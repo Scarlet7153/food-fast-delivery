@@ -1,0 +1,468 @@
+import { useState } from 'react'
+import { useQuery } from 'react-query'
+import { adminService } from '../../services/adminService'
+import { 
+  Search, Filter, Truck, Battery, MapPin, Activity, 
+  CheckCircle, XCircle, AlertTriangle, Eye, Settings
+} from 'lucide-react'
+import { formatDateTime, formatDroneStatus, formatWeight, formatDistance } from '../../utils/formatters'
+
+function AdminDrones() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [restaurantFilter, setRestaurantFilter] = useState('all')
+  const [selectedDrone, setSelectedDrone] = useState(null)
+  const [showDroneModal, setShowDroneModal] = useState(false)
+
+  // Fetch drones
+  const { data: dronesData, isLoading } = useQuery(
+    ['admin-drones', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter }],
+    () => adminService.getAllDrones({
+      search: searchQuery,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      restaurant: restaurantFilter !== 'all' ? restaurantFilter : undefined
+    }),
+    {
+      staleTime: 2 * 60 * 1000, // 2 minutes
+    }
+  )
+
+  const drones = dronesData?.data?.drones || []
+  const restaurants = dronesData?.data?.restaurants || []
+
+  const statusOptions = [
+    { value: 'all', label: 'All Status' },
+    { value: 'IDLE', label: 'Idle' },
+    { value: 'CHARGING', label: 'Charging' },
+    { value: 'MAINTENANCE', label: 'Maintenance' },
+    { value: 'IN_FLIGHT', label: 'Đang giao' },
+    { value: 'ERROR', label: 'Error' },
+  ]
+
+  const handleViewDrone = (drone) => {
+    setSelectedDrone(drone)
+    setShowDroneModal(true)
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'IDLE':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'CHARGING':
+        return <Battery className="h-4 w-4 text-blue-500" />
+      case 'MAINTENANCE':
+        return <Settings className="h-4 w-4 text-yellow-500" />
+      case 'IN_FLIGHT':
+        return <Activity className="h-4 w-4 text-purple-500" />
+      case 'ERROR':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
+      default:
+        return <XCircle className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'IDLE':
+        return 'bg-green-100 text-green-800'
+      case 'CHARGING':
+        return 'bg-blue-100 text-blue-800'
+      case 'MAINTENANCE':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'IN_FLIGHT':
+        return 'bg-purple-100 text-purple-800'
+      case 'ERROR':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getBatteryColor = (batteryLevel) => {
+    if (batteryLevel > 70) return 'text-green-500'
+    if (batteryLevel > 30) return 'text-yellow-500'
+    return 'text-red-500'
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đội Drone</h1>
+        <p className="text-gray-600 mt-1">
+          Monitor and manage all drones across the platform
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search drones by name, model, or serial number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input pl-10 w-full"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="input lg:w-48"
+          >
+            {statusOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Restaurant Filter */}
+          <select
+            value={restaurantFilter}
+            onChange={(e) => setRestaurantFilter(e.target.value)}
+            className="input lg:w-48"
+          >
+            <option value="all">All Restaurants</option>
+            {restaurants.map(restaurant => (
+              <option key={restaurant._id} value={restaurant._id}>
+                {restaurant.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Drones Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          [...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
+              <div className="space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-8 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))
+        ) : drones.length > 0 ? (
+          drones.map((drone) => (
+            <DroneCard
+              key={drone._id}
+              drone={drone}
+              onView={handleViewDrone}
+              getStatusIcon={getStatusIcon}
+              getStatusColor={getStatusColor}
+              getBatteryColor={getBatteryColor}
+            />
+          ))
+        ) : (
+          <div className="col-span-full">
+            <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+              <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No drones found
+              </h3>
+              <p className="text-gray-500">
+                {searchQuery || statusFilter !== 'all' || restaurantFilter !== 'all'
+                  ? 'No drones match your current filters.'
+                  : 'No drones have been registered yet.'
+                }
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Drone Detail Modal */}
+      {showDroneModal && selectedDrone && (
+        <DroneDetailModal
+          drone={selectedDrone}
+          onClose={() => setShowDroneModal(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Drone Card Component
+function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryColor }) {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-gray-900">{drone.name}</h3>
+          <p className="text-sm text-gray-600">{drone.model}</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          {getStatusIcon(drone.status)}
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(drone.status)}`}>
+            {formatDroneStatus(drone.status)}
+          </span>
+        </div>
+      </div>
+
+      {/* Drone Info */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Nhà hàng</span>
+          <span className="font-medium text-gray-900">{drone.restaurant?.name}</span>
+        </div>
+        
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Pin</span>
+          <div className="flex items-center space-x-1">
+            <Battery className={`h-4 w-4 ${getBatteryColor(drone.batteryLevel)}`} />
+            <span className={`font-medium ${getBatteryColor(drone.batteryLevel)}`}>
+              {drone.batteryLevel}%
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Max Payload</span>
+          <span className="font-medium">{formatWeight(drone.maxPayloadGrams)}</span>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600">Max Range</span>
+          <span className="font-medium">{formatDistance(drone.maxRangeMeters)}</span>
+        </div>
+      </div>
+
+      {/* Current Mission */}
+      {drone.currentMission && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center space-x-2 mb-1">
+            <Activity className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">Active Mission</span>
+          </div>
+          <p className="text-sm text-blue-700">
+            Order #{drone.currentMission.orderNumber}
+          </p>
+        </div>
+      )}
+
+      {/* Location */}
+      {drone.currentLocation && (
+        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
+          <MapPin className="h-4 w-4" />
+          <span className="text-xs">
+            {drone.currentLocation.lat.toFixed(4)}, {drone.currentLocation.lng.toFixed(4)}
+          </span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-500">
+          Last updated: {formatDateTime(drone.lastUpdatedAt)}
+        </div>
+        <button
+          onClick={() => onView(drone)}
+          className="btn btn-outline btn-sm flex items-center space-x-1"
+        >
+          <Eye className="h-3 w-3" />
+          <span>Xem</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Drone Detail Modal Component
+function DroneDetailModal({ drone, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Drone Details</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Drone Header */}
+          <div className="flex items-start space-x-6">
+            <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+              <Truck className="h-12 w-12 text-gray-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-gray-900">{drone.name}</h3>
+              <p className="text-gray-600 mb-2">{drone.model}</p>
+              <p className="text-sm text-gray-500">Serial: {drone.serialNumber}</p>
+            </div>
+          </div>
+
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-lg font-medium mb-4">Drone Specifications</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Max Payload</span>
+                  <span className="font-medium">{formatWeight(drone.maxPayloadGrams)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Max Range</span>
+                  <span className="font-medium">{formatDistance(drone.maxRangeMeters)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Max Flight Time</span>
+                  <span className="font-medium">{drone.maxFlightTimeMinutes} minutes</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Current Battery</span>
+                  <span className={`font-medium ${
+                    drone.batteryLevel > 70 ? 'text-green-600' :
+                    drone.batteryLevel > 30 ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {drone.batteryLevel}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-medium mb-4">Status Information</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Current Status</span>
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {formatDroneStatus(drone.status)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Nhà hàng</span>
+                  <span className="font-medium">{drone.restaurant?.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Registration Date</span>
+                  <span className="font-medium">{formatDateTime(drone.createdAt)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Last Updated</span>
+                  <span className="font-medium">{formatDateTime(drone.lastUpdatedAt)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Location */}
+          {drone.currentLocation && (
+            <div>
+              <h4 className="text-lg font-medium mb-4">Current Location</h4>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-gray-900">
+                      Latitude: {drone.currentLocation.lat.toFixed(6)}
+                    </p>
+                    <p className="text-gray-900">
+                      Longitude: {drone.currentLocation.lng.toFixed(6)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Last updated: {formatDateTime(drone.currentLocation.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Current Mission */}
+          {drone.currentMission && (
+            <div>
+              <h4 className="text-lg font-medium mb-4">Current Mission</h4>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mission ID
+                    </label>
+                    <p className="text-gray-900">#{drone.currentMission.missionNumber}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Order Number
+                    </label>
+                    <p className="text-gray-900">#{drone.currentMission.orderNumber}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mission Status
+                    </label>
+                    <p className="text-gray-900">{drone.currentMission.status}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Started At
+                    </label>
+                    <p className="text-gray-900">{formatDateTime(drone.currentMission.startedAt)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mission History */}
+          <div>
+            <h4 className="text-lg font-medium mb-4">Recent Missions</h4>
+            <div className="space-y-3">
+              {drone.recentMissions?.length > 0 ? (
+                drone.recentMissions.map((mission, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">Mission #{mission.missionNumber}</p>
+                      <p className="text-sm text-gray-600">
+                        Order #{mission.orderNumber} • {formatDateTime(mission.startedAt)}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      mission.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                      mission.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {mission.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No recent missions</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          {drone.notes && (
+            <div>
+              <h4 className="text-lg font-medium mb-4">Ghi chú</h4>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-gray-900">{drone.notes}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default AdminDrones
