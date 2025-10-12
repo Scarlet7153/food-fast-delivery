@@ -161,19 +161,6 @@ export const formatMissionStatus = (status) => {
   return statusMap[status] || status
 }
 
-// Format drone status
-export const formatDroneStatus = (status) => {
-  const statusMap = {
-    IDLE: 'Chờ',
-    CHARGING: 'Sạc pin',
-    MAINTENANCE: 'Bảo trì',
-    IN_FLIGHT: 'Bay',
-    ERROR: 'Lỗi'
-  }
-  
-  return statusMap[status] || status
-}
-
 // Format payment status
 export const formatPaymentStatus = (status) => {
   const statusMap = {
@@ -209,4 +196,17 @@ export const formatFileSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// Format drone status
+export const formatDroneStatus = (status) => {
+  const statusMap = {
+    'IDLE': 'Đang Rảnh',
+    'CHARGING': 'Đang Sạc',
+    'MAINTENANCE': 'Đang Bảo Trì',
+    'IN_FLIGHT': 'Đang Bay',
+    'ERROR': 'Đang Lỗi'
+  }
+  
+  return statusMap[status] || status
 }

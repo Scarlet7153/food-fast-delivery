@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { droneService } from '../../services/droneService'
 import { 
-  Plus, Edit, Trash2, Power, Battery, MapPin, Clock,
-  AlertTriangle, CheckCircle, XCircle, Settings, Eye, Package, X, Save
+  Plus, Edit, Trash2, Power, MapPin, Clock,
+  AlertTriangle, CheckCircle, XCircle, Settings, Eye, Package, X, Save, Battery, Plane
 } from 'lucide-react'
 import { formatDistance, formatDuration, formatDroneStatus, formatDateTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -77,11 +77,11 @@ function RestaurantDrones() {
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Drone' },
-    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'IDLE', label: 'Đang Rảnh' },
     { value: 'CHARGING', label: 'Đang Sạc' },
-    { value: 'MAINTENANCE', label: 'Bảo Trì' },
+    { value: 'MAINTENANCE', label: 'Đang Bảo Trì' },
     { value: 'IN_FLIGHT', label: 'Đang Bay' },
-    { value: 'ERROR', label: 'Lỗi' },
+    { value: 'ERROR', label: 'Đang Lỗi' },
   ]
 
   const getStatusIcon = (status) => {
@@ -118,11 +118,6 @@ function RestaurantDrones() {
     }
   }
 
-  const getBatteryColor = (battery) => {
-    if (battery > 70) return 'text-green-600'
-    if (battery > 30) return 'text-yellow-600'
-    return 'text-red-600'
-  }
 
   const handleDeleteDrone = (droneId, droneName) => {
     if (window.confirm(`Bạn có chắc muốn xóa drone "${droneName}"?`)) {
@@ -226,7 +221,6 @@ function RestaurantDrones() {
                   onStatusChange={handleStatusChange}
                   getStatusIcon={getStatusIcon}
                   getStatusColor={getStatusColor}
-                  getBatteryColor={getBatteryColor}
                   isDeleting={deleteDroneMutation.isLoading}
                   isUpdating={updateDroneMutation.isLoading}
                 />
@@ -295,8 +289,7 @@ function RestaurantDrones() {
 }
 
 // Drone Card Component
-function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, getStatusColor, getBatteryColor, isDeleting, isUpdating }) {
-  const batteryPercentage = Math.round((drone.currentBattery / drone.maxBattery) * 100)
+function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, getStatusColor, isDeleting, isUpdating }) {
   const canChangeStatus = drone.status !== 'IN_FLIGHT'
 
   return (
@@ -306,7 +299,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-              {getStatusIcon(drone.status)}
+              <Plane className="h-6 w-6 text-gray-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{drone.name}</h3>
@@ -324,24 +317,6 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
 
       {/* Drone Details */}
       <div className="p-4 space-y-4">
-        {/* Battery */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Battery className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">Pin</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-16 bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getBatteryColor(batteryPercentage)}`}
-                style={{ width: `${batteryPercentage}%` }}
-              ></div>
-            </div>
-            <span className={`text-sm font-medium ${getBatteryColor(batteryPercentage)}`}>
-              {batteryPercentage}%
-            </span>
-          </div>
-        </div>
 
         {/* Payload */}
         <div className="flex items-center justify-between">
@@ -419,10 +394,10 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
               disabled={isUpdating}
               className="text-xs border border-gray-300 rounded px-2 py-1"
             >
-              <option value="IDLE">Đặt Rảnh</option>
-              <option value="CHARGING">Đặt Sạc</option>
-              <option value="MAINTENANCE">Đặt Bảo Trì</option>
-              <option value="ERROR">Đặt Lỗi</option>
+              <option value="IDLE">Đang Rảnh</option>
+              <option value="CHARGING">Đang Sạc</option>
+              <option value="MAINTENANCE">Đang Bảo Trì</option>
+              <option value="ERROR">Đang Lỗi</option>
             </select>
           )}
         </div>
@@ -438,18 +413,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
     model: drone?.model || '',
     maxPayloadGrams: drone?.maxPayloadGrams || 1000,
     maxRangeMeters: drone?.maxRangeMeters || 5000,
-    status: drone?.status || 'IDLE',
-    location: {
-      lat: drone?.location?.lat || 0,
-      lng: drone?.location?.lng || 0
-    },
-    geofence: {
-      center: {
-        lat: drone?.geofence?.center?.lat || 0,
-        lng: drone?.geofence?.center?.lng || 0
-      },
-      radiusMeters: drone?.geofence?.radiusMeters || 1000
-    }
+    status: drone?.status || 'IDLE'
   })
 
   const handleChange = (field, value) => {
@@ -476,10 +440,10 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
   }
 
   const statusOptions = [
-    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'IDLE', label: 'Đang Rảnh' },
     { value: 'CHARGING', label: 'Đang Sạc' },
-    { value: 'MAINTENANCE', label: 'Bảo Trì' },
-    { value: 'ERROR', label: 'Lỗi' },
+    { value: 'MAINTENANCE', label: 'Đang Bảo Trì' },
+    { value: 'ERROR', label: 'Đang Lỗi' },
   ]
 
   return (
@@ -554,33 +518,6 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Pin Tối Đa (%)
-              </label>
-              <input
-                type="number"
-                value={formData.maxBattery}
-                onChange={(e) => handleChange('maxBattery', parseInt(e.target.value))}
-                className="input w-full"
-                min="1"
-                max="100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Pin Hiện Tại (%)
-              </label>
-              <input
-                type="number"
-                value={formData.currentBattery}
-                onChange={(e) => handleChange('currentBattery', parseInt(e.target.value))}
-                className="input w-full"
-                min="0"
-                max="100"
-              />
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -599,45 +536,6 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
               </select>
             </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Vĩ Độ
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={formData.location.lat}
-                onChange={(e) => handleChange('location.lat', parseFloat(e.target.value))}
-                className="input w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kinh Độ
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={formData.location.lng}
-                onChange={(e) => handleChange('location.lng', parseFloat(e.target.value))}
-                className="input w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bán Kính Geofence (mét)
-              </label>
-              <input
-                type="number"
-                value={formData.geofence.radiusMeters}
-                onChange={(e) => handleChange('geofence.radiusMeters', parseInt(e.target.value))}
-                className="input w-full"
-                min="1"
-              />
-            </div>
           </div>
 
           {/* Actions */}
@@ -645,14 +543,14 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-outline"
+              className="btn btn-outline btn-md"
               disabled={isLoading}
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary btn-md"
               disabled={isLoading}
             >
               {isLoading ? (

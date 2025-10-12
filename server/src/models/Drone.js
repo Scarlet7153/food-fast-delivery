@@ -14,8 +14,8 @@ const droneSchema = new mongoose.Schema({
   },
   serial: {
     type: String,
-    required: [true, 'Serial number is required'],
-    unique: true,
+    required: false,
+    unique: false,
     trim: true,
     maxlength: [20, 'Serial number cannot exceed 20 characters']
   },
@@ -31,98 +31,17 @@ const droneSchema = new mongoose.Schema({
     required: true,
   },
   // Physical specifications
-  payloadMaxGrams: {
+  maxPayloadGrams: {
     type: Number,
     required: [true, 'Maximum payload is required'],
     min: [100, 'Maximum payload must be at least 100 grams'],
     max: [10000, 'Maximum payload cannot exceed 10000 grams']
   },
-  batteryPercent: {
-    type: Number,
-    default: 100,
-    min: 0,
-    max: 100,
-    required: true
-  },
-  rangeKm: {
+  maxRangeMeters: {
     type: Number,
     required: [true, 'Range is required'],
-    min: [1, 'Range must be at least 1 km'],
-    max: [50, 'Range cannot exceed 50 km']
-  },
-  speedKmh: {
-    type: Number,
-    default: 50,
-    min: [10, 'Speed must be at least 10 km/h'],
-    max: [100, 'Speed cannot exceed 100 km/h']
-  },
-  maxAltitude: {
-    type: Number,
-    default: 120, // meters
-    min: 50,
-    max: 500
-  },
-  // Current location
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      default: [0, 0],
-      index: '2dsphere'
-    },
-    altitude: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    heading: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 360
-    },
-    lastUpdated: {
-      type: Date,
-      default: Date.now
-    }
-  },
-  // Geofence configuration
-  geofence: {
-    type: {
-      type: String,
-      enum: ['circle', 'polygon'],
-      required: [true, 'Geofence type is required']
-    },
-    center: {
-      type: [Number], // [longitude, latitude]
-      required: function() {
-        return this.geofence && this.geofence.type === 'circle';
-      }
-    },
-    radiusKm: {
-      type: Number,
-      required: function() {
-        return this.geofence && this.geofence.type === 'circle';
-      },
-      min: [0.5, 'Radius must be at least 0.5 km'],
-      max: [20, 'Radius cannot exceed 20 km']
-    },
-    coordinates: {
-      type: [[Number]], // [[lng, lat], [lng, lat], ...]
-      required: function() {
-        return this.geofence && this.geofence.type === 'polygon';
-      },
-      validate: {
-        validator: function(coords) {
-          return this.geofence && this.geofence.type !== 'polygon' || coords.length >= 3;
-        },
-        message: 'Polygon must have at least 3 coordinates'
-      }
-    }
+    min: [1000, 'Range must be at least 1000 meters'],
+    max: [50000, 'Range cannot exceed 50000 meters']
   },
   // Maintenance and health
   maintenance: {
@@ -326,16 +245,6 @@ droneSchema.methods.updateLocation = function(longitude, latitude, altitude = 0,
   return this.save();
 };
 
-// Instance method to update battery
-droneSchema.methods.updateBattery = function(batteryPercent) {
-  this.batteryPercent = Math.max(0, Math.min(100, batteryPercent));
-  
-  if (this.batteryPercent <= this.settings.lowBatteryThreshold && this.status === 'IN_FLIGHT') {
-    this.settings.emergencyLanding = true;
-  }
-  
-  return this.save();
-};
 
 // Instance method to update status
 droneSchema.methods.updateStatus = function(newStatus) {

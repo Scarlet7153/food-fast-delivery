@@ -155,18 +155,7 @@ const schemas = {
     serial: Joi.string().min(5).max(20).optional(), // Make optional since frontend doesn't send it
     maxPayloadGrams: Joi.number().min(100).max(10000).required(),
     maxRangeMeters: Joi.number().min(1000).max(50000).required(),
-    status: Joi.string().valid('IDLE', 'CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR').optional(),
-    location: Joi.object({
-      lat: Joi.number().min(-90).max(90).required(),
-      lng: Joi.number().min(-180).max(180).required()
-    }).optional(),
-    geofence: Joi.object({
-      center: Joi.object({
-        lat: Joi.number().min(-90).max(90).required(),
-        lng: Joi.number().min(-180).max(180).required()
-      }).required(),
-      radiusMeters: Joi.number().min(100).max(10000).required()
-    }).required()
+    status: Joi.string().valid('IDLE', 'CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR').optional()
   }),
 
   // Mission schemas

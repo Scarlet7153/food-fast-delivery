@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 // Create drone
 const createDrone = async (req, res) => {
   try {
-    const { name, serial, model, payloadMaxGrams, rangeKm, speedKmh, geofence } = req.body;
+    const { name, serial, model, maxPayloadGrams, maxRangeMeters, status } = req.body;
 
     // Check if user has a restaurant
     if (!req.user.restaurantId) {
@@ -15,28 +15,25 @@ const createDrone = async (req, res) => {
       });
     }
 
-    // Check if serial number is unique
-    const existingDrone = await Drone.findOne({ serial });
-    if (existingDrone) {
-      return res.status(400).json({
-        success: false,
-        error: 'Drone with this serial number already exists'
-      });
+    // Check if serial number is unique (only if provided)
+    if (serial) {
+      const existingDrone = await Drone.findOne({ serial });
+      if (existingDrone) {
+        return res.status(400).json({
+          success: false,
+          error: 'Drone with this serial number already exists'
+        });
+      }
     }
 
     const drone = new Drone({
       restaurantId: req.user.restaurantId,
       name,
-      serial,
+      serial: serial || `DRONE-${Date.now()}`, // Generate serial if not provided
       model,
-      payloadMaxGrams,
-      rangeKm,
-      speedKmh,
-      geofence,
-      location: {
-        type: 'Point',
-        coordinates: [0, 0] // Default location, needs to be updated
-      }
+      maxPayloadGrams,
+      maxRangeMeters,
+      status: status || 'IDLE'
     });
 
     await drone.save();
