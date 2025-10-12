@@ -14,7 +14,8 @@ router.post('/', auth, requireRole('restaurant'), validate(schemas.restaurant), 
 
 // Public routes (must be after /me to avoid conflict)
 router.get('/:id', restaurantController.getRestaurant);
-router.get('/:id/menu', restaurantController.getRestaurantMenu);
+router.get('/:id/menu', auth, requireRole('restaurant'), restaurantController.getRestaurantMenu);
+router.post('/:id/menu', auth, requireRole('restaurant'), validate(schemas.menuItem), restaurantController.createMenuItem);
 router.put('/:id', auth, requireRole('restaurant'), restaurantController.updateRestaurant);
 router.get('/:id/stats', auth, requireRole('restaurant'), restaurantController.getRestaurantStats);
 

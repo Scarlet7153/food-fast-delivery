@@ -20,12 +20,16 @@ function RestaurantMenu() {
   // Fetch menu items
   const { data: menuData, isLoading } = useQuery(
     ['restaurant-menu', { search: searchQuery, category: categoryFilter }],
-    () => restaurantService.getMyRestaurant().then(res => 
-      restaurantService.getRestaurantMenu(res.restaurant._id, {
+    async () => {
+      const res = await restaurantService.getMyRestaurant()
+      if (!res?.data?.restaurant?._id) {
+        throw new Error('Restaurant not found')
+      }
+      return restaurantService.getRestaurantMenu(res.data.restaurant._id, {
         search: searchQuery,
         category: categoryFilter !== 'all' ? categoryFilter : undefined
       })
-    ),
+    },
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
@@ -35,7 +39,10 @@ function RestaurantMenu() {
   const createItemMutation = useMutation(
     async (itemData) => {
       const restaurant = await restaurantService.getMyRestaurant()
-      return restaurantService.createMenuItem(restaurant.restaurant._id, itemData)
+      if (!restaurant?.data?.restaurant?._id) {
+        throw new Error('Restaurant not found')
+      }
+      return restaurantService.createMenuItem(restaurant.data.restaurant._id, itemData)
     },
     {
       onSuccess: () => {
@@ -86,6 +93,10 @@ function RestaurantMenu() {
 
   const menuItems = menuData?.data?.menuItems || []
   const categories = menuData?.data?.categories || ['all']
+  
+  // Debug: Check data structure
+  console.log('Menu data:', menuData)
+  console.log('Menu items:', menuItems)
 
   const handleDeleteItem = (itemId, itemName) => {
     if (window.confirm(`Bạn có chắc muốn xóa "${itemName}"?`)) {
@@ -257,11 +268,26 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       {/* Item Image */}
       <div className="aspect-w-16 aspect-h-9 bg-gray-200 relative">
-        <img
-          src={item.imageUrl || '/api/placeholder/400/225'}
-          alt={item.name}
-          className="w-full h-48 object-cover"
-        />
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="w-full h-48 object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'flex'
+            }}
+          />
+        ) : null}
+        <div 
+          className="w-full h-48 bg-gray-200 flex items-center justify-center"
+          style={{display: item.imageUrl ? 'none' : 'flex'}}
+        >
+          <div className="text-center">
+            <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <span className="text-sm text-gray-500">Chưa có ảnh</span>
+          </div>
+        </div>
         {!item.available && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -512,14 +538,14 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-outline"
+              className="btn btn-outline btn-md"
               disabled={isLoading}
             >
               {t('Hủy')}
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary btn-md"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -126,7 +126,11 @@ const schemas = {
     price: Joi.number().min(0).required(),
     category: Joi.string().max(50).optional(),
     available: Joi.boolean().default(true),
-    weightGrams: Joi.number().min(1).max(5000).optional()
+    weightGrams: Joi.number().min(1).max(5000).optional(),
+    imageUrl: Joi.string().uri().optional(),
+    prepTime: Joi.number().min(0).optional(),
+    allergens: Joi.array().items(Joi.string()).optional(),
+    nutritionalInfo: Joi.object().optional()
   }),
 
   // Order schemas

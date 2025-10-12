@@ -270,11 +270,9 @@ const getRestaurantMenu = async (req, res) => {
     const { id } = req.params;
     const { category, featured, minPrice, maxPrice, search } = req.query;
 
-    // Check if restaurant exists and is active
+    // Check if restaurant exists
     const restaurant = await Restaurant.findOne({ 
-      _id: id, 
-      active: true, 
-      approved: true 
+      _id: id
     });
 
     if (!restaurant) {
@@ -293,11 +291,12 @@ const getRestaurantMenu = async (req, res) => {
 
     // Search in menu items if search term provided
     let filteredItems = menuItems;
-    if (search) {
+    if (search && typeof search === 'string') {
+      const searchLower = search.toLowerCase();
       filteredItems = menuItems.filter(item => 
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.description?.toLowerCase().includes(search.toLowerCase()) ||
-        item.tags?.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+        item.name.toLowerCase().includes(searchLower) ||
+        (item.description && item.description.toLowerCase().includes(searchLower)) ||
+        (item.category && item.category.toLowerCase().includes(searchLower))
       );
     }
 
@@ -315,7 +314,8 @@ const getRestaurantMenu = async (req, res) => {
           name: restaurant.name,
           address: restaurant.address,
           rating: restaurant.rating,
-          isOpen: restaurant.isOpen(),
+          active: restaurant.active,
+          approved: restaurant.approved,
           deliverySettings: restaurant.deliverySettings
         },
         menuItems: filteredItems,
@@ -325,6 +325,12 @@ const getRestaurantMenu = async (req, res) => {
 
   } catch (error) {
     logger.error('Get restaurant menu error:', error);
+    logger.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      params: req.params,
+      query: req.query
+    });
     res.status(500).json({
       success: false,
       error: 'Failed to get restaurant menu'
@@ -631,12 +637,62 @@ const rejectRestaurant = async (req, res) => {
   }
 };
 
+// Create menu item for restaurant
+const createMenuItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const menuItemData = req.body;
+
+    // Debug: Log received data
+    logger.info('Creating menu item with data:', menuItemData);
+
+    // Check if restaurant exists and user owns it
+    const restaurant = await Restaurant.findOne({ 
+      _id: id,
+      ownerUserId: req.user._id
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found or you do not have permission'
+      });
+    }
+
+    // Create menu item
+    const menuItem = new MenuItem({
+      restaurantId: id,
+      ...menuItemData
+    });
+
+    await menuItem.save();
+
+    logger.info(`Menu item created: ${menuItem.name} for restaurant ${restaurant.name}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Menu item created successfully',
+      data: {
+        menuItem
+      }
+    });
+
+  } catch (error) {
+    logger.error('Create menu item error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create menu item'
+    });
+  }
+};
+
 module.exports = {
   getRestaurants,
   getRestaurant,
   getMyRestaurant,
   updateMyRestaurant,
   getRestaurantMenu,
+  createMenuItem,
   createRestaurant,
   updateRestaurant,
   getRestaurantStats,
