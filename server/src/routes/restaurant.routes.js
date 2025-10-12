@@ -6,11 +6,14 @@ const restaurantController = require('../controllers/restaurant.controller');
 
 // Public routes
 router.get('/', restaurantController.getRestaurants);
-router.get('/:id', restaurantController.getRestaurant);
-router.get('/:id/menu', restaurantController.getRestaurantMenu);
 
 // Restaurant owner routes (protected)
+router.get('/me', auth, requireRole('restaurant'), restaurantController.getMyRestaurant);
 router.post('/', auth, requireRole('restaurant'), validate(schemas.restaurant), restaurantController.createRestaurant);
+
+// Public routes (must be after /me to avoid conflict)
+router.get('/:id', restaurantController.getRestaurant);
+router.get('/:id/menu', restaurantController.getRestaurantMenu);
 router.put('/:id', auth, requireRole('restaurant'), restaurantController.updateRestaurant);
 router.get('/:id/stats', auth, requireRole('restaurant'), restaurantController.getRestaurantStats);
 

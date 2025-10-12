@@ -144,6 +144,37 @@ const getRestaurants = async (req, res) => {
   }
 };
 
+// Get current user's restaurant (for restaurant owners)
+const getMyRestaurant = async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ 
+      ownerUserId: req.user._id
+    })
+    .populate('ownerUserId', 'name phone email');
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found. Please create a restaurant first.'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        restaurant
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get my restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get restaurant'
+    });
+  }
+};
+
 // Get single restaurant
 const getRestaurant = async (req, res) => {
   try {
@@ -560,6 +591,7 @@ const rejectRestaurant = async (req, res) => {
 module.exports = {
   getRestaurants,
   getRestaurant,
+  getMyRestaurant,
   getRestaurantMenu,
   createRestaurant,
   updateRestaurant,
