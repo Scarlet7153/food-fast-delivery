@@ -8,6 +8,7 @@ import {
 import { formatCurrency } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
+import ImageUpload from '../../components/ImageUpload'
 
 function RestaurantSettings() {
   const [isEditing, setIsEditing] = useState(false)
@@ -312,20 +313,38 @@ function RestaurantSettings() {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL Hình Ảnh Nhà Hàng
+                Hình Ảnh Nhà Hàng <span className="text-gray-500 text-sm">(Tùy chọn)</span>
               </label>
               {isEditing ? (
-                <input
-                  type="url"
+                <ImageUpload
                   value={formData.imageUrl}
-                  onChange={(e) => handleChange('imageUrl', e.target.value)}
-                  className="input w-full"
-                  placeholder="https://example.com/image.jpg"
+                  onChange={(value) => handleChange('imageUrl', value)}
+                  disabled={updateRestaurantMutation.isLoading}
                 />
               ) : (
-                <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
-                  <Image className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.imageUrl || 'Chưa có URL hình ảnh'}</span>
+                <div className="p-6 bg-gray-50 rounded-lg">
+                  {formData.imageUrl ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Hình ảnh nhà hàng"
+                        className="h-96 w-auto max-w-full object-cover rounded-lg border shadow-md"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          e.target.nextSibling.style.display = 'flex'
+                        }}
+                      />
+                      <div className="mt-4 flex items-center space-x-2" style={{display: 'none'}}>
+                        <Image className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-900 text-sm break-all">{formData.imageUrl}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2 py-8">
+                      <Image className="h-6 w-6 text-gray-400" />
+                      <span className="text-gray-900">Chưa có hình ảnh nhà hàng</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

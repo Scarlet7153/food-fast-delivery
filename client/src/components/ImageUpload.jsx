@@ -97,7 +97,7 @@ function ImageUpload({ value, onChange, className = '', disabled = false }) {
                   {preview ? 'Thay đổi ảnh' : 'Chọn ảnh từ máy'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG, JPEG (tối đa 5MB)
+                  PNG, JPG, JPEG (tối đa 5MB) - Tùy chọn
                 </p>
               </div>
             </div>
@@ -108,7 +108,7 @@ function ImageUpload({ value, onChange, className = '', disabled = false }) {
       {/* Manual URL Input */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Hoặc nhập URL ảnh
+          Hoặc nhập URL ảnh <span className="text-gray-500 text-sm">(Tùy chọn)</span>
         </label>
         <input
           type="url"
@@ -118,7 +118,7 @@ function ImageUpload({ value, onChange, className = '', disabled = false }) {
             onChange(e.target.value)
           }}
           className="input w-full"
-          placeholder="https://example.com/image.jpg"
+          placeholder="https://example.com/image.jpg (không bắt buộc)"
           disabled={uploading}
         />
       </div>

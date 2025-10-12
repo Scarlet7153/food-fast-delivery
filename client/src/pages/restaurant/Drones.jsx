@@ -438,8 +438,6 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
     model: drone?.model || '',
     maxPayloadGrams: drone?.maxPayloadGrams || 1000,
     maxRangeMeters: drone?.maxRangeMeters || 5000,
-    maxBattery: drone?.maxBattery || 100,
-    currentBattery: drone?.currentBattery || 100,
     status: drone?.status || 'IDLE',
     location: {
       lat: drone?.location?.lat || 0,

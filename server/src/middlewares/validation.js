@@ -66,6 +66,59 @@ const schemas = {
     }).optional()
   }),
 
+  // Restaurant update schema (location not required for updates)
+  restaurantUpdate: Joi.object({
+    name: Joi.string().min(2).max(100).optional(),
+    description: Joi.string().max(500).optional(),
+    address: Joi.string().min(10).max(200).optional(),
+    phone: Joi.string().pattern(/^[0-9]{10,11}$/).optional(),
+    email: Joi.string().email().optional(),
+    imageUrl: Joi.string().uri().optional(),
+    deliverySettings: Joi.object({
+      baseRate: Joi.number().min(0).optional(),
+      perKmRate: Joi.number().min(0).optional(),
+      estimatedTime: Joi.string().optional(),
+      maxDistance: Joi.number().min(0).optional()
+    }).optional(),
+    operatingHours: Joi.object({
+      monday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      tuesday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      wednesday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      thursday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      friday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      saturday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional(),
+      sunday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        closed: Joi.boolean()
+      }).optional()
+    }).optional()
+  }),
+
   // Menu item schemas
   menuItem: Joi.object({
     name: Joi.string().min(2).max(100).required(),
@@ -98,29 +151,21 @@ const schemas = {
   // Drone schemas
   drone: Joi.object({
     name: Joi.string().min(2).max(50).required(),
-    serial: Joi.string().min(5).max(20).required(),
-    payloadMaxGrams: Joi.number().min(100).max(10000).required(),
-    rangeKm: Joi.number().min(1).max(50).required(),
-    speedKmh: Joi.number().min(10).max(100).optional(),
+    model: Joi.string().min(2).max(50).required(),
+    serial: Joi.string().min(5).max(20).optional(), // Make optional since frontend doesn't send it
+    maxPayloadGrams: Joi.number().min(100).max(10000).required(),
+    maxRangeMeters: Joi.number().min(1000).max(50000).required(),
+    status: Joi.string().valid('IDLE', 'CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR').optional(),
+    location: Joi.object({
+      lat: Joi.number().min(-90).max(90).required(),
+      lng: Joi.number().min(-180).max(180).required()
+    }).optional(),
     geofence: Joi.object({
-      type: Joi.string().valid('circle', 'polygon').required(),
-      center: Joi.array().items(Joi.number()).length(2).when('type', {
-        is: 'circle',
-        then: Joi.required(),
-        otherwise: Joi.forbidden()
-      }),
-      radiusKm: Joi.number().min(0.5).max(20).when('type', {
-        is: 'circle',
-        then: Joi.required(),
-        otherwise: Joi.forbidden()
-      }),
-      coordinates: Joi.array().items(
-        Joi.array().items(Joi.number()).length(2)
-      ).min(3).when('type', {
-        is: 'polygon',
-        then: Joi.required(),
-        otherwise: Joi.forbidden()
-      })
+      center: Joi.object({
+        lat: Joi.number().min(-90).max(90).required(),
+        lng: Joi.number().min(-180).max(180).required()
+      }).required(),
+      radiusMeters: Joi.number().min(100).max(10000).required()
     }).required()
   }),
 

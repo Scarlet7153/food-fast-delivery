@@ -482,7 +482,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hình Ảnh Sản Phẩm
+                Hình Ảnh Sản Phẩm <span className="text-gray-500 text-sm">(Tùy chọn)</span>
               </label>
               <ImageUpload
                 value={formData.imageUrl}

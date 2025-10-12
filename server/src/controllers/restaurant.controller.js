@@ -175,6 +175,49 @@ const getMyRestaurant = async (req, res) => {
   }
 };
 
+// Update current user's restaurant (for restaurant owners)
+const updateMyRestaurant = async (req, res) => {
+  try {
+    const updateData = req.body;
+
+    // Find restaurant owned by current user
+    const restaurant = await Restaurant.findOne({ 
+      ownerUserId: req.user._id
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found. Please create a restaurant first.'
+      });
+    }
+
+    // Update restaurant
+    const updatedRestaurant = await Restaurant.findByIdAndUpdate(
+      restaurant._id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    logger.info(`My restaurant updated: ${updatedRestaurant.name}`);
+
+    res.json({
+      success: true,
+      message: 'Restaurant updated successfully',
+      data: {
+        restaurant: updatedRestaurant
+      }
+    });
+
+  } catch (error) {
+    logger.error('Update my restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update restaurant'
+    });
+  }
+};
+
 // Get single restaurant
 const getRestaurant = async (req, res) => {
   try {
@@ -592,6 +635,7 @@ module.exports = {
   getRestaurants,
   getRestaurant,
   getMyRestaurant,
+  updateMyRestaurant,
   getRestaurantMenu,
   createRestaurant,
   updateRestaurant,

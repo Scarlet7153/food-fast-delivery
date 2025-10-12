@@ -9,6 +9,7 @@ router.get('/', restaurantController.getRestaurants);
 
 // Restaurant owner routes (protected)
 router.get('/me', auth, requireRole('restaurant'), restaurantController.getMyRestaurant);
+router.put('/me', auth, requireRole('restaurant'), validate(schemas.restaurantUpdate), restaurantController.updateMyRestaurant);
 router.post('/', auth, requireRole('restaurant'), validate(schemas.restaurant), restaurantController.createRestaurant);
 
 // Public routes (must be after /me to avoid conflict)
