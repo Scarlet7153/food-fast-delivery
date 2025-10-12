@@ -7,6 +7,7 @@ import {
   CheckCircle, XCircle, Eye, EyeOff
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function AdminSettings() {
   const [activeTab, setActiveTab] = useState('general')
@@ -30,10 +31,10 @@ function AdminSettings() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('admin-settings')
-        toast.success('Settings updated successfully')
+        toast.success('Cập nhật cài đặt thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update settings')
+        toast.error('Không thể cập nhật cài đặt')
       }
     }
   )
@@ -41,10 +42,10 @@ function AdminSettings() {
   const settings = settingsData?.data || {}
 
   const tabs = [
-    { id: 'general', label: 'General', icon: Globe },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'database', label: 'Database', icon: Database },
+    { id: 'general', label: 'Chung', icon: Globe },
+    { id: 'security', label: 'Bảo Mật', icon: Shield },
+    { id: 'notifications', label: 'Thông Báo', icon: Bell },
+    { id: 'database', label: 'Cơ Sở Dữ Liệu', icon: Database },
     { id: 'payment', label: 'Thanh toán', icon: DollarSign },
     { id: 'api', label: 'API', icon: Server },
   ]
@@ -59,7 +60,7 @@ function AdminSettings() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Cài Đặt Hệ Thống</h1>
         <p className="text-gray-600 mt-1">
-          Configure platform-wide settings and preferences
+          Cấu hình cài đặt và tùy chọn toàn nền tảng
         </p>
       </div>
 
@@ -169,8 +170,8 @@ function GeneralSettings({ settings, onSave, isLoading }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">General Settings</h2>
-          <p className="text-gray-600 mt-1">Configure basic platform settings</p>
+          <h2 className="text-lg font-semibold text-gray-900">Cài Đặt Chung</h2>
+          <p className="text-gray-600 mt-1">Cấu hình cài đặt nền tảng cơ bản</p>
         </div>
         <SettingsIcon className="h-6 w-6 text-gray-400" />
       </div>
@@ -179,20 +180,20 @@ function GeneralSettings({ settings, onSave, isLoading }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Platform Name
+              Tên Nền Tảng
             </label>
             <input
               type="text"
               value={formData.platformName}
               onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
               className="input w-full"
-              placeholder="Enter platform name"
+              placeholder="Nhập tên nền tảng"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Currency
+              Tiền Tệ
             </label>
             <select
               value={formData.currency}
@@ -208,23 +209,23 @@ function GeneralSettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Language
+              Ngôn Ngữ
             </label>
             <select
               value={formData.language}
               onChange={(e) => setFormData({ ...formData, language: e.target.value })}
               className="input w-full"
             >
-              <option value="en">English</option>
-              <option value="vi">Vietnamese</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
+              <option value="en">Tiếng Anh</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="es">Tiếng Tây Ban Nha</option>
+              <option value="fr">Tiếng Pháp</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Timezone
+              Múi Giờ
             </label>
             <select
               value={formData.timezone}
@@ -232,15 +233,15 @@ function GeneralSettings({ settings, onSave, isLoading }) {
               className="input w-full"
             >
               <option value="UTC">UTC</option>
-              <option value="America/New_York">Eastern Time</option>
+              <option value="America/New_York">Giờ Đông Bắc Mỹ</option>
               <option value="Europe/London">London</option>
-              <option value="Asia/Ho_Chi_Minh">Ho Chi Minh City</option>
+              <option value="Asia/Ho_Chi_Minh">Thành phố Hồ Chí Minh</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Format
+              Định Dạng Ngày
             </label>
             <select
               value={formData.dateFormat}
@@ -255,29 +256,29 @@ function GeneralSettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Format
+              Định Dạng Giờ
             </label>
             <select
               value={formData.timeFormat}
               onChange={(e) => setFormData({ ...formData, timeFormat: e.target.value })}
               className="input w-full"
             >
-              <option value="12h">12 Hour (AM/PM)</option>
-              <option value="24h">24 Hour</option>
+              <option value="12h">12 Giờ (AM/PM)</option>
+              <option value="24h">24 Giờ</option>
             </select>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Platform Description
+            Mô Tả Nền Tảng
           </label>
           <textarea
             value={formData.platformDescription}
             onChange={(e) => setFormData({ ...formData, platformDescription: e.target.value })}
             className="input w-full"
             rows={4}
-            placeholder="Enter platform description"
+            placeholder="Nhập mô tả nền tảng"
           />
         </div>
 
@@ -290,12 +291,12 @@ function GeneralSettings({ settings, onSave, isLoading }) {
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>
@@ -327,8 +328,8 @@ function SecuritySettings({ settings, onSave, isLoading }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Security Settings</h2>
-          <p className="text-gray-600 mt-1">Configure security policies and authentication</p>
+          <h2 className="text-lg font-semibold text-gray-900">Cài Đặt Bảo Mật</h2>
+          <p className="text-gray-600 mt-1">Cấu hình chính sách bảo mật và xác thực</p>
         </div>
         <Shield className="h-6 w-6 text-gray-400" />
       </div>
@@ -337,7 +338,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Session Timeout (minutes)
+              Thời Gian Hết Hạn Phiên (phút)
             </label>
             <input
               type="number"
@@ -351,7 +352,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password Minimum Length
+              Độ Dài Tối Thiểu Mật Khẩu
             </label>
             <input
               type="number"
@@ -365,7 +366,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Max Login Attempts
+              Số Lần Đăng Nhập Tối Đa
             </label>
             <input
               type="number"
@@ -379,7 +380,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lockout Duration (minutes)
+              Thời Gian Khóa (phút)
             </label>
             <input
               type="number"
@@ -393,7 +394,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              JWT Token Expiry (minutes)
+              Thời Hạn Token JWT (phút)
             </label>
             <input
               type="number"
@@ -407,7 +408,7 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Refresh Token Expiry (days)
+              Thời Hạn Refresh Token (ngày)
             </label>
             <input
               type="number"
@@ -423,8 +424,8 @@ function SecuritySettings({ settings, onSave, isLoading }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Require Email Verification</label>
-              <p className="text-sm text-gray-500">Users must verify their email address</p>
+              <label className="text-sm font-medium text-gray-700">Yêu Cầu Xác Thực Email</label>
+              <p className="text-sm text-gray-500">Người dùng phải xác thực địa chỉ email</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -439,8 +440,8 @@ function SecuritySettings({ settings, onSave, isLoading }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Enable Two-Factor Authentication</label>
-              <p className="text-sm text-gray-500">Add extra security with 2FA</p>
+              <label className="text-sm font-medium text-gray-700">Bật Xác Thực Hai Yếu Tố</label>
+              <p className="text-sm text-gray-500">Thêm bảo mật với 2FA</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -463,12 +464,12 @@ function SecuritySettings({ settings, onSave, isLoading }) {
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>
@@ -612,12 +613,12 @@ function NotificationSettings({ settings, onSave, isLoading }) {
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>
@@ -736,12 +737,12 @@ function DatabaseSettings({ settings, onSave, isLoading }) {
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>
@@ -827,7 +828,7 @@ function PaymentSettings({ settings, onSave, isLoading }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Currency
+              Tiền Tệ
             </label>
             <select
               value={formData.currency}
@@ -866,12 +867,12 @@ function PaymentSettings({ settings, onSave, isLoading }) {
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>
@@ -1039,12 +1040,12 @@ function ApiSettings({ settings, onSave, isLoading, showApiKey, setShowApiKey, s
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                Lưu Cài Đặt
               </>
             )}
           </button>

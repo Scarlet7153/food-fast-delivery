@@ -8,6 +8,7 @@ import {
   BarChart3, PieChart, MapPin, Clock
 } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function AdminDashboard() {
   const [timeRange, setTimeRange] = useState('today')
@@ -56,9 +57,9 @@ function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Bảng Điều Khiển Admin</h1>
           <p className="text-gray-600 mt-1">
-            Platform overview and system monitoring
+            Tổng quan nền tảng và giám sát hệ thống
           </p>
         </div>
         
@@ -80,7 +81,7 @@ function AdminDashboard() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Users"
+          title="Tổng Người Dùng"
           value={stats.totalUsers || 0}
           icon={<Users className="h-6 w-6" />}
           color="blue"
@@ -89,7 +90,7 @@ function AdminDashboard() {
         />
         
         <StatCard
-          title="Active Restaurants"
+          title="Nhà Hàng Hoạt Động"
           value={stats.activeRestaurants || 0}
           icon={<Building2 className="h-6 w-6" />}
           color="green"
@@ -98,7 +99,7 @@ function AdminDashboard() {
         />
         
         <StatCard
-          title="Total Orders"
+          title="Tổng Đơn Hàng"
           value={stats.totalOrders || 0}
           icon={<ShoppingBag className="h-6 w-6" />}
           color="purple"
@@ -107,7 +108,7 @@ function AdminDashboard() {
         />
         
         <StatCard
-          title="Platform Revenue"
+          title="Doanh Thu Nền Tảng"
           value={formatCurrency(stats.platformRevenue || 0)}
           icon={<DollarSign className="h-6 w-6" />}
           color="orange"
@@ -121,14 +122,14 @@ function AdminDashboard() {
         {/* Revenue Chart */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Revenue Trends</h2>
+            <h2 className="text-lg font-semibold">Xu Hướng Doanh Thu</h2>
             <BarChart3 className="h-5 w-5 text-gray-400" />
           </div>
           
           <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
             <div className="text-center">
               <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">Revenue chart would be displayed here</p>
+              <p className="text-gray-500">Biểu đồ doanh thu sẽ hiển thị ở đây</p>
             </div>
           </div>
         </div>
@@ -136,7 +137,7 @@ function AdminDashboard() {
         {/* Order Distribution */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Order Status Distribution</h2>
+            <h2 className="text-lg font-semibold">Phân Bố Trạng Thái Đơn Hàng</h2>
             <PieChart className="h-5 w-5 text-gray-400" />
           </div>
           
@@ -152,7 +153,7 @@ function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">In Progress</span>
+                <span className="text-sm text-gray-600">Đang Xử Lý</span>
               </div>
               <span className="font-medium">{stats.inProgressOrders || 0}</span>
             </div>
@@ -181,7 +182,7 @@ function AdminDashboard() {
         {/* Active Drones */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Active Drones</h2>
+            <h2 className="text-lg font-semibold">Drone Hoạt Động</h2>
             <Truck className="h-5 w-5 text-gray-400" />
           </div>
           
@@ -197,7 +198,7 @@ function AdminDashboard() {
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium">Idle</span>
+                <span className="text-sm font-medium">Rảnh</span>
               </div>
               <span className="font-medium text-blue-700">{stats.dronesIdle || 0}</span>
             </div>
@@ -205,7 +206,7 @@ function AdminDashboard() {
             <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm font-medium">Maintenance</span>
+                <span className="text-sm font-medium">Bảo Trì</span>
               </div>
               <span className="font-medium text-yellow-700">{stats.dronesMaintenance || 0}</span>
             </div>
@@ -215,31 +216,31 @@ function AdminDashboard() {
         {/* System Health */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">System Health</h2>
+            <h2 className="text-lg font-semibold">Sức Khỏe Hệ Thống</h2>
             <Activity className="h-5 w-5 text-gray-400" />
           </div>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">API Response Time</span>
+              <span className="text-sm text-gray-600">Thời Gian Phản Hồi API</span>
               <span className="font-medium text-green-600">45ms</span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Database Status</span>
+              <span className="text-sm text-gray-600">Trạng Thái Cơ Sở Dữ Liệu</span>
               <div className="flex items-center space-x-1">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600">Healthy</span>
+                <span className="text-sm text-green-600">Khỏe Mạnh</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Socket Connections</span>
+              <span className="text-sm text-gray-600">Kết Nối Socket</span>
               <span className="font-medium text-blue-600">{stats.activeConnections || 0}</span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Error Rate</span>
+              <span className="text-sm text-gray-600">Tỷ Lệ Lỗi</span>
               <span className="font-medium text-green-600">0.1%</span>
             </div>
           </div>
@@ -248,7 +249,7 @@ function AdminDashboard() {
         {/* Recent Alerts */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent Alerts</h2>
+            <h2 className="text-lg font-semibold">Cảnh Báo Gần Đây</h2>
             <AlertTriangle className="h-5 w-5 text-gray-400" />
           </div>
           
@@ -256,24 +257,24 @@ function AdminDashboard() {
             <div className="flex items-start space-x-3 p-2">
               <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
               <div className="flex-1">
-                <p className="text-sm text-gray-900">System backup completed</p>
-                <p className="text-xs text-gray-500">2 minutes ago</p>
+                <p className="text-sm text-gray-900">Sao lưu hệ thống hoàn tất</p>
+                <p className="text-xs text-gray-500">2 phút trước</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3 p-2">
               <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
               <div className="flex-1">
-                <p className="text-sm text-gray-900">High order volume detected</p>
-                <p className="text-xs text-gray-500">15 minutes ago</p>
+                <p className="text-sm text-gray-900">Phát hiện khối lượng đơn hàng cao</p>
+                <p className="text-xs text-gray-500">15 phút trước</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-3 p-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
               <div className="flex-1">
-                <p className="text-sm text-gray-900">New restaurant registered</p>
-                <p className="text-xs text-gray-500">1 hour ago</p>
+                <p className="text-sm text-gray-900">Nhà hàng mới đăng ký</p>
+                <p className="text-xs text-gray-500">1 giờ trước</p>
               </div>
             </div>
           </div>
@@ -284,7 +285,7 @@ function AdminDashboard() {
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Recent Activity</h2>
+            <h2 className="text-lg font-semibold">Hoạt Động Gần Đây</h2>
             <Clock className="h-5 w-5 text-gray-400" />
           </div>
         </div>
@@ -318,10 +319,10 @@ function AdminDashboard() {
             <div className="p-12 text-center">
               <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No recent activity
+                Không có hoạt động gần đây
               </h3>
               <p className="text-gray-500">
-                System activity will appear here.
+                Hoạt động hệ thống sẽ hiển thị ở đây.
               </p>
             </div>
           )}

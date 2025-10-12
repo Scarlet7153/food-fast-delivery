@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { formatDateTime, formatPhoneNumber } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function Profile() {
   const { user, updateProfile, changePassword, isLoading } = useAuthStore()
@@ -67,12 +68,12 @@ function Profile() {
     e.preventDefault()
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match')
+      toast.error('Mật khẩu mới không khớp')
       return
     }
 
     if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long')
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự')
       return
     }
 
@@ -115,19 +116,19 @@ function Profile() {
 
   const tabs = [
     { id: 'profile', label: 'Hồ Sơ', icon: User },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'preferences', label: 'Preferences', icon: Bell },
-    { id: 'billing', label: 'Billing', icon: CreditCard }
+    { id: 'security', label: 'Bảo Mật', icon: Shield },
+    { id: 'preferences', label: 'Tùy Chọn', icon: Bell },
+    { id: 'billing', label: 'Thanh Toán', icon: CreditCard }
   ]
 
   if (!user) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Profile not found
+          Không tìm thấy hồ sơ
         </h2>
         <p className="text-gray-600">
-          Unable to load profile information.
+          Không thể tải thông tin hồ sơ.
         </p>
       </div>
     )
@@ -145,7 +146,7 @@ function Profile() {
             <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
             <p className="text-gray-600">{user.email}</p>
             <p className="text-sm text-gray-500">
-              Member since {formatDateTime(user.createdAt)}
+              Thành viên từ {formatDateTime(user.createdAt)}
             </p>
           </div>
         </div>
@@ -223,7 +224,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Profile Information</h2>
+        <h2 className="text-lg font-semibold">Thông Tin Hồ Sơ</h2>
         {!isEditing && (
           <button
             onClick={onEdit}
@@ -239,7 +240,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
+              Họ Và Tên
             </label>
             {isEditing ? (
               <input
@@ -259,7 +260,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
+              Địa Chỉ Email
             </label>
             {isEditing ? (
               <input
@@ -279,7 +280,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
+              Số Điện Thoại
             </label>
             {isEditing ? (
               <input
@@ -287,13 +288,13 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
                 value={profileForm.phone}
                 onChange={(e) => onFormChange('phone', e.target.value)}
                 className="input w-full"
-                placeholder="Enter your phone number"
+                placeholder="Nhập số điện thoại"
               />
             ) : (
               <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
                 <Phone className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-900">
-                  {user.phone ? formatPhoneNumber(user.phone) : 'Not provided'}
+                  {user.phone ? formatPhoneNumber(user.phone) : 'Chưa cung cấp'}
                 </span>
               </div>
             )}
@@ -301,7 +302,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Account Type
+              Loại Tài Khoản
             </label>
             <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
               <Shield className="h-4 w-4 text-gray-400" />
@@ -312,7 +313,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Address
+            Địa Chỉ
           </label>
           {isEditing ? (
             <textarea
@@ -320,13 +321,13 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
               onChange={(e) => onFormChange('address', e.target.value)}
               className="input w-full"
               rows={3}
-              placeholder="Enter your address"
+              placeholder="Nhập địa chỉ"
             />
           ) : (
             <div className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg">
               <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
               <span className="text-gray-900">
-                {user.address || 'Not provided'}
+                {user.address || 'Chưa cung cấp'}
               </span>
             </div>
           )}
@@ -351,12 +352,12 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Saving...
+                  Đang lưu...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  Lưu Thay Đổi
                 </>
               )}
             </button>
@@ -372,14 +373,14 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Security Settings</h2>
+        <h2 className="text-lg font-semibold">Cài Đặt Bảo Mật</h2>
         {!isChangingPassword && (
           <button
             onClick={onEdit}
             className="btn btn-outline btn-sm flex items-center space-x-2"
           >
             <Key className="h-4 w-4" />
-            <span>Change Password</span>
+            <span>Đổi Mật Khẩu</span>
           </button>
         )}
       </div>
@@ -389,10 +390,10 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <Shield className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-900">Account Security</span>
+              <span className="font-medium text-blue-900">Bảo Mật Tài Khoản</span>
             </div>
             <p className="text-sm text-blue-700 mt-1">
-              Your account is secured with industry-standard encryption.
+              Tài khoản của bạn được bảo mật bằng mã hóa tiêu chuẩn ngành.
             </p>
           </div>
 
@@ -408,9 +409,9 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-900">Two-Factor Authentication</span>
+                <span className="text-gray-900">Xác Thực Hai Yếu Tố</span>
               </div>
-              <span className="text-sm text-gray-500">Not enabled</span>
+              <span className="text-sm text-gray-500">Chưa bật</span>
             </div>
           </div>
         </div>
@@ -418,7 +419,7 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Current Password
+              Mật Khẩu Hiện Tại
             </label>
             <input
               type="password"
@@ -431,7 +432,7 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
+              Mật Khẩu Mới
             </label>
             <input
               type="password"
@@ -442,13 +443,13 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
               minLength={6}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Password must be at least 6 characters long
+              Mật khẩu phải có ít nhất 6 ký tự
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm New Password
+              Xác Nhận Mật Khẩu Mới
             </label>
             <input
               type="password"
@@ -477,12 +478,12 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Changing...
+                  Đang đổi...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Change Password
+                  Đổi Mật Khẩu
                 </>
               )}
             </button>
@@ -497,15 +498,15 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
 function PreferencesTab({ user }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Notification Preferences</h2>
+      <h2 className="text-lg font-semibold">Tùy Chọn Thông Báo</h2>
       
       <div className="space-y-4">
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
           <div className="flex items-center space-x-3">
             <Bell className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="font-medium text-gray-900">Order Updates</p>
-              <p className="text-sm text-gray-600">Get notified about order status changes</p>
+              <p className="font-medium text-gray-900">Cập Nhật Đơn Hàng</p>
+              <p className="text-sm text-gray-600">Nhận thông báo về thay đổi trạng thái đơn hàng</p>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -518,8 +519,8 @@ function PreferencesTab({ user }) {
           <div className="flex items-center space-x-3">
             <Bell className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="font-medium text-gray-900">Delivery Notifications</p>
-              <p className="text-sm text-gray-600">Get notified when your drone is approaching</p>
+              <p className="font-medium text-gray-900">Thông Báo Giao Hàng</p>
+              <p className="text-sm text-gray-600">Nhận thông báo khi drone đang đến gần</p>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -532,8 +533,8 @@ function PreferencesTab({ user }) {
           <div className="flex items-center space-x-3">
             <Bell className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="font-medium text-gray-900">Promotional Offers</p>
-              <p className="text-sm text-gray-600">Receive special offers and discounts</p>
+              <p className="font-medium text-gray-900">Ưu Đãi Khuyến Mãi</p>
+              <p className="text-sm text-gray-600">Nhận ưu đãi đặc biệt và giảm giá</p>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -550,36 +551,36 @@ function PreferencesTab({ user }) {
 function BillingTab({ user }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Billing Information</h2>
+      <h2 className="text-lg font-semibold">Thông Tin Thanh Toán</h2>
       
       <div className="space-y-4">
         <div className="p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3 mb-3">
             <CreditCard className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Payment Methods</span>
+            <span className="font-medium text-gray-900">Phương Thức Thanh Toán</span>
           </div>
           <p className="text-sm text-gray-600">
-            No payment methods saved. Payment methods are handled securely through MoMo wallet integration.
+            Chưa lưu phương thức thanh toán. Thanh toán được xử lý an toàn qua tích hợp ví MoMo.
           </p>
         </div>
 
         <div className="p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3 mb-3">
             <Calendar className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Order History</span>
+            <span className="font-medium text-gray-900">Lịch Sử Đơn Hàng</span>
           </div>
           <p className="text-sm text-gray-600">
-            View your complete order history and receipts in the Orders section.
+            Xem lịch sử đơn hàng đầy đủ và hóa đơn trong phần Đơn Hàng.
           </p>
         </div>
 
         <div className="p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center space-x-3 mb-3">
             <Shield className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Security</span>
+            <span className="font-medium text-gray-900">Bảo Mật</span>
           </div>
           <p className="text-sm text-gray-600">
-            All payments are processed securely through encrypted channels. We never store your payment information.
+            Tất cả thanh toán được xử lý an toàn qua kênh mã hóa. Chúng tôi không bao giờ lưu trữ thông tin thanh toán của bạn.
           </p>
         </div>
       </div>

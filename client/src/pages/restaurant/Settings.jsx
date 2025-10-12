@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantSettings() {
   const [isEditing, setIsEditing] = useState(false)
@@ -51,10 +52,10 @@ function RestaurantSettings() {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-profile'])
         setIsEditing(false)
-        toast.success('Restaurant settings updated successfully')
+        toast.success('Cập nhật cài đặt nhà hàng thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update restaurant settings')
+        toast.error('Không thể cập nhật cài đặt nhà hàng')
       }
     }
   )
@@ -140,13 +141,13 @@ function RestaurantSettings() {
   }
 
   const days = [
-    { key: 'monday', label: 'Monday' },
-    { key: 'tuesday', label: 'Tuesday' },
-    { key: 'wednesday', label: 'Wednesday' },
-    { key: 'thursday', label: 'Thursday' },
-    { key: 'friday', label: 'Friday' },
-    { key: 'saturday', label: 'Saturday' },
-    { key: 'sunday', label: 'Sunday' }
+    { key: 'monday', label: 'Thứ Hai' },
+    { key: 'tuesday', label: 'Thứ Ba' },
+    { key: 'wednesday', label: 'Thứ Tư' },
+    { key: 'thursday', label: 'Thứ Năm' },
+    { key: 'friday', label: 'Thứ Sáu' },
+    { key: 'saturday', label: 'Thứ Bảy' },
+    { key: 'sunday', label: 'Chủ Nhật' }
   ]
 
   if (isLoading) {
@@ -169,9 +170,9 @@ function RestaurantSettings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Restaurant Settings</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Cài Đặt Nhà Hàng</h1>
           <p className="text-gray-600 mt-1">
-            Manage your restaurant information and delivery settings
+            Quản lý thông tin nhà hàng và cài đặt giao hàng
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -182,7 +183,7 @@ function RestaurantSettings() {
                 className="btn btn-outline flex items-center space-x-2"
               >
                 <X className="h-4 w-4" />
-                <span>Cancel</span>
+                <span>Hủy</span>
               </button>
               <button
                 onClick={handleSubmit}
@@ -191,7 +192,7 @@ function RestaurantSettings() {
               >
                 <Save className="h-4 w-4" />
                 <span>
-                  {updateRestaurantMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                  {updateRestaurantMutation.isLoading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                 </span>
               </button>
             </>
@@ -201,7 +202,7 @@ function RestaurantSettings() {
               className="btn btn-primary flex items-center space-x-2"
             >
               <Edit className="h-4 w-4" />
-              <span>Edit Settings</span>
+              <span>Sửa Cài Đặt</span>
             </button>
           )}
         </div>
@@ -212,13 +213,13 @@ function RestaurantSettings() {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center space-x-2 mb-6">
             <User className="h-5 w-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Thông Tin Cơ Bản</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Restaurant Name *
+                Tên Nhà Hàng *
               </label>
               {isEditing ? (
                 <input
@@ -237,7 +238,7 @@ function RestaurantSettings() {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Mô Tả
               </label>
               {isEditing ? (
                 <textarea
@@ -248,14 +249,14 @@ function RestaurantSettings() {
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-900">{formData.description || 'No description'}</span>
+                  <span className="text-gray-900">{formData.description || 'Chưa có mô tả'}</span>
                 </div>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Số Điện Thoại
               </label>
               {isEditing ? (
                 <input
@@ -267,14 +268,14 @@ function RestaurantSettings() {
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <Phone className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.phone || 'No phone number'}</span>
+                  <span className="text-gray-900">{formData.phone || 'Chưa có số điện thoại'}</span>
                 </div>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Địa Chỉ Email
               </label>
               {isEditing ? (
                 <input
@@ -285,14 +286,14 @@ function RestaurantSettings() {
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
-                  <span className="text-gray-900">{formData.email || 'No email'}</span>
+                  <span className="text-gray-900">{formData.email || 'Chưa có email'}</span>
                 </div>
               )}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address
+                Địa Chỉ
               </label>
               {isEditing ? (
                 <input
@@ -304,14 +305,14 @@ function RestaurantSettings() {
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.address || 'No address'}</span>
+                  <span className="text-gray-900">{formData.address || 'Chưa có địa chỉ'}</span>
                 </div>
               )}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Restaurant Image URL
+                URL Hình Ảnh Nhà Hàng
               </label>
               {isEditing ? (
                 <input
@@ -324,7 +325,7 @@ function RestaurantSettings() {
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <Image className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.imageUrl || 'No image URL'}</span>
+                  <span className="text-gray-900">{formData.imageUrl || 'Chưa có URL hình ảnh'}</span>
                 </div>
               )}
             </div>
@@ -335,13 +336,13 @@ function RestaurantSettings() {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center space-x-2 mb-6">
             <Truck className="h-5 w-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-900">Delivery Settings</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Cài Đặt Giao Hàng</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Base Delivery Rate (VND)
+                Phí Giao Hàng Cơ Bản (VND)
               </label>
               {isEditing ? (
                 <input
@@ -361,7 +362,7 @@ function RestaurantSettings() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Per Kilometer Rate (VND)
+                Phí Theo Kilomet (VND)
               </label>
               {isEditing ? (
                 <input
@@ -381,7 +382,7 @@ function RestaurantSettings() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Estimated Delivery Time
+                Thời Gian Giao Hàng Dự Kiến
               </label>
               {isEditing ? (
                 <input
@@ -394,14 +395,14 @@ function RestaurantSettings() {
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.deliverySettings.estimatedTime} minutes</span>
+                  <span className="text-gray-900">{formData.deliverySettings.estimatedTime} phút</span>
                 </div>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Maximum Delivery Distance (km)
+                Khoảng Cách Giao Hàng Tối Đa (km)
               </label>
               {isEditing ? (
                 <input
@@ -425,7 +426,7 @@ function RestaurantSettings() {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center space-x-2 mb-6">
             <Clock className="h-5 w-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-900">Operating Hours</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Giờ Hoạt Động</h2>
           </div>
 
           <div className="space-y-4">
@@ -444,7 +445,7 @@ function RestaurantSettings() {
                         onChange={(e) => handleOperatingHoursChange(day.key, 'closed', !e.target.checked)}
                         className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                       />
-                      <span className="text-sm text-gray-600">Open</span>
+                      <span className="text-sm text-gray-600">Mở</span>
                     </div>
                     
                     {!formData.operatingHours[day.key].closed && (
@@ -455,7 +456,7 @@ function RestaurantSettings() {
                           onChange={(e) => handleOperatingHoursChange(day.key, 'open', e.target.value)}
                           className="input"
                         />
-                        <span className="text-gray-500">to</span>
+                        <span className="text-gray-500">đến</span>
                         <input
                           type="time"
                           value={formData.operatingHours[day.key].close}
@@ -468,7 +469,7 @@ function RestaurantSettings() {
                 ) : (
                   <div className="text-sm text-gray-600">
                     {formData.operatingHours[day.key].closed ? (
-                      <span className="text-red-600">Closed</span>
+                      <span className="text-red-600">Đóng</span>
                     ) : (
                       <span>
                         {formData.operatingHours[day.key].open} - {formData.operatingHours[day.key].close}

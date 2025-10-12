@@ -12,6 +12,7 @@ import {
   formatMissionStatus, formatDistance 
 } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function OrderDetail() {
   const { id } = useParams()
@@ -42,7 +43,7 @@ function OrderDetail() {
       socketService.onOrderUpdate((data) => {
         if (data.orderId === order._id) {
           refetch()
-          toast.success('Order status updated!')
+          toast.success('Trạng thái đơn hàng đã cập nhật!')
         }
       })
 
@@ -50,7 +51,7 @@ function OrderDetail() {
       socketService.onMissionUpdate((data) => {
         if (data.orderId === order._id) {
           refetch()
-          toast.success('Delivery status updated!')
+          toast.success('Trạng thái giao hàng đã cập nhật!')
         }
       })
     }
@@ -61,30 +62,30 @@ function OrderDetail() {
   }, [order, refetch])
 
   const handleCancelOrder = async () => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
+    if (window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
       try {
         await orderService.cancelOrder(id, 'Cancelled by customer')
-        toast.success('Order cancelled successfully')
+        toast.success('Hủy đơn hàng thành công')
         refetch()
       } catch (error) {
-        toast.error('Failed to cancel order')
+        toast.error('Không thể hủy đơn hàng')
       }
     }
   }
 
   const handleRateOrder = async () => {
     if (rating === 0) {
-      toast.error('Please select a rating')
+      toast.error('Vui lòng chọn đánh giá')
       return
     }
 
     try {
       await orderService.rateOrder(id, { rating })
-      toast.success('Thank you for your rating!')
+      toast.success('Cảm ơn bạn đã đánh giá!')
       setShowRatingModal(false)
       refetch()
     } catch (error) {
-      toast.error('Failed to submit rating')
+      toast.error('Không thể gửi đánh giá')
     }
   }
 
@@ -110,16 +111,16 @@ function OrderDetail() {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Order not found
+          Không tìm thấy đơn hàng
         </h2>
         <p className="text-gray-600 mb-6">
-          The order you're looking for doesn't exist or you don't have permission to view it.
+          Đơn hàng bạn tìm kiếm không tồn tại hoặc bạn không có quyền xem.
         </p>
         <button
           onClick={() => navigate('/customer/orders')}
           className="btn btn-primary"
         >
-          Back to Orders
+          Quay Lại Đơn Hàng
         </button>
       </div>
     )
@@ -170,7 +171,7 @@ function OrderDetail() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Order #{order.orderNumber}
+              Đơn #{order.orderNumber}
             </h1>
             <p className="text-gray-600">
               {formatDateTime(order.createdAt)}
@@ -191,7 +192,7 @@ function OrderDetail() {
 
       {/* Restaurant Info */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">Restaurant Information</h2>
+        <h2 className="text-lg font-semibold mb-4">Thông Tin Nhà Hàng</h2>
         <div className="flex items-start space-x-4">
           <div className="w-16 h-16 bg-gray-200 rounded-lg">
             <img
@@ -226,7 +227,7 @@ function OrderDetail() {
       {/* Order Items */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">Order Items</h2>
+          <h2 className="text-lg font-semibold">Món Đã Đặt</h2>
         </div>
         <div className="divide-y divide-gray-200">
           {order.items.map((item, index) => (
@@ -267,14 +268,14 @@ function OrderDetail() {
 
       {/* Delivery Information */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">Delivery Information</h2>
+        <h2 className="text-lg font-semibold mb-4">Thông Tin Giao Hàng</h2>
         
         {order.deliveryAddress && (
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
               <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
               <div>
-                <p className="font-medium text-gray-900">Delivery Address</p>
+                <p className="font-medium text-gray-900">Địa Chỉ Giao Hàng</p>
                 <p className="text-gray-600">
                   {order.deliveryAddress.street}
                   {order.deliveryAddress.city && `, ${order.deliveryAddress.city}`}
@@ -283,7 +284,7 @@ function OrderDetail() {
                 </p>
                 {order.deliveryAddress.notes && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Note: {order.deliveryAddress.notes}
+                    Ghi chú: {order.deliveryAddress.notes}
                   </p>
                 )}
               </div>
@@ -292,7 +293,7 @@ function OrderDetail() {
             <div className="flex items-center space-x-3">
               <Clock className="h-5 w-5 text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">Contact Information</p>
+                <p className="font-medium text-gray-900">Thông Tin Liên Hệ</p>
                 <p className="text-gray-600">
                   {order.contactInfo?.name} • {order.contactInfo?.phone}
                 </p>
@@ -304,7 +305,7 @@ function OrderDetail() {
         {order.specialInstructions && (
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-700">
-              <strong>Special Instructions:</strong> {order.specialInstructions}
+              <strong>Ghi chú đặc biệt:</strong> {order.specialInstructions}
             </p>
           </div>
         )}
@@ -317,7 +318,7 @@ function OrderDetail() {
 
       {/* Order Summary */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+        <h2 className="text-lg font-semibold mb-4">Tóm Tắt Đơn Hàng</h2>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Tạm tính</span>
@@ -328,8 +329,8 @@ function OrderDetail() {
             <span className="font-medium">{formatCurrency(order.deliveryFee)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Service Fee</span>
-            <span className="font-medium">Free</span>
+            <span className="text-gray-600">Phí dịch vụ</span>
+            <span className="font-medium">Miễn phí</span>
           </div>
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between">
@@ -349,7 +350,7 @@ function OrderDetail() {
             onClick={handleCancelOrder}
             className="btn btn-outline text-red-600 border-red-300 hover:bg-red-50"
           >
-            Cancel Order
+            Hủy Đơn Hàng
           </button>
         )}
 
@@ -359,7 +360,7 @@ function OrderDetail() {
             className="btn btn-primary flex items-center space-x-2"
           >
             <Star className="h-4 w-4" />
-            <span>Rate Order</span>
+            <span>Đánh Giá</span>
           </button>
         )}
       </div>
@@ -380,7 +381,7 @@ function OrderDetail() {
 // Order Timeline Component
 function OrderTimeline({ order }) {
   const statuses = [
-    { status: 'PLACED', label: 'Order Placed', icon: CheckCircle },
+    { status: 'PLACED', label: 'Đã Đặt', icon: CheckCircle },
     { status: 'CONFIRMED', label: 'Đã xác nhận', icon: CheckCircle },
     { status: 'COOKING', label: 'Đang nấu', icon: Loader2 },
     { status: 'READY_FOR_PICKUP', label: 'Sẵn sàng giao', icon: Truck },
@@ -397,7 +398,7 @@ function OrderTimeline({ order }) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
-      <h2 className="text-lg font-semibold mb-4">Order Progress</h2>
+      <h2 className="text-lg font-semibold mb-4">Tiến Trình Đơn Hàng</h2>
       <div className="relative">
         <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-gray-200"></div>
         <div className="space-y-6">
@@ -423,7 +424,7 @@ function OrderTimeline({ order }) {
                   </p>
                   {isCurrent && order.status !== 'DELIVERED' && (
                     <p className="text-xs text-gray-500 mt-1">
-                      In progress...
+                      Đang thực hiện...
                     </p>
                   )}
                 </div>
@@ -438,12 +439,12 @@ function OrderTimeline({ order }) {
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5 text-red-500" />
             <span className="text-sm font-medium text-red-800">
-              Order {order.status.toLowerCase()}
+              Đơn hàng {order.status.toLowerCase()}
             </span>
           </div>
           {order.cancellationReason && (
             <p className="text-sm text-red-700 mt-1">
-              Reason: {order.cancellationReason}
+              Lý do: {order.cancellationReason}
             </p>
           )}
         </div>
@@ -474,7 +475,7 @@ function DroneMissionCard({ mission }) {
     <div className="bg-white rounded-lg shadow-sm border p-6">
       <h2 className="text-lg font-semibold mb-4 flex items-center space-x-2">
         <Truck className="h-5 w-5" />
-        <span>Drone Delivery</span>
+        <span>Giao Hàng Bằng Drone</span>
       </h2>
       
       <div className="space-y-4">
@@ -484,7 +485,7 @@ function DroneMissionCard({ mission }) {
               Drone #{mission.drone?.name}
             </p>
             <p className="text-sm text-gray-600">
-              {mission.drone?.model || 'Delivery Drone'}
+              {mission.drone?.model || 'Drone Giao Hàng'}
             </p>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(mission.status)}`}>
@@ -510,10 +511,10 @@ function DroneMissionCard({ mission }) {
 
         {mission.path && mission.path.length > 0 && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-900 mb-2">Flight Path</p>
+            <p className="text-sm font-medium text-gray-900 mb-2">Tuyến Bay</p>
             <div className="text-xs text-gray-600">
-              <p>Total distance: {formatDistance(mission.totalDistance || 0)}</p>
-              <p>Estimated flight time: {mission.estimatedFlightTime || 'N/A'}</p>
+              <p>Tổng khoảng cách: {formatDistance(mission.totalDistance || 0)}</p>
+              <p>Thời gian bay dự kiến: {mission.estimatedFlightTime || 'N/A'}</p>
             </div>
           </div>
         )}
@@ -527,7 +528,7 @@ function RatingModal({ rating, setRating, onSubmit, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4">Rate Your Order</h3>
+        <h3 className="text-lg font-semibold mb-4">Đánh Giá Đơn Hàng</h3>
         
         <div className="flex justify-center space-x-2 mb-6">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -548,14 +549,14 @@ function RatingModal({ rating, setRating, onSubmit, onClose }) {
             onClick={onClose}
             className="btn btn-outline"
           >
-            Cancel
+            Hủy
           </button>
           <button
             onClick={onSubmit}
             disabled={rating === 0}
             className="btn btn-primary"
           >
-            Submit Rating
+            Gửi Đánh Giá
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantMissions() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -34,10 +35,10 @@ function RestaurantMissions() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Mission status updated successfully')
+        toast.success('Cập nhật trạng thái nhiệm vụ thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update mission status')
+        toast.error('Không thể cập nhật trạng thái nhiệm vụ')
       }
     }
   )
@@ -48,10 +49,10 @@ function RestaurantMissions() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Drone assigned successfully')
+        toast.success('Phân công drone thành công')
       },
       onError: (error) => {
-        toast.error('Failed to assign drone')
+        toast.error('Không thể phân công drone')
       }
     }
   )
@@ -59,20 +60,20 @@ function RestaurantMissions() {
   const missions = missionsData?.data?.missions || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Missions' },
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'ASSIGNED', label: 'Assigned' },
-    { value: 'IN_PROGRESS', label: 'In Progress' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' },
-    { value: 'FAILED', label: 'Failed' },
+    { value: 'all', label: 'Tất Cả Nhiệm Vụ' },
+    { value: 'PENDING', label: 'Chờ Xử Lý' },
+    { value: 'ASSIGNED', label: 'Đã Phân Công' },
+    { value: 'IN_PROGRESS', label: 'Đang Thực Hiện' },
+    { value: 'COMPLETED', label: 'Hoàn Thành' },
+    { value: 'CANCELLED', label: 'Đã Hủy' },
+    { value: 'FAILED', label: 'Thất Bại' },
   ]
 
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'priority', label: 'Priority' },
-    { value: 'status', label: 'By Status' },
+    { value: 'newest', label: 'Mới Nhất' },
+    { value: 'oldest', label: 'Cũ Nhất' },
+    { value: 'priority', label: 'Ưu Tiên' },
+    { value: 'status', label: 'Theo Trạng Thái' },
   ]
 
   const getStatusIcon = (status) => {
@@ -116,11 +117,11 @@ function RestaurantMissions() {
   const getNextStatus = (currentStatus) => {
     switch (currentStatus) {
       case 'PENDING':
-        return { status: 'ASSIGNED', label: 'Assign Drone', icon: Truck }
+        return { status: 'ASSIGNED', label: 'Phân Công Drone', icon: Truck }
       case 'ASSIGNED':
-        return { status: 'IN_PROGRESS', label: 'Start Mission', icon: Clock }
+        return { status: 'IN_PROGRESS', label: 'Bắt Đầu Nhiệm Vụ', icon: Clock }
       case 'IN_PROGRESS':
-        return { status: 'COMPLETED', label: 'Complete Mission', icon: CheckCircle }
+        return { status: 'COMPLETED', label: 'Hoàn Thành Nhiệm Vụ', icon: CheckCircle }
       default:
         return null
     }
@@ -130,9 +131,9 @@ function RestaurantMissions() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Delivery Missions</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Nhiệm Vụ Giao Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Manage drone delivery missions and track their progress
+          Quản lý nhiệm vụ giao hàng bằng drone và theo dõi tiến độ
         </p>
       </div>
 
@@ -144,7 +145,7 @@ function RestaurantMissions() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search missions by order number or customer name..."
+              placeholder="Tìm kiếm nhiệm vụ theo số đơn hoặc tên khách hàng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -183,7 +184,7 @@ function RestaurantMissions() {
             className="btn btn-outline flex items-center space-x-2"
           >
             <Clock className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>Tải Lại</span>
           </button>
         </div>
       </div>
@@ -229,12 +230,12 @@ function RestaurantMissions() {
               <Truck className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No missions found
+              Không tìm thấy nhiệm vụ
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'No missions match your current filters.'
-                : 'No delivery missions have been created yet.'
+                ? 'Không có nhiệm vụ nào phù hợp với bộ lọc.'
+                : 'Chưa có nhiệm vụ giao hàng nào được tạo.'
               }
             </p>
             {searchQuery || statusFilter !== 'all' ? (
@@ -245,7 +246,7 @@ function RestaurantMissions() {
                 }}
                 className="btn btn-primary"
               >
-                Clear Filters
+                Xóa Bộ Lọc
               </button>
             ) : null}
           </div>
@@ -289,10 +290,10 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="font-semibold text-gray-900">
-                  Mission #{mission.missionNumber}
+                  Nhiệm Vụ #{mission.missionNumber}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Order: #{mission.order?.orderNumber}
+                  Đơn: #{mission.order?.orderNumber}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -305,7 +306,7 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
             {/* Mission Details */}
             <div className="space-y-1 text-sm text-gray-600 mb-3">
               <div className="flex items-center space-x-4">
-                <span>{mission.order?.items?.length || 0} items</span>
+                <span>{mission.order?.items?.length || 0} món</span>
                 <span>•</span>
                 <span>{formatCurrency(mission.order?.totalAmount || 0)}</span>
                 <span>•</span>
@@ -344,7 +345,7 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
         <div className="flex items-center space-x-2 ml-4">
           <button className="btn btn-outline btn-sm flex items-center space-x-1">
             <Eye className="h-4 w-4" />
-            <span>View</span>
+            <span>Xem</span>
           </button>
 
           {canUpdate && nextStatus && (
@@ -371,14 +372,14 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
               onClick={() => setShowDroneSelect(true)}
               className="btn btn-outline btn-sm text-blue-600 border-blue-300 hover:bg-blue-50"
             >
-              Assign Drone
+              Phân Công Drone
             </button>
           )}
 
           {mission.status === 'PENDING' && (
             <button
               onClick={() => {
-                const reason = window.prompt('Cancellation reason:')
+                const reason = window.prompt('Lý do hủy:')
                 if (reason) {
                   onStatusUpdate(mission._id, 'CANCELLED', reason)
                 }
@@ -396,24 +397,24 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center space-x-3">
             <label className="text-sm font-medium text-blue-900">
-              Select Drone:
+              Chọn Drone:
             </label>
             <select
               value={selectedDroneId}
               onChange={(e) => setSelectedDroneId(e.target.value)}
               className="input flex-1"
             >
-              <option value="">Choose a drone...</option>
+              <option value="">Chọn drone...</option>
               {/* This would be populated with available drones */}
-              <option value="drone1">Drone #1 (Available)</option>
-              <option value="drone2">Drone #2 (Available)</option>
+              <option value="drone1">Drone #1 (Sẵn sàng)</option>
+              <option value="drone2">Drone #2 (Sẵn sàng)</option>
             </select>
             <button
               onClick={handleAssignDrone}
               disabled={!selectedDroneId}
               className="btn btn-primary btn-sm"
             >
-              Assign
+              Phân Công
             </button>
             <button
               onClick={() => {

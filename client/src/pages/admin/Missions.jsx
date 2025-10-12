@@ -6,6 +6,7 @@ import {
   CheckCircle, XCircle, AlertTriangle, Eye
 } from 'lucide-react'
 import { formatDateTime, formatMissionStatus, formatDistance, formatWeight } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function AdminMissions() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,9 +32,9 @@ function AdminMissions() {
   const restaurants = missionsData?.data?.restaurants || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'PENDING', label: 'Đang chờ' },
-    { value: 'ASSIGNED', label: 'Assigned' },
+    { value: 'all', label: 'Tất Cả Trạng Thái' },
+    { value: 'PENDING', label: 'Chờ Xử Lý' },
+    { value: 'ASSIGNED', label: 'Đã Phân Công' },
     { value: 'IN_FLIGHT', label: 'Đang giao' },
     { value: 'DELIVERED', label: 'Đã giao' },
     { value: 'FAILED', label: 'Thất bại' },
@@ -81,7 +82,7 @@ function AdminMissions() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Nhiệm Vụ Giao Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Monitor all delivery missions across the platform
+          Theo dõi tất cả nhiệm vụ giao hàng trên nền tảng
         </p>
       </div>
 
@@ -93,7 +94,7 @@ function AdminMissions() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search missions by ID, order number, or drone..."
+              placeholder="Tìm kiếm nhiệm vụ theo ID, số đơn hàng hoặc drone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -119,7 +120,7 @@ function AdminMissions() {
             onChange={(e) => setRestaurantFilter(e.target.value)}
             className="input lg:w-48"
           >
-            <option value="all">All Restaurants</option>
+            <option value="all">Tất Cả Nhà Hàng</option>
             {restaurants.map(restaurant => (
               <option key={restaurant._id} value={restaurant._id}>
                 {restaurant.name}
@@ -136,25 +137,25 @@ function AdminMissions() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mission
+                  Nhiệm Vụ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order
+                  Đơn Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Restaurant
+                  Nhà Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Drone
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng Thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Started
+                  Bắt Đầu
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Thao Tác
                 </th>
               </tr>
             </thead>
@@ -208,14 +209,14 @@ function AdminMissions() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {mission.restaurant?.name || 'Unknown'}
+                        {mission.restaurant?.name || 'Không xác định'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <Truck className="h-4 w-4 text-gray-400" />
                         <span className="text-sm text-gray-900">
-                          {mission.drone?.name || 'Unassigned'}
+                          {mission.drone?.name || 'Chưa phân công'}
                         </span>
                       </div>
                     </td>
@@ -245,12 +246,12 @@ function AdminMissions() {
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No missions found
+                      Không tìm thấy nhiệm vụ
                     </h3>
                     <p className="text-gray-500">
                       {searchQuery || statusFilter !== 'all' || restaurantFilter !== 'all'
-                        ? 'No missions match your current filters.'
-                        : 'No delivery missions have been created yet.'
+                        ? 'Không có nhiệm vụ nào phù hợp với bộ lọc.'
+                        : 'Chưa có nhiệm vụ giao hàng nào được tạo.'
                       }
                     </p>
                   </td>
@@ -279,7 +280,7 @@ function MissionDetailModal({ mission, onClose }) {
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Mission #{mission.missionNumber}</h2>
+            <h2 className="text-xl font-semibold">Nhiệm Vụ #{mission.missionNumber}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -293,45 +294,45 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Mission Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Mission Details</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Chi Tiết Nhiệm Vụ</h3>
               <p className="text-sm text-gray-600">ID: #{mission.missionNumber}</p>
-              <p className="text-sm text-gray-600">Status: {formatMissionStatus(mission.status)}</p>
+              <p className="text-sm text-gray-600">Trạng thái: {formatMissionStatus(mission.status)}</p>
               <p className="text-sm text-gray-600">
-                Distance: {mission.distance ? formatDistance(mission.distance) : 'N/A'}
+                Khoảng cách: {mission.distance ? formatDistance(mission.distance) : 'N/A'}
               </p>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Order Information</h3>
-              <p className="text-sm text-gray-600">Order: #{mission.order?.orderNumber}</p>
-              <p className="text-sm text-gray-600">Customer: {mission.order?.customer?.name}</p>
+              <h3 className="font-medium text-gray-900 mb-2">Thông Tin Đơn Hàng</h3>
+              <p className="text-sm text-gray-600">Đơn hàng: #{mission.order?.orderNumber}</p>
+              <p className="text-sm text-gray-600">Khách hàng: {mission.order?.customer?.name}</p>
               <p className="text-sm text-gray-600">
-                Items: {mission.order?.items?.length || 0} items
+                Món ăn: {mission.order?.items?.length || 0} món
               </p>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Drone Information</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Thông Tin Drone</h3>
               <p className="text-sm text-gray-600">
-                Drone: {mission.drone?.name || 'Unassigned'}
+                Drone: {mission.drone?.name || 'Chưa phân công'}
               </p>
               <p className="text-sm text-gray-600">
-                Restaurant: {mission.restaurant?.name}
+                Nhà hàng: {mission.restaurant?.name}
               </p>
               <p className="text-sm text-gray-600">
-                Battery: {mission.drone?.batteryLevel || 'N/A'}%
+                Pin: {mission.drone?.batteryLevel || 'N/A'}%
               </p>
             </div>
           </div>
 
           {/* Mission Timeline */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Mission Timeline</h3>
+            <h3 className="text-lg font-medium mb-4">Lịch Sử Nhiệm Vụ</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Mission Created</p>
+                  <p className="text-sm font-medium text-gray-900">Tạo Nhiệm Vụ</p>
                   <p className="text-xs text-gray-500">{formatDateTime(mission.createdAt)}</p>
                 </div>
               </div>
@@ -340,7 +341,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Mission Started</p>
+                    <p className="text-sm font-medium text-gray-900">Bắt Đầu Nhiệm Vụ</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.startedAt)}</p>
                   </div>
                 </div>
@@ -350,7 +351,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Mission Completed</p>
+                    <p className="text-sm font-medium text-gray-900">Hoàn Thành Nhiệm Vụ</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.deliveredAt)}</p>
                   </div>
                 </div>
@@ -360,7 +361,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Mission Failed</p>
+                    <p className="text-sm font-medium text-gray-900">Nhiệm Vụ Thất Bại</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.failedAt)}</p>
                   </div>
                 </div>
@@ -371,12 +372,12 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Delivery Path */}
           {mission.path && mission.path.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Delivery Path</h3>
+              <h3 className="text-lg font-medium mb-4">Tuyến Đường Giao Hàng</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Pickup Location
+                      Điểm Nhận Hàng
                     </label>
                     <p className="text-gray-900">
                       {mission.path[0]?.lat?.toFixed(6)}, {mission.path[0]?.lng?.toFixed(6)}
@@ -384,7 +385,7 @@ function MissionDetailModal({ mission, onClose }) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Delivery Location
+                      Điểm Giao Hàng
                     </label>
                     <p className="text-gray-900">
                       {mission.path[mission.path.length - 1]?.lat?.toFixed(6)}, {mission.path[mission.path.length - 1]?.lng?.toFixed(6)}
@@ -393,9 +394,9 @@ function MissionDetailModal({ mission, onClose }) {
                 </div>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Total Waypoints
+                    Tổng Số Điểm
                   </label>
-                  <p className="text-gray-900">{mission.path.length} waypoints</p>
+                  <p className="text-gray-900">{mission.path.length} điểm</p>
                 </div>
               </div>
             </div>
@@ -404,7 +405,7 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Mission Notes */}
           {mission.notes && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Mission Notes</h3>
+              <h3 className="text-lg font-medium mb-4">Ghi Chú Nhiệm Vụ</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-900">{mission.notes}</p>
               </div>
@@ -414,7 +415,7 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Failure Reason */}
           {mission.failureReason && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Failure Reason</h3>
+              <h3 className="text-lg font-medium mb-4">Lý Do Thất Bại</h3>
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-900">{mission.failureReason}</p>
               </div>

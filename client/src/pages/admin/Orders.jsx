@@ -6,6 +6,7 @@ import {
   CheckCircle, XCircle, AlertTriangle, Eye
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function AdminOrders() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,7 +32,7 @@ function AdminOrders() {
   const restaurants = ordersData?.data?.restaurants || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
+    { value: 'all', label: 'Tất Cả Trạng Thái' },
     { value: 'PLACED', label: 'Đã đặt' },
     { value: 'CONFIRMED', label: 'Đã xác nhận' },
     { value: 'COOKING', label: 'Đang nấu' },
@@ -84,7 +85,7 @@ function AdminOrders() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đơn Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Monitor all orders across the platform
+          Theo dõi tất cả đơn hàng trên nền tảng
         </p>
       </div>
 
@@ -96,7 +97,7 @@ function AdminOrders() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders by customer name, order ID, or restaurant..."
+              placeholder="Tìm kiếm đơn hàng theo tên khách hàng, ID đơn hàng hoặc nhà hàng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -122,7 +123,7 @@ function AdminOrders() {
             onChange={(e) => setRestaurantFilter(e.target.value)}
             className="input lg:w-48"
           >
-            <option value="all">All Restaurants</option>
+            <option value="all">Tất Cả Nhà Hàng</option>
             {restaurants.map(restaurant => (
               <option key={restaurant._id} value={restaurant._id}>
                 {restaurant.name}
@@ -139,25 +140,25 @@ function AdminOrders() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order
+                  Đơn Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Khách Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Restaurant
+                  Nhà Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng Thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  Số Tiền
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
+                  Ngày Tạo
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Thao Tác
                 </th>
               </tr>
             </thead>
@@ -203,14 +204,14 @@ function AdminOrders() {
                           #{order.orderNumber}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {order.items.length} items
+                          {order.items.length} món
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.customer?.name || 'Unknown'}
+                          {order.customer?.name || 'Không xác định'}
                         </div>
                         <div className="text-sm text-gray-500">
                           {order.contactInfo?.phone || order.customer?.email}
@@ -219,7 +220,7 @@ function AdminOrders() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {order.restaurant?.name || 'Unknown Restaurant'}
+                        {order.restaurant?.name || 'Nhà hàng không xác định'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -251,12 +252,12 @@ function AdminOrders() {
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No orders found
+                      Không tìm thấy đơn hàng
                     </h3>
                     <p className="text-gray-500">
                       {searchQuery || statusFilter !== 'all' || restaurantFilter !== 'all'
-                        ? 'No orders match your current filters.'
-                        : 'No orders have been placed yet.'
+                        ? 'Không có đơn hàng nào phù hợp với bộ lọc.'
+                        : 'Chưa có đơn hàng nào được đặt.'
                       }
                     </p>
                   </td>
@@ -285,7 +286,7 @@ function OrderDetailModal({ order, onClose }) {
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Order #{order.orderNumber}</h2>
+            <h2 className="text-xl font-semibold">Đơn Hàng #{order.orderNumber}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -299,7 +300,7 @@ function OrderDetailModal({ order, onClose }) {
           {/* Order Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Customer Information</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Thông Tin Khách Hàng</h3>
               <p className="text-sm text-gray-600">{order.customer?.name}</p>
               <p className="text-sm text-gray-600">{order.contactInfo?.phone}</p>
               <p className="text-sm text-gray-600">{order.customer?.email}</p>
@@ -312,16 +313,16 @@ function OrderDetailModal({ order, onClose }) {
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Order Summary</h3>
-              <p className="text-sm text-gray-600">Items: {order.items.length}</p>
-              <p className="text-sm text-gray-600">Total: {formatCurrency(order.totalAmount)}</p>
-              <p className="text-sm text-gray-600">Status: {formatOrderStatus(order.status)}</p>
+              <h3 className="font-medium text-gray-900 mb-2">Tóm Tắt Đơn Hàng</h3>
+              <p className="text-sm text-gray-600">Món ăn: {order.items.length}</p>
+              <p className="text-sm text-gray-600">Tổng: {formatCurrency(order.totalAmount)}</p>
+              <p className="text-sm text-gray-600">Trạng thái: {formatOrderStatus(order.status)}</p>
             </div>
           </div>
 
           {/* Order Items */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Order Items</h3>
+            <h3 className="text-lg font-medium mb-4">Món Ăn Đã Đặt</h3>
             <div className="space-y-3">
               {order.items.map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -347,7 +348,7 @@ function OrderDetailModal({ order, onClose }) {
           {/* Delivery Information */}
           {order.deliveryAddress && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Delivery Information</h3>
+              <h3 className="text-lg font-medium mb-4">Thông Tin Giao Hàng</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
@@ -358,7 +359,7 @@ function OrderDetailModal({ order, onClose }) {
                     </p>
                     {order.deliveryAddress.notes && (
                       <p className="text-sm text-gray-600 mt-1">
-                        Note: {order.deliveryAddress.notes}
+                        Ghi chú: {order.deliveryAddress.notes}
                       </p>
                     )}
                   </div>
@@ -370,7 +371,7 @@ function OrderDetailModal({ order, onClose }) {
           {/* Mission Information */}
           {order.deliveryMission && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Delivery Mission</h3>
+              <h3 className="text-lg font-medium mb-4">Nhiệm Vụ Giao Hàng</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -381,24 +382,24 @@ function OrderDetailModal({ order, onClose }) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mission Status
+                      Trạng Thái Nhiệm Vụ
                     </label>
                     <p className="text-gray-900">{order.deliveryMission.status}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Started At
+                      Bắt Đầu Lúc
                     </label>
                     <p className="text-gray-900">{formatDateTime(order.deliveryMission.startedAt)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Estimated Arrival
+                      Dự Kiến Đến
                     </label>
                     <p className="text-gray-900">
                       {order.deliveryMission.estimatedArrival ? 
                         formatDateTime(order.deliveryMission.estimatedArrival) : 
-                        'Not available'
+                        'Không có thông tin'
                       }
                     </p>
                   </div>
@@ -409,12 +410,12 @@ function OrderDetailModal({ order, onClose }) {
 
           {/* Timeline */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Order Timeline</h3>
+            <h3 className="text-lg font-medium mb-4">Lịch Sử Đơn Hàng</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Order Placed</p>
+                  <p className="text-sm font-medium text-gray-900">Đặt hàng</p>
                   <p className="text-xs text-gray-500">{formatDateTime(order.createdAt)}</p>
                 </div>
               </div>

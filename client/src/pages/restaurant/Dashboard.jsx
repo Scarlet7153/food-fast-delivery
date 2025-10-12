@@ -5,6 +5,7 @@ import {
   Truck, AlertTriangle, CheckCircle, Package
 } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function RestaurantDashboard() {
   // Fetch restaurant statistics
@@ -93,13 +94,13 @@ function RestaurantDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
+              <p className="text-sm font-medium text-gray-600">Tổng Đơn Hàng</p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.totalOrders || 0}
               </p>
               <p className="text-sm text-green-600 flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +12% from last week
+                +12% so với tuần trước
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -111,13 +112,13 @@ function RestaurantDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
+              <p className="text-sm font-medium text-gray-600">Doanh Thu Hôm Nay</p>
               <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(stats.todayRevenue || 0)}
               </p>
               <p className="text-sm text-green-600 flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +8% from yesterday
+                +8% so với hôm qua
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -129,13 +130,13 @@ function RestaurantDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Orders</p>
+              <p className="text-sm font-medium text-gray-600">Đơn Đang Xử Lý</p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.activeOrders || 0}
               </p>
               <p className="text-sm text-blue-600 flex items-center mt-1">
                 <Clock className="h-3 w-3 mr-1" />
-                In progress
+                Đang tiến hành
               </p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -147,13 +148,13 @@ function RestaurantDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg. Rating</p>
+              <p className="text-sm font-medium text-gray-600">Đánh Giá TB</p>
               <p className="text-2xl font-bold text-gray-900">
                 {stats.averageRating?.toFixed(1) || '4.5'}
               </p>
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <Users className="h-3 w-3 mr-1" />
-                {stats.totalReviews || 0} reviews
+                {stats.totalReviews || 0} đánh giá
               </p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
@@ -168,12 +169,12 @@ function RestaurantDashboard() {
         {/* Revenue Chart */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Revenue Trend
+            Xu Hướng Doanh Thu
           </h3>
           <div className="h-64 flex items-center justify-center text-gray-500">
             <div className="text-center">
               <TrendingUp className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-              <p>Revenue chart will be displayed here</p>
+              <p>Biểu đồ doanh thu sẽ hiển thị ở đây</p>
             </div>
           </div>
         </div>
@@ -181,7 +182,7 @@ function RestaurantDashboard() {
         {/* Order Status Chart */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Orders by Status
+            Đơn Hàng Theo Trạng Thái
           </h3>
           <div className="space-y-4">
             {[
@@ -212,10 +213,10 @@ function RestaurantDashboard() {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
-              Recent Orders
+              Đơn Hàng Gần Đây
             </h3>
             <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-              View all orders
+              Xem tất cả đơn hàng
             </button>
           </div>
         </div>
@@ -231,10 +232,10 @@ function RestaurantDashboard() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        Order #{order.orderNumber}
+                        Đơn #{order.orderNumber}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {order.items.length} items • {formatCurrency(order.totalAmount)}
+                        {order.items.length} món • {formatCurrency(order.totalAmount)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDateTime(order.createdAt)}
@@ -260,10 +261,10 @@ function RestaurantDashboard() {
             <div className="p-12 text-center">
               <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No orders yet
+                Chưa có đơn hàng
               </h3>
               <p className="text-gray-500">
-                Orders will appear here when customers place them.
+                Đơn hàng sẽ hiển thị ở đây khi khách hàng đặt.
               </p>
             </div>
           )}
@@ -274,19 +275,19 @@ function RestaurantDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Quick Actions
+            Thao Tác Nhanh
           </h3>
           <div className="space-y-3">
             <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">Add Menu Item</span>
+              <span className="text-sm font-medium text-gray-700">Thêm Món Ăn</span>
               <span className="text-gray-400">→</span>
             </button>
             <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">Manage Drones</span>
+              <span className="text-sm font-medium text-gray-700">Quản Lý Drone</span>
               <span className="text-gray-400">→</span>
             </button>
             <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">View Reports</span>
+              <span className="text-sm font-medium text-gray-700">Xem Báo Cáo</span>
               <span className="text-gray-400">→</span>
             </button>
           </div>
@@ -294,28 +295,28 @@ function RestaurantDashboard() {
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            System Status
+            Trạng Thái Hệ Thống
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">API Status</span>
+              <span className="text-sm text-gray-600">Trạng Thái API</span>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Online</span>
+                <span className="text-sm text-green-600">Hoạt Động</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Drone Network</span>
+              <span className="text-sm text-gray-600">Mạng Drone</span>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Connected</span>
+                <span className="text-sm text-green-600">Đã Kết Nối</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Payment Gateway</span>
+              <span className="text-sm text-gray-600">Cổng Thanh Toán</span>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Active</span>
+                <span className="text-sm text-green-600">Hoạt Động</span>
               </div>
             </div>
           </div>
@@ -323,23 +324,23 @@ function RestaurantDashboard() {
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Today's Summary
+            Tổng Kết Hôm Nay
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Orders Completed</span>
+              <span className="text-sm text-gray-600">Đơn Hoàn Thành</span>
               <span className="text-sm font-medium text-gray-900">
                 {stats.todayCompleted || 0}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Avg. Prep Time</span>
+              <span className="text-sm text-gray-600">Thời Gian Chuẩn Bị TB</span>
               <span className="text-sm font-medium text-gray-900">
-                {stats.averagePrepTime || 0} min
+                {stats.averagePrepTime || 0} phút
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Success Rate</span>
+              <span className="text-sm text-gray-600">Tỉ Lệ Thành Công</span>
               <span className="text-sm font-medium text-green-600">
                 {(stats.successRate || 0).toFixed(1)}%
               </span>

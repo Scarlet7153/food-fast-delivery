@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDateTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function AdminRestaurants() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -35,11 +36,11 @@ function AdminRestaurants() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['admin-restaurants'])
-        toast.success('Restaurant status updated successfully')
+        toast.success('Cập nhật trạng thái nhà hàng thành công')
         setShowRestaurantModal(false)
       },
       onError: (error) => {
-        toast.error('Failed to update restaurant status')
+        toast.error('Không thể cập nhật trạng thái nhà hàng')
       }
     }
   )
@@ -47,11 +48,11 @@ function AdminRestaurants() {
   const restaurants = restaurantsData?.data?.restaurants || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'pending', label: 'Đang chờ' },
-    { value: 'approved', label: 'Đã duyệt' },
-    { value: 'rejected', label: 'Từ chối' },
-    { value: 'suspended', label: 'Suspended' },
+    { value: 'all', label: 'Tất Cả Trạng Thái' },
+    { value: 'pending', label: 'Chờ Duyệt' },
+    { value: 'approved', label: 'Đã Duyệt' },
+    { value: 'rejected', label: 'Từ Chối' },
+    { value: 'suspended', label: 'Bị Khóa' },
   ]
 
   const handleViewRestaurant = (restaurant) => {
@@ -97,7 +98,7 @@ function AdminRestaurants() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản Lý Nhà Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Manage restaurant registrations and approvals
+          Quản lý đăng ký và duyệt nhà hàng
         </p>
       </div>
 
@@ -109,7 +110,7 @@ function AdminRestaurants() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search restaurants by name, owner, or ID..."
+              placeholder="Tìm kiếm nhà hàng theo tên, chủ sở hữu hoặc ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -159,12 +160,12 @@ function AdminRestaurants() {
             <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
               <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No restaurants found
+                Không tìm thấy nhà hàng
               </h3>
               <p className="text-gray-500">
                 {searchQuery || statusFilter !== 'all'
-                  ? 'No restaurants match your current filters.'
-                  : 'No restaurants have been registered yet.'
+                  ? 'Không có nhà hàng nào phù hợp với bộ lọc.'
+                  : 'Chưa có nhà hàng nào được đăng ký.'
                 }
               </p>
             </div>
@@ -243,7 +244,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">
-          Joined: {formatDateTime(restaurant.createdAt)}
+          Tham gia: {formatDateTime(restaurant.createdAt)}
         </div>
         <button
           onClick={() => onView(restaurant)}
@@ -308,7 +309,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Restaurant Details</h2>
+            <h2 className="text-xl font-semibold">Chi Tiết Nhà Hàng</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -344,7 +345,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
               <div className="flex items-center space-x-2">
                 <Star className="h-4 w-4 text-yellow-400 fill-current" />
                 <span className="font-medium">{restaurant.rating?.toFixed(1) || 'N/A'}</span>
-                <span className="text-gray-500">({restaurant.reviewCount || 0} reviews)</span>
+                <span className="text-gray-500">({restaurant.reviewCount || 0} đánh giá)</span>
               </div>
             </div>
           </div>
@@ -352,15 +353,15 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
           {/* Restaurant Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-lg font-medium mb-4">Contact Information</h4>
+              <h4 className="text-lg font-medium mb-4">Thông Tin Liên Hệ</h4>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{restaurant.phone || 'Not provided'}</span>
+                  <span className="text-gray-900">{restaurant.phone || 'Chưa cung cấp'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{restaurant.email || 'Not provided'}</span>
+                  <span className="text-gray-900">{restaurant.email || 'Chưa cung cấp'}</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
@@ -375,19 +376,19 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
             </div>
 
             <div>
-              <h4 className="text-lg font-medium mb-4">Business Information</h4>
+              <h4 className="text-lg font-medium mb-4">Thông Tin Kinh Doanh</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Registration Date</span>
+                  <span className="text-gray-600">Ngày Đăng Ký</span>
                   <span className="text-gray-900">{formatDateTime(restaurant.createdAt)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Business License</span>
-                  <span className="text-gray-900">{restaurant.businessLicense || 'Not provided'}</span>
+                  <span className="text-gray-600">Giấy Phép Kinh Doanh</span>
+                  <span className="text-gray-900">{restaurant.businessLicense || 'Chưa cung cấp'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Tax ID</span>
-                  <span className="text-gray-900">{restaurant.taxId || 'Not provided'}</span>
+                  <span className="text-gray-600">Mã Số Thuế</span>
+                  <span className="text-gray-900">{restaurant.taxId || 'Chưa cung cấp'}</span>
                 </div>
               </div>
             </div>
@@ -396,12 +397,12 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
           {/* Owner Information */}
           {restaurant.owner && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Owner Information</h4>
+              <h4 className="text-lg font-medium mb-4">Thông Tin Chủ Sở Hữu</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Owner Name
+                      Tên Chủ Sở Hữu
                     </label>
                     <p className="text-gray-900">{restaurant.owner.name}</p>
                   </div>
@@ -413,13 +414,13 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone
+                      Số Điện Thoại
                     </label>
-                    <p className="text-gray-900">{restaurant.owner.phone || 'Not provided'}</p>
+                    <p className="text-gray-900">{restaurant.owner.phone || 'Chưa cung cấp'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Status
+                      Trạng Thái Tài Khoản
                     </label>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       restaurant.owner.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -436,7 +437,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
 
           {/* Statistics */}
           <div>
-            <h4 className="text-lg font-medium mb-4">Restaurant Statistics</h4>
+            <h4 className="text-lg font-medium mb-4">Thống Kê Nhà Hàng</h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{restaurant.menuItemsCount || 0}</p>
@@ -448,13 +449,13 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{restaurant.totalOrders || 0}</p>
-                <p className="text-sm text-gray-600">Total Orders</p>
+                <p className="text-sm text-gray-600">Tổng Đơn Hàng</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">
                   {formatCurrency(restaurant.totalRevenue || 0)}
                 </p>
-                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-sm text-gray-600">Tổng Doanh Thu</p>
               </div>
             </div>
           </div>
@@ -462,26 +463,26 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
           {/* Delivery Settings */}
           {restaurant.deliverySettings && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Delivery Settings</h4>
+              <h4 className="text-lg font-medium mb-4">Cài Đặt Giao Hàng</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Base Rate
+                      Phí Cơ Bản
                     </label>
                     <p className="text-gray-900">{formatCurrency(restaurant.deliverySettings.baseRate)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Distance
+                      Khoảng Cách Tối Đa
                     </label>
                     <p className="text-gray-900">{restaurant.deliverySettings.maxDeliveryDistance}m</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Estimated Time
+                      Thời Gian Dự Kiến
                     </label>
-                    <p className="text-gray-900">{restaurant.deliverySettings.estimatedTime} min</p>
+                    <p className="text-gray-900">{restaurant.deliverySettings.estimatedTime} phút</p>
                   </div>
                 </div>
               </div>
@@ -491,34 +492,34 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
           {/* Status Management */}
           {restaurant.status === 'pending' && (
             <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">
-              <h4 className="text-lg font-medium mb-4">Restaurant Approval</h4>
+              <h4 className="text-lg font-medium mb-4">Duyệt Nhà Hàng</h4>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Action
+                    Hành Động
                   </label>
                   <select
                     value={action}
                     onChange={(e) => setAction(e.target.value)}
                     className="input w-full"
                   >
-                    <option value="">Select action</option>
-                    <option value="approve">Approve Restaurant</option>
-                    <option value="reject">Reject Application</option>
-                    <option value="request_info">Request More Information</option>
+                    <option value="">Chọn hành động</option>
+                    <option value="approve">Duyệt Nhà Hàng</option>
+                    <option value="reject">Từ Chối Đơn Đăng Ký</option>
+                    <option value="request_info">Yêu Cầu Thêm Thông Tin</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason / Notes
+                    Lý Do / Ghi Chú
                   </label>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="input w-full"
                     rows={4}
-                    placeholder="Enter reason for approval/rejection or additional information needed..."
+                    placeholder="Nhập lý do duyệt/từ chối hoặc thông tin bổ sung cần thiết..."
                   />
                 </div>
 
@@ -529,14 +530,14 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                     className="btn btn-outline"
                     disabled={isUpdating}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={isUpdating || !action}
                   >
-                    {isUpdating ? 'Processing...' : 'Submit Decision'}
+                    {isUpdating ? 'Đang xử lý...' : 'Gửi Quyết Định'}
                   </button>
                 </div>
               </div>

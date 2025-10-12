@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatWeight } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function Checkout() {
   const navigate = useNavigate()
@@ -65,7 +66,7 @@ function Checkout() {
     {
       onSuccess: (response) => {
         const order = response.data.order
-        toast.success('Order created successfully!')
+        toast.success('Tạo đơn hàng thành công!')
         
         // Clear cart
         clearCart()
@@ -79,7 +80,7 @@ function Checkout() {
       },
       onError: (error) => {
         console.error('Order creation error:', error)
-        toast.error('Failed to create order. Please try again.')
+        toast.error('Không thể tạo đơn hàng. Vui lòng thử lại.')
       }
     }
   )
@@ -96,7 +97,7 @@ function Checkout() {
       },
       onError: (error) => {
         console.error('Payment creation error:', error)
-        toast.error('Failed to create payment. Please try again.')
+        toast.error('Không thể tạo thanh toán. Vui lòng thử lại.')
       }
     }
   )
@@ -125,7 +126,7 @@ function Checkout() {
     if (currentStep === 1) {
       // Validate delivery info
       if (!formData.deliveryAddress.street || !formData.contactInfo.phone) {
-        toast.error('Please fill in all required fields')
+        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
         return
       }
       setCurrentStep(2)
@@ -172,7 +173,7 @@ function Checkout() {
 
       await createPaymentMutation.mutateAsync(paymentData)
     } catch (error) {
-      toast.error('Failed to initiate payment')
+      toast.error('Không thể khởi tạo thanh toán')
     }
   }
 
@@ -189,16 +190,16 @@ function Checkout() {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Your cart is empty
+          Giỏ hàng trống
         </h2>
         <p className="text-gray-600 mb-6">
-          Add some items to your cart before checkout.
+          Thêm món vào giỏ hàng trước khi thanh toán.
         </p>
         <button
           onClick={() => navigate('/customer/restaurants')}
           className="btn btn-primary"
         >
-          Browse Restaurants
+          Xem Nhà Hàng
         </button>
       </div>
     )
@@ -221,7 +222,7 @@ function Checkout() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Thanh Toán</h1>
-          <p className="text-gray-600">Complete your order</p>
+          <p className="text-gray-600">Hoàn tất đơn hàng của bạn</p>
         </div>
       </div>
 
@@ -234,7 +235,7 @@ function Checkout() {
             }`}>
               {currentStep > 1 ? <CheckCircle className="h-4 w-4" /> : '1'}
             </div>
-            <span className="font-medium">Delivery Info</span>
+            <span className="font-medium">Thông Tin Giao Hàng</span>
           </div>
           
           <div className={`flex-1 h-1 ${currentStep >= 2 ? 'bg-primary-600' : 'bg-gray-200'}`}></div>
@@ -245,7 +246,7 @@ function Checkout() {
             }`}>
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : '2'}
             </div>
-            <span className="font-medium">Thanh toán</span>
+            <span className="font-medium">Thanh Toán</span>
           </div>
         </div>
       </div>
@@ -273,7 +274,7 @@ function Checkout() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-6">
-            <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+            <h3 className="text-lg font-semibold mb-4">Tóm Tắt Đơn Hàng</h3>
             
             {/* Restaurant Info */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
@@ -308,8 +309,8 @@ function Checkout() {
               </div>
               
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Service Fee</span>
-                <span className="font-medium">Free</span>
+                <span className="text-gray-600">Phí dịch vụ</span>
+                <span className="font-medium">Miễn phí</span>
               </div>
             </div>
 
@@ -327,15 +328,15 @@ function Checkout() {
             <div className="space-y-3 text-sm text-gray-600 mb-6">
               <div className="flex items-center space-x-2">
                 <Truck className="h-4 w-4" />
-                <span>{formatWeight(totalWeight)} total weight</span>
+                <span>Tổng khối lượng {formatWeight(totalWeight)}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4" />
-                <span>25-35 min delivery</span>
+                <span>Giao trong 25-35 phút</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Shield className="h-4 w-4" />
-                <span>Contactless delivery</span>
+                <span>Giao không tiếp xúc</span>
               </div>
             </div>
 
@@ -346,7 +347,7 @@ function Checkout() {
                 disabled={!isFormValid()}
                 className="btn btn-primary w-full btn-lg"
               >
-                Continue to Payment
+                Tiếp Tục Thanh Toán
               </button>
             )}
 
@@ -359,12 +360,12 @@ function Checkout() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Creating Order...</span>
+                    <span>Đang Tạo Đơn...</span>
                   </>
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5" />
-                    <span>Place Order</span>
+                    <span>Đặt Hàng</span>
                   </>
                 )}
               </button>
@@ -373,13 +374,13 @@ function Checkout() {
             {paymentUrl && (
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-3">
-                  Payment window opened. Complete payment to confirm your order.
+                  Cửa sổ thanh toán đã mở. Hoàn tất thanh toán để xác nhận đơn hàng.
                 </p>
                 <button
                   onClick={() => window.open(paymentUrl, '_blank')}
                   className="btn btn-primary w-full"
                 >
-                  Open Payment Window
+                  Mở Cửa Sổ Thanh Toán
                 </button>
               </div>
             )}
@@ -398,73 +399,73 @@ function DeliveryInfoStep({ formData, onChange }) {
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
           <MapPin className="h-5 w-5" />
-          <span>Delivery Address</span>
+          <span>{t('Địa chỉ')} Giao Hàng</span>
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Street Address *
+              Địa Chỉ Đường *
             </label>
             <input
               type="text"
               value={formData.deliveryAddress.street}
               onChange={(e) => onChange('deliveryAddress.street', e.target.value)}
               className="input w-full"
-              placeholder="Enter your street address"
+              placeholder="Nhập địa chỉ đường của bạn"
               required
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              City
+              Thành Phố
             </label>
             <input
               type="text"
               value={formData.deliveryAddress.city}
               onChange={(e) => onChange('deliveryAddress.city', e.target.value)}
               className="input w-full"
-              placeholder="Ho Chi Minh City"
+              placeholder="Thành phố Hồ Chí Minh"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              District
+              Quận/Huyện
             </label>
             <input
               type="text"
               value={formData.deliveryAddress.district}
               onChange={(e) => onChange('deliveryAddress.district', e.target.value)}
               className="input w-full"
-              placeholder="District 1"
+              placeholder="Quận 1"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ward
+              Phường/Xã
             </label>
             <input
               type="text"
               value={formData.deliveryAddress.ward}
               onChange={(e) => onChange('deliveryAddress.ward', e.target.value)}
               className="input w-full"
-              placeholder="Ward name"
+              placeholder="Tên phường"
             />
           </div>
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Delivery Notes
+              Ghi Chú Giao Hàng
             </label>
             <textarea
               value={formData.deliveryAddress.notes}
               onChange={(e) => onChange('deliveryAddress.notes', e.target.value)}
               className="input w-full"
               rows={3}
-              placeholder="Building name, floor, apartment number, etc."
+              placeholder="Tên tòa nhà, tầng, số căn hộ, v.v..."
             />
           </div>
         </div>
@@ -474,34 +475,34 @@ function DeliveryInfoStep({ formData, onChange }) {
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
           <User className="h-5 w-5" />
-          <span>Contact Information</span>
+          <span>Thông Tin Liên Hệ</span>
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name *
+              Họ Tên *
             </label>
             <input
               type="text"
               value={formData.contactInfo.name}
               onChange={(e) => onChange('contactInfo.name', e.target.value)}
               className="input w-full"
-              placeholder="Your full name"
+              placeholder="Nhập họ tên của bạn"
               required
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
+              {t('Số điện thoại')} *
             </label>
             <input
               type="tel"
               value={formData.contactInfo.phone}
               onChange={(e) => onChange('contactInfo.phone', e.target.value)}
               className="input w-full"
-              placeholder="Your phone number"
+              placeholder="Nhập số điện thoại"
               required
             />
           </div>
@@ -516,7 +517,7 @@ function DeliveryInfoStep({ formData, onChange }) {
           onChange={(e) => onChange('specialInstructions', e.target.value)}
           className="input w-full"
           rows={3}
-          placeholder="Any special instructions for your order..."
+          placeholder="Ghi chú đặc biệt cho đơn hàng..."
         />
       </div>
     </div>
@@ -528,21 +529,21 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
   const paymentMethods = [
     {
       id: 'momo',
-      name: 'MoMo Wallet',
-      description: 'Pay with your MoMo wallet',
+      name: 'Ví MoMo',
+      description: 'Thanh toán bằng ví MoMo',
       icon: '💳',
       recommended: true
     },
     {
       id: 'credit_card',
-      name: 'Credit Card',
-      description: 'Pay with Visa, Mastercard',
+      name: 'Thẻ Tín Dụng',
+      description: 'Thanh toán bằng Visa, Mastercard',
       icon: '💳'
     },
     {
       id: 'bank_transfer',
-      name: 'Bank Transfer',
-      description: 'Transfer from your bank account',
+      name: 'Chuyển Khoản',
+      description: 'Chuyển khoản từ tài khoản ngân hàng',
       icon: '🏦'
     }
   ]
@@ -582,7 +583,7 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
                     <span className="font-medium">{method.name}</span>
                     {method.recommended && (
                       <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-                        Recommended
+                        Đề xuất
                       </span>
                     )}
                   </div>
@@ -598,10 +599,10 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center space-x-2">
           <Shield className="h-5 w-5 text-green-600" />
-          <span className="font-medium text-green-800">Secure Payment</span>
+          <span className="font-medium text-green-800">Thanh Toán An Toàn</span>
         </div>
         <p className="text-sm text-green-700 mt-1">
-          Your payment information is encrypted and secure. We use industry-standard SSL encryption to protect your data.
+          Thông tin thanh toán được mã hóa và bảo mật. Chúng tôi sử dụng mã hóa SSL chuẩn công nghiệp.
         </p>
       </div>
 
@@ -609,10 +610,10 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <CreditCard className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-blue-800">Payment Window Opened</span>
+            <span className="font-medium text-blue-800">Cửa Sổ Thanh Toán Đã Mở</span>
           </div>
           <p className="text-sm text-blue-700 mt-1">
-            Complete your payment in the opened window to confirm your order.
+            Hoàn tất thanh toán trong cửa sổ đã mở để xác nhận đơn hàng.
           </p>
         </div>
       )}

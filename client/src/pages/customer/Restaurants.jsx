@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { restaurantService } from '../../services/restaurantService'
 import { Search, Star, Clock, MapPin, Filter, Grid, List } from 'lucide-react'
 import { formatCurrency, formatDistance } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function Restaurants() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,29 +32,29 @@ function Restaurants() {
   // Categories
   const categories = [
     { id: 'all', name: 'Tất Cả Danh Mục' },
-    { id: 'fastfood', name: 'Fast Food' },
+    { id: 'fastfood', name: 'Đồ Ăn Nhanh' },
     { id: 'pizza', name: 'Pizza' },
-    { id: 'asian', name: 'Asian Cuisine' },
-    { id: 'healthy', name: 'Healthy Food' },
-    { id: 'dessert', name: 'Desserts' },
-    { id: 'beverages', name: 'Beverages' },
+    { id: 'asian', name: 'Món Á' },
+    { id: 'healthy', name: 'Ăn Kiêng' },
+    { id: 'dessert', name: 'Tráng Miệng' },
+    { id: 'beverages', name: 'Đồ Uống' },
   ]
 
   // Sort options
   const sortOptions = [
-    { value: 'rating', label: 'Highest Rated' },
-    { value: 'distance', label: 'Nearest First' },
-    { value: 'deliveryTime', label: 'Fastest Delivery' },
-    { value: 'name', label: 'Name A-Z' },
+    { value: 'rating', label: 'Đánh Giá Cao' },
+    { value: 'distance', label: 'Gần Nhất' },
+    { value: 'deliveryTime', label: 'Giao Nhanh Nhất' },
+    { value: 'name', label: 'Tên A-Z' },
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Nhà hàng</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Nhà Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Discover restaurants offering drone delivery in your area
+          Khám phá các nhà hàng giao đồ ăn bằng drone trong khu vực của bạn
         </p>
       </div>
 
@@ -117,7 +118,7 @@ function Restaurants() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
+                  Danh Mục
                 </label>
                 <select
                   value={selectedCategory}
@@ -134,25 +135,25 @@ function Restaurants() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Delivery Time
+                  Thời Gian Giao
                 </label>
                 <select className="input w-full">
-                  <option value="all">Any time</option>
-                  <option value="fast">Under 20 min</option>
-                  <option value="medium">20-30 min</option>
-                  <option value="slow">30+ min</option>
+                  <option value="all">Bất kỳ</option>
+                  <option value="fast">Dưới 20 phút</option>
+                  <option value="medium">20-30 phút</option>
+                  <option value="slow">Trên 30 phút</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Distance
+                  Khoảng Cách
                 </label>
                 <select className="input w-full">
-                  <option value="all">Any distance</option>
-                  <option value="near">Under 1km</option>
+                  <option value="all">Bất kỳ</option>
+                  <option value="near">Dưới 1km</option>
                   <option value="medium">1-3km</option>
-                  <option value="far">3km+</option>
+                  <option value="far">Trên 3km</option>
                 </select>
               </div>
             </div>
@@ -164,11 +165,11 @@ function Restaurants() {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold">
-            {searchQuery ? `Search Results for "${searchQuery}"` : 'All Restaurants'}
+            {searchQuery ? `Kết quả tìm kiếm cho "${searchQuery}"` : 'Tất Cả Nhà Hàng'}
           </h2>
           {restaurants.length > 0 && (
             <span className="text-sm text-gray-500">
-              {restaurants.length} restaurants found
+              Tìm thấy {restaurants.length} nhà hàng
             </span>
           )}
         </div>
@@ -194,12 +195,12 @@ function Restaurants() {
               <Search className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No restaurants found
+              Không tìm thấy nhà hàng
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery 
-                ? `No restaurants match your search "${searchQuery}"`
-                : 'No restaurants available at the moment'
+                ? `Không có nhà hàng phù hợp với từ khóa "${searchQuery}"`
+                : 'Chưa có nhà hàng nào khả dụng'
               }
             </p>
             {searchQuery && (
@@ -207,7 +208,7 @@ function Restaurants() {
                 onClick={() => setSearchQuery('')}
                 className="btn btn-primary"
               >
-                Clear Search
+                Xóa Tìm Kiếm
               </button>
             )}
           </div>
@@ -260,16 +261,16 @@ function RestaurantGridCard({ restaurant }) {
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="h-4 w-4" />
-              <span>{estimatedTime} min</span>
+              <span>{estimatedTime} phút</span>
             </div>
           </div>
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-sm text-gray-600">
-              Delivery: {formatCurrency(deliveryFee)}
+              Phí giao: {formatCurrency(deliveryFee)}
             </span>
             <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-              Drone Delivery
+              Giao bằng Drone
             </span>
           </div>
         </div>
@@ -322,13 +323,13 @@ function RestaurantListCard({ restaurant }) {
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>{estimatedTime} min</span>
-              </div>
-              <span>Delivery: {formatCurrency(deliveryFee)}</span>
+              <span>{estimatedTime} phút</span>
             </div>
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-              Drone Delivery
-            </span>
+            <span>Phí giao: {formatCurrency(deliveryFee)}</span>
+          </div>
+          <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
+            Giao bằng Drone
+          </span>
           </div>
         </div>
       </div>

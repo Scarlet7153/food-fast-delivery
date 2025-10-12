@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { droneService } from '../../services/droneService'
 import { 
   Plus, Edit, Trash2, Power, Battery, MapPin, Clock,
-  AlertTriangle, CheckCircle, XCircle, Settings, Eye
+  AlertTriangle, CheckCircle, XCircle, Settings, Eye, Package, X, Save
 } from 'lucide-react'
-import { formatDistance, formatDuration, formatDroneStatus } from '../../utils/formatters'
+import { formatDistance, formatDuration, formatDroneStatus, formatDateTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantDrones() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -35,10 +36,10 @@ function RestaurantDrones() {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-drones'])
         setShowAddModal(false)
-        toast.success('Drone registered successfully')
+        toast.success('Đăng ký drone thành công')
       },
       onError: (error) => {
-        toast.error('Failed to register drone')
+        toast.error('Không thể đăng ký drone')
       }
     }
   )
@@ -50,10 +51,10 @@ function RestaurantDrones() {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-drones'])
         setEditingDrone(null)
-        toast.success('Drone updated successfully')
+        toast.success('Cập nhật drone thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update drone')
+        toast.error('Không thể cập nhật drone')
       }
     }
   )
@@ -64,10 +65,10 @@ function RestaurantDrones() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-drones'])
-        toast.success('Drone deleted successfully')
+        toast.success('Xóa drone thành công')
       },
       onError: (error) => {
-        toast.error('Failed to delete drone')
+        toast.error('Không thể xóa drone')
       }
     }
   )
@@ -75,12 +76,12 @@ function RestaurantDrones() {
   const drones = dronesData?.data?.drones || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Drones' },
-    { value: 'IDLE', label: 'Idle' },
-    { value: 'CHARGING', label: 'Charging' },
-    { value: 'MAINTENANCE', label: 'Maintenance' },
-    { value: 'IN_FLIGHT', label: 'In Flight' },
-    { value: 'ERROR', label: 'Error' },
+    { value: 'all', label: 'Tất Cả Drone' },
+    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'CHARGING', label: 'Đang Sạc' },
+    { value: 'MAINTENANCE', label: 'Bảo Trì' },
+    { value: 'IN_FLIGHT', label: 'Đang Bay' },
+    { value: 'ERROR', label: 'Lỗi' },
   ]
 
   const getStatusIcon = (status) => {
@@ -124,7 +125,7 @@ function RestaurantDrones() {
   }
 
   const handleDeleteDrone = (droneId, droneName) => {
-    if (window.confirm(`Are you sure you want to delete drone "${droneName}"?`)) {
+    if (window.confirm(`Bạn có chắc muốn xóa drone "${droneName}"?`)) {
       deleteDroneMutation.mutate(droneId)
     }
   }
@@ -141,9 +142,9 @@ function RestaurantDrones() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Drone Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản Lý Drone</h1>
           <p className="text-gray-600 mt-1">
-            Manage your delivery drones and monitor their status
+            Quản lý drone giao hàng và theo dõi trạng thái
           </p>
         </div>
         <button
@@ -151,7 +152,7 @@ function RestaurantDrones() {
           className="btn btn-primary flex items-center space-x-2"
         >
           <Plus className="h-4 w-4" />
-          <span>Register Drone</span>
+          <span>Đăng Ký Drone</span>
         </button>
       </div>
 
@@ -162,7 +163,7 @@ function RestaurantDrones() {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Search drones by name or ID..."
+              placeholder="Tìm kiếm drone theo tên hoặc ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -191,7 +192,7 @@ function RestaurantDrones() {
             className="btn btn-outline flex items-center space-x-2"
           >
             <Clock className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>Tải Lại</span>
           </button>
         </div>
       </div>
@@ -238,12 +239,12 @@ function RestaurantDrones() {
               <Power className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No drones found
+              Không tìm thấy drone
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'No drones match your current filters.'
-                : 'Register your first delivery drone to get started.'
+                ? 'Không có drone nào phù hợp với bộ lọc.'
+                : 'Đăng ký drone giao hàng đầu tiên để bắt đầu.'
               }
             </p>
             {searchQuery || statusFilter !== 'all' ? (
@@ -254,14 +255,14 @@ function RestaurantDrones() {
                 }}
                 className="btn btn-primary"
               >
-                Clear Filters
+                Xóa Bộ Lọc
               </button>
             ) : (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="btn btn-primary"
               >
-                Register Drone
+                Đăng Ký Drone
               </button>
             )}
           </div>
@@ -327,7 +328,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Battery className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">Battery</span>
+            <span className="text-sm text-gray-600">Pin</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-16 bg-gray-200 rounded-full h-2">
@@ -346,7 +347,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Package className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">Max Payload</span>
+            <span className="text-sm text-gray-600">Tải Trọng Tối Đa</span>
           </div>
           <span className="text-sm font-medium text-gray-900">
             {drone.maxPayloadGrams}g
@@ -357,7 +358,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <MapPin className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">Range</span>
+            <span className="text-sm text-gray-600">Tầm Bay</span>
           </div>
           <span className="text-sm font-medium text-gray-900">
             {formatDistance(drone.maxRangeMeters)}
@@ -368,7 +369,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         {drone.currentMission && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900">Active Mission</span>
+              <span className="text-sm font-medium text-blue-900">Nhiệm Vụ Đang Thực Hiện</span>
               <span className="text-xs text-blue-700">
                 #{drone.currentMission.orderNumber}
               </span>
@@ -384,7 +385,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-600">Location</span>
+              <span className="text-sm text-gray-600">Vị Trí</span>
             </div>
             <span className="text-xs text-gray-500">
               {drone.location.lat.toFixed(4)}, {drone.location.lng.toFixed(4)}
@@ -418,10 +419,10 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
               disabled={isUpdating}
               className="text-xs border border-gray-300 rounded px-2 py-1"
             >
-              <option value="IDLE">Set Idle</option>
-              <option value="CHARGING">Set Charging</option>
-              <option value="MAINTENANCE">Set Maintenance</option>
-              <option value="ERROR">Set Error</option>
+              <option value="IDLE">Đặt Rảnh</option>
+              <option value="CHARGING">Đặt Sạc</option>
+              <option value="MAINTENANCE">Đặt Bảo Trì</option>
+              <option value="ERROR">Đặt Lỗi</option>
             </select>
           )}
         </div>
@@ -477,10 +478,10 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
   }
 
   const statusOptions = [
-    { value: 'IDLE', label: 'Idle' },
-    { value: 'CHARGING', label: 'Charging' },
-    { value: 'MAINTENANCE', label: 'Maintenance' },
-    { value: 'ERROR', label: 'Error' },
+    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'CHARGING', label: 'Đang Sạc' },
+    { value: 'MAINTENANCE', label: 'Bảo Trì' },
+    { value: 'ERROR', label: 'Lỗi' },
   ]
 
   return (
@@ -488,7 +489,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">
-            {drone ? 'Edit Drone' : 'Register New Drone'}
+            {drone ? 'Sửa Drone' : 'Đăng Ký Drone Mới'}
           </h2>
           <button
             onClick={onClose}
@@ -503,7 +504,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
             {/* Basic Info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Drone Name *
+                Tên Drone *
               </label>
               <input
                 type="text"
@@ -516,7 +517,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Model *
+                Mẫu *
               </label>
               <input
                 type="text"
@@ -529,7 +530,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Payload (grams) *
+                Tải Trọng Tối Đa (gram) *
               </label>
               <input
                 type="number"
@@ -543,7 +544,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Range (meters) *
+                Tầm Bay Tối Đa (mét) *
               </label>
               <input
                 type="number"
@@ -557,7 +558,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Battery (%)
+                Pin Tối Đa (%)
               </label>
               <input
                 type="number"
@@ -571,7 +572,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Battery (%)
+                Pin Hiện Tại (%)
               </label>
               <input
                 type="number"
@@ -585,7 +586,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                Trạng Thái
               </label>
               <select
                 value={formData.status}
@@ -603,7 +604,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
             {/* Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Latitude
+                Vĩ Độ
               </label>
               <input
                 type="number"
@@ -616,7 +617,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Longitude
+                Kinh Độ
               </label>
               <input
                 type="number"
@@ -629,7 +630,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Geofence Radius (meters)
+                Bán Kính Geofence (mét)
               </label>
               <input
                 type="number"
@@ -649,7 +650,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
               className="btn btn-outline"
               disabled={isLoading}
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -659,12 +660,12 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  {drone ? 'Updating...' : 'Registering...'}
+                  {drone ? 'Đang cập nhật...' : 'Đang đăng ký...'}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  {drone ? 'Update Drone' : 'Register Drone'}
+                  {drone ? 'Cập Nhật Drone' : 'Đăng Ký Drone'}
                 </>
               )}
             </button>

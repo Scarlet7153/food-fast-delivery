@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatWeight } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantMenu() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,10 +40,10 @@ function RestaurantMenu() {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-menu'])
         setShowAddModal(false)
-        toast.success('Menu item created successfully')
+        toast.success('Tạo món ăn thành công')
       },
       onError: (error) => {
-        toast.error('Failed to create menu item')
+        toast.error('Không thể tạo món ăn')
       }
     }
   )
@@ -57,10 +58,10 @@ function RestaurantMenu() {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-menu'])
         setEditingItem(null)
-        toast.success('Menu item updated successfully')
+        toast.success('Cập nhật món ăn thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update menu item')
+        toast.error('Không thể cập nhật món ăn')
       }
     }
   )
@@ -74,10 +75,10 @@ function RestaurantMenu() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-menu'])
-        toast.success('Menu item deleted successfully')
+        toast.success('Xóa món ăn thành công')
       },
       onError: (error) => {
-        toast.error('Failed to delete menu item')
+        toast.error('Không thể xóa món ăn')
       }
     }
   )
@@ -86,7 +87,7 @@ function RestaurantMenu() {
   const categories = menuData?.data?.categories || ['all']
 
   const handleDeleteItem = (itemId, itemName) => {
-    if (window.confirm(`Are you sure you want to delete "${itemName}"?`)) {
+    if (window.confirm(`Bạn có chắc muốn xóa "${itemName}"?`)) {
       deleteItemMutation.mutate(itemId)
     }
   }
@@ -103,9 +104,9 @@ function RestaurantMenu() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản Lý Thực Đơn</h1>
           <p className="text-gray-600 mt-1">
-            Manage your restaurant's menu items and pricing
+            Quản lý món ăn và giá cả của nhà hàng
           </p>
         </div>
         <button
@@ -113,7 +114,7 @@ function RestaurantMenu() {
           className="btn btn-primary flex items-center space-x-2"
         >
           <Plus className="h-4 w-4" />
-          <span>Add Menu Item</span>
+          <span>Thêm Món Ăn</span>
         </button>
       </div>
 
@@ -125,7 +126,7 @@ function RestaurantMenu() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search menu items..."
+              placeholder="Tìm kiếm món ăn..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -138,7 +139,7 @@ function RestaurantMenu() {
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="input lg:w-48"
           >
-            <option value="all">All Categories</option>
+            <option value="all">Tất Cả Danh Mục</option>
             {categories.filter(cat => cat !== 'all').map(category => (
               <option key={category} value={category}>
                 {category}
@@ -148,9 +149,9 @@ function RestaurantMenu() {
 
           {/* Status Filter */}
           <select className="input lg:w-48">
-            <option value="all">All Items</option>
-            <option value="available">Available</option>
-            <option value="unavailable">Unavailable</option>
+            <option value="all">Tất Cả Món</option>
+            <option value="available">Còn Hàng</option>
+            <option value="unavailable">Hết Hàng</option>
           </select>
         </div>
       </div>
@@ -194,12 +195,12 @@ function RestaurantMenu() {
               <Package className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No menu items found
+              Không tìm thấy món ăn
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || categoryFilter !== 'all'
-                ? 'No items match your current filters.'
-                : 'Start by adding your first menu item.'
+                ? 'Không có món nào phù hợp với bộ lọc.'
+                : 'Bắt đầu bằng cách thêm món ăn đầu tiên.'
               }
             </p>
             {searchQuery || categoryFilter !== 'all' ? (
@@ -210,14 +211,14 @@ function RestaurantMenu() {
                 }}
                 className="btn btn-primary"
               >
-                Clear Filters
+                Xóa Bộ Lọc
               </button>
             ) : (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="btn btn-primary"
               >
-                Add Menu Item
+                Thêm Món Ăn
               </button>
             )}
           </div>
@@ -263,7 +264,7 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
         {!item.available && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-              Unavailable
+              Hết Hàng
             </span>
           </div>
         )}
@@ -302,16 +303,16 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1">
               <Package className="h-3 w-3" />
-              <span>Weight: {formatWeight(item.weightGrams || 0)}</span>
+              <span>Khối lượng: {formatWeight(item.weightGrams || 0)}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="h-3 w-3" />
-              <span>Prep: {item.prepTime || 0}min</span>
+              <span>Chuẩn bị: {item.prepTime || 0}p</span>
             </div>
           </div>
           
           <div className="flex items-center space-x-1">
-            <span>Category: {item.category || 'Uncategorized'}</span>
+            <span>Danh mục: {item.category || 'Chưa phân loại'}</span>
           </div>
         </div>
 
@@ -338,7 +339,7 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
               ? 'bg-green-100 text-green-700' 
               : 'bg-red-100 text-red-700'
           }`}>
-            {item.available ? 'Available' : 'Unavailable'}
+            {item.available ? 'Còn Hàng' : 'Hết Hàng'}
           </span>
         </div>
       </div>
@@ -374,8 +375,8 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
   }
 
   const categories = [
-    'Appetizers', 'Main Course', 'Desserts', 'Beverages', 
-    'Fast Food', 'Healthy', 'Asian', 'Italian'
+    'Khai Vị', 'Món Chính', 'Tráng Miệng', 'Đồ Uống', 
+    'Đồ Ăn Nhanh', 'Ăn Kiêng', 'Món Á', 'Món Ý'
   ]
 
   return (
@@ -383,7 +384,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">
-            {item ? 'Edit Menu Item' : 'Add New Menu Item'}
+            {item ? 'Sửa Món Ăn' : 'Thêm Món Ăn Mới'}
           </h2>
           <button
             onClick={onClose}
@@ -398,7 +399,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
             {/* Basic Info */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Item Name *
+                Tên Món *
               </label>
               <input
                 type="text"
@@ -411,7 +412,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+                Mô Tả *
               </label>
               <textarea
                 value={formData.description}
@@ -424,7 +425,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price (VND) *
+                Giá (VND) *
               </label>
               <input
                 type="number"
@@ -438,14 +439,14 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Danh Mục
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => handleChange('category', e.target.value)}
                 className="input w-full"
               >
-                <option value="">Select Category</option>
+                <option value="">Chọn Danh Mục</option>
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
@@ -454,7 +455,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Weight (grams)
+                Khối Lượng (gram)
               </label>
               <input
                 type="number"
@@ -467,7 +468,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Prep Time (minutes)
+                Thời Gian Chuẩn Bị (phút)
               </label>
               <input
                 type="number"
@@ -480,7 +481,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Image URL
+                URL Hình Ảnh
               </label>
               <input
                 type="url"
@@ -501,7 +502,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="available" className="text-sm font-medium text-gray-700">
-                  Available for order
+                  Còn hàng để đặt
                 </label>
               </div>
             </div>
@@ -515,7 +516,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
               className="btn btn-outline"
               disabled={isLoading}
             >
-              Cancel
+              {t('Hủy')}
             </button>
             <button
               type="submit"
@@ -525,12 +526,12 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  {item ? 'Updating...' : 'Creating...'}
+                  {item ? 'Đang cập nhật...' : 'Đang tạo...'}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  {item ? 'Update Item' : 'Create Item'}
+                  {item ? 'Cập Nhật' : 'Tạo Món'}
                 </>
               )}
             </button>

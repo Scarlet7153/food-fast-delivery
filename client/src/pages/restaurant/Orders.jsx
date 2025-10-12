@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -34,10 +35,10 @@ function RestaurantOrders() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-orders'])
-        toast.success('Order status updated successfully')
+        toast.success('Cập nhật trạng thái đơn hàng thành công')
       },
       onError: (error) => {
-        toast.error('Failed to update order status')
+        toast.error('Không thể cập nhật trạng thái đơn hàng')
       }
     }
   )
@@ -45,21 +46,21 @@ function RestaurantOrders() {
   const orders = ordersData?.data?.orders || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Orders' },
-    { value: 'PLACED', label: 'Placed' },
-    { value: 'CONFIRMED', label: 'Confirmed' },
-    { value: 'COOKING', label: 'Cooking' },
-    { value: 'READY_FOR_PICKUP', label: 'Ready for Pickup' },
-    { value: 'IN_FLIGHT', label: 'In Flight' },
-    { value: 'DELIVERED', label: 'Delivered' },
-    { value: 'CANCELLED', label: 'Cancelled' },
+    { value: 'all', label: 'Tất Cả Đơn' },
+    { value: 'PLACED', label: 'Đã Đặt' },
+    { value: 'CONFIRMED', label: 'Đã Xác Nhận' },
+    { value: 'COOKING', label: 'Đang Nấu' },
+    { value: 'READY_FOR_PICKUP', label: 'Sẵn Sàng' },
+    { value: 'IN_FLIGHT', label: 'Đang Bay' },
+    { value: 'DELIVERED', label: 'Đã Giao' },
+    { value: 'CANCELLED', label: 'Đã Hủy' },
   ]
 
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'total', label: 'Highest Amount' },
-    { value: 'status', label: 'By Status' },
+    { value: 'newest', label: 'Mới Nhất' },
+    { value: 'oldest', label: 'Cũ Nhất' },
+    { value: 'total', label: 'Giá Trị Cao' },
+    { value: 'status', label: 'Theo Trạng Thái' },
   ]
 
   const getStatusIcon = (status) => {
@@ -101,13 +102,13 @@ function RestaurantOrders() {
   const getNextStatus = (currentStatus) => {
     switch (currentStatus) {
       case 'PLACED':
-        return { status: 'CONFIRMED', label: 'Confirm Order', icon: CheckCircle }
+        return { status: 'CONFIRMED', label: 'Xác Nhận Đơn', icon: CheckCircle }
       case 'CONFIRMED':
-        return { status: 'COOKING', label: 'Start Cooking', icon: Utensils }
+        return { status: 'COOKING', label: 'Bắt Đầu Nấu', icon: Utensils }
       case 'COOKING':
-        return { status: 'READY_FOR_PICKUP', label: 'Ready for Pickup', icon: Package }
+        return { status: 'READY_FOR_PICKUP', label: 'Sẵn Sàng', icon: Package }
       case 'READY_FOR_PICKUP':
-        return { status: 'IN_FLIGHT', label: 'Assign Drone', icon: Truck }
+        return { status: 'IN_FLIGHT', label: 'Giao Cho Drone', icon: Truck }
       default:
         return null
     }
@@ -117,9 +118,9 @@ function RestaurantOrders() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Orders Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đơn Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Manage incoming orders and track their status
+          Quản lý đơn hàng đến và theo dõi trạng thái
         </p>
       </div>
 
@@ -131,7 +132,7 @@ function RestaurantOrders() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders by order number or customer name..."
+              placeholder="Tìm kiếm theo mã đơn hoặc tên khách hàng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -170,7 +171,7 @@ function RestaurantOrders() {
             className="btn btn-outline flex items-center space-x-2"
           >
             <Clock className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>Làm Mới</span>
           </button>
         </div>
       </div>
@@ -215,12 +216,12 @@ function RestaurantOrders() {
               <Package className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No orders found
+              Không tìm thấy đơn hàng
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'No orders match your current filters.'
-                : 'No orders have been placed yet.'
+                ? 'Không có đơn hàng phù hợp với bộ lọc.'
+                : 'Chưa có đơn hàng nào được đặt.'
               }
             </p>
             {searchQuery || statusFilter !== 'all' ? (
@@ -231,7 +232,7 @@ function RestaurantOrders() {
                 }}
                 className="btn btn-primary"
               >
-                Clear Filters
+                Xóa Bộ Lọc
               </button>
             ) : null}
           </div>
@@ -273,10 +274,10 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="font-semibold text-gray-900">
-                  Order #{order.orderNumber}
+                  Đơn #{order.orderNumber}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Customer: {order.customer?.name || 'Unknown'}
+                  Khách hàng: {order.customer?.name || 'Không rõ'}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -289,7 +290,7 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
             {/* Order Details */}
             <div className="space-y-1 text-sm text-gray-600 mb-3">
               <div className="flex items-center space-x-4">
-                <span>{order.items.length} items</span>
+                <span>{order.items.length} món</span>
                 <span>•</span>
                 <span>{formatCurrency(order.totalAmount)}</span>
                 <span>•</span>
@@ -319,7 +320,7 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
               ))}
               {order.items.length > 3 && (
                 <span className="text-xs text-gray-500">
-                  +{order.items.length - 3} more
+                  +{order.items.length - 3} món nữa
                 </span>
               )}
             </div>
@@ -344,7 +345,7 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
         <div className="flex items-center space-x-2 ml-4">
           <button className="btn btn-outline btn-sm flex items-center space-x-1">
             <Eye className="h-4 w-4" />
-            <span>View</span>
+            <span>Xem</span>
           </button>
 
           {canUpdate && nextStatus && (
@@ -370,14 +371,14 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
           {order.status === 'PLACED' && (
             <button
               onClick={() => {
-                const reason = window.prompt('Cancellation reason:')
+                const reason = window.prompt('Lý do hủy:')
                 if (reason) {
                   onStatusUpdate(order._id, 'CANCELLED', reason)
                 }
               }}
               className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
             >
-              Cancel
+              Hủy
             </button>
           )}
         </div>
@@ -387,7 +388,7 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
       {order.specialInstructions && (
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-700">
-            <strong>Special Instructions:</strong> {order.specialInstructions}
+            <strong>Yêu Cầu Đặc Biệt:</strong> {order.specialInstructions}
           </p>
         </div>
       )}
@@ -396,14 +397,14 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
       {showNoteInput && (
         <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Add Note (Optional)
+            Thêm Ghi Chú (Tùy chọn)
           </label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="input w-full"
             rows={2}
-            placeholder="Add any notes about this order..."
+            placeholder="Thêm ghi chú về đơn hàng này..."
           />
         </div>
       )}

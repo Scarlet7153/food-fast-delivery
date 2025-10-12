@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDistance, formatTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function RestaurantDetail() {
   const { id } = useParams()
@@ -49,13 +50,13 @@ function RestaurantDetail() {
 
   const handleAddToCart = (item) => {
     if (!isSameRestaurant && restaurantId) {
-      if (window.confirm('You have items from another restaurant in your cart. Do you want to clear it and add items from this restaurant?')) {
+      if (window.confirm('Bạn có món từ nhà hàng khác trong giỏ. Bạn có muốn xóa và thêm món từ nhà hàng này?')) {
         addItem(item, currentRestaurant)
-        toast.success(`${item.name} added to cart`)
+        toast.success(`Đã thêm ${item.name} vào giỏ`)
       }
     } else {
       addItem(item, currentRestaurant)
-      toast.success(`${item.name} added to cart`)
+      toast.success(`Đã thêm ${item.name} vào giỏ`)
     }
   }
 
@@ -81,13 +82,13 @@ function RestaurantDetail() {
   if (!currentRestaurant) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Restaurant not found</h2>
-        <p className="text-gray-600 mb-4">The restaurant you're looking for doesn't exist.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy nhà hàng</h2>
+        <p className="text-gray-600 mb-4">Nhà hàng bạn tìm kiếm không tồn tại.</p>
         <button
           onClick={() => navigate('/customer/restaurants')}
           className="btn btn-primary"
         >
-          Browse Restaurants
+          Xem Nhà Hàng
         </button>
       </div>
     )
@@ -156,15 +157,15 @@ function RestaurantDetail() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="flex items-center space-x-2 text-gray-600">
               <MapPin className="h-5 w-5" />
-              <span>{formatDistance(currentRestaurant.distance || 1500)} away</span>
+              <span>Cách {formatDistance(currentRestaurant.distance || 1500)}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
               <Clock className="h-5 w-5" />
-              <span>{estimatedTime} min delivery</span>
+              <span>Giao trong {estimatedTime} phút</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
               <Phone className="h-5 w-5" />
-              <span>{currentRestaurant.phone || 'No phone'}</span>
+              <span>{currentRestaurant.phone || 'Không có SĐT'}</span>
             </div>
           </div>
 
@@ -174,15 +175,15 @@ function RestaurantDetail() {
               <div>
                 <h3 className="font-medium text-primary-900">Có Giao Hàng Bằng Drone</h3>
                 <p className="text-sm text-primary-700">
-                  Delivery fee: {formatCurrency(deliveryFee)}
+                  Phí giao hàng: {formatCurrency(deliveryFee)}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-primary-700">
-                  Estimated delivery: {estimatedTime} minutes
+                  Thời gian dự kiến: {estimatedTime} phút
                 </p>
                 <p className="text-xs text-primary-600">
-                  Contactless delivery
+                  Giao không tiếp xúc
                 </p>
               </div>
             </div>
@@ -222,7 +223,7 @@ function RestaurantDetail() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              All
+              Tất Cả
             </button>
             {categories.filter(cat => cat !== 'all').map(category => (
               <button
@@ -268,10 +269,10 @@ function RestaurantDetail() {
           ) : (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No items found
+                Không tìm thấy món
               </h3>
               <p className="text-gray-500">
-                No menu items available in this category.
+                Không có món ăn trong danh mục này.
               </p>
             </div>
           )}
@@ -313,7 +314,7 @@ function MenuItemGridCard({ item, onAddToCart }) {
 
         {item.weightGrams && (
           <p className="text-xs text-gray-500 mb-3">
-            Weight: {item.weightGrams}g
+            Khối lượng: {item.weightGrams}g
           </p>
         )}
 
@@ -378,8 +379,8 @@ function MenuItemListCard({ item, onAddToCart }) {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 text-xs text-gray-500">
-            {item.weightGrams && <span>Weight: {item.weightGrams}g</span>}
-            {item.prepTime && <span>Prep: {item.prepTime}min</span>}
+            {item.weightGrams && <span>Khối lượng: {item.weightGrams}g</span>}
+            {item.prepTime && <span>Chuẩn bị: {item.prepTime}p</span>}
           </div>
 
           {quantity > 0 ? (
@@ -404,7 +405,7 @@ function MenuItemListCard({ item, onAddToCart }) {
               className="btn btn-primary btn-sm flex items-center space-x-1"
             >
               <Plus className="h-4 w-4" />
-              <span>Add</span>
+              <span>Thêm</span>
             </button>
           )}
         </div>
@@ -424,10 +425,10 @@ function CartSummary({ onGoToCart }) {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium text-gray-900">
-            {getTotalItems()} items in cart
+            {getTotalItems()} món trong giỏ
           </p>
           <p className="text-sm text-gray-600">
-            Total: {formatCurrency(getTotal())}
+            Tổng: {formatCurrency(getTotal())}
           </p>
         </div>
         <button
@@ -435,7 +436,7 @@ function CartSummary({ onGoToCart }) {
           className="btn btn-primary flex items-center space-x-2"
         >
           <ShoppingCart className="h-4 w-4" />
-          <span>View Cart</span>
+          <span>Xem Giỏ</span>
         </button>
       </div>
     </div>

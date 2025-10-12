@@ -6,6 +6,7 @@ import {
   CheckCircle, XCircle, AlertTriangle, Eye, Settings
 } from 'lucide-react'
 import { formatDateTime, formatDroneStatus, formatWeight, formatDistance } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 
 function AdminDrones() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,12 +32,12 @@ function AdminDrones() {
   const restaurants = dronesData?.data?.restaurants || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'IDLE', label: 'Idle' },
-    { value: 'CHARGING', label: 'Charging' },
-    { value: 'MAINTENANCE', label: 'Maintenance' },
+    { value: 'all', label: 'Tất Cả Trạng Thái' },
+    { value: 'IDLE', label: 'Rảnh Rỗi' },
+    { value: 'CHARGING', label: 'Đang Sạc' },
+    { value: 'MAINTENANCE', label: 'Bảo Trì' },
     { value: 'IN_FLIGHT', label: 'Đang giao' },
-    { value: 'ERROR', label: 'Error' },
+    { value: 'ERROR', label: 'Lỗi' },
   ]
 
   const handleViewDrone = (drone) => {
@@ -90,7 +91,7 @@ function AdminDrones() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đội Drone</h1>
         <p className="text-gray-600 mt-1">
-          Monitor and manage all drones across the platform
+          Theo dõi và quản lý tất cả drone trên nền tảng
         </p>
       </div>
 
@@ -102,7 +103,7 @@ function AdminDrones() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search drones by name, model, or serial number..."
+              placeholder="Tìm kiếm drone theo tên, model hoặc số serial..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -128,7 +129,7 @@ function AdminDrones() {
             onChange={(e) => setRestaurantFilter(e.target.value)}
             className="input lg:w-48"
           >
-            <option value="all">All Restaurants</option>
+            <option value="all">Tất Cả Nhà Hàng</option>
             {restaurants.map(restaurant => (
               <option key={restaurant._id} value={restaurant._id}>
                 {restaurant.name}
@@ -167,12 +168,12 @@ function AdminDrones() {
             <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
               <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No drones found
+                Không tìm thấy drone
               </h3>
               <p className="text-gray-500">
                 {searchQuery || statusFilter !== 'all' || restaurantFilter !== 'all'
-                  ? 'No drones match your current filters.'
-                  : 'No drones have been registered yet.'
+                  ? 'Không có drone nào phù hợp với bộ lọc.'
+                  : 'Chưa có drone nào được đăng ký.'
                 }
               </p>
             </div>
@@ -227,12 +228,12 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">Max Payload</span>
+          <span className="text-gray-600">Tải Trọng Tối Đa</span>
           <span className="font-medium">{formatWeight(drone.maxPayloadGrams)}</span>
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">Max Range</span>
+          <span className="text-gray-600">Tầm Bay Tối Đa</span>
           <span className="font-medium">{formatDistance(drone.maxRangeMeters)}</span>
         </div>
       </div>
@@ -242,7 +243,7 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-1">
             <Activity className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Active Mission</span>
+            <span className="text-sm font-medium text-blue-900">Nhiệm Vụ Đang Thực Hiện</span>
           </div>
           <p className="text-sm text-blue-700">
             Order #{drone.currentMission.orderNumber}
@@ -263,7 +264,7 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">
-          Last updated: {formatDateTime(drone.lastUpdatedAt)}
+          Cập nhật lần cuối: {formatDateTime(drone.lastUpdatedAt)}
         </div>
         <button
           onClick={() => onView(drone)}
@@ -284,7 +285,7 @@ function DroneDetailModal({ drone, onClose }) {
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Drone Details</h2>
+            <h2 className="text-xl font-semibold">Chi Tiết Drone</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -310,22 +311,22 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Basic Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-lg font-medium mb-4">Drone Specifications</h4>
+              <h4 className="text-lg font-medium mb-4">Thông Số Kỹ Thuật Drone</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Max Payload</span>
+                  <span className="text-gray-600">Tải Trọng Tối Đa</span>
                   <span className="font-medium">{formatWeight(drone.maxPayloadGrams)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Max Range</span>
+                  <span className="text-gray-600">Tầm Bay Tối Đa</span>
                   <span className="font-medium">{formatDistance(drone.maxRangeMeters)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Max Flight Time</span>
-                  <span className="font-medium">{drone.maxFlightTimeMinutes} minutes</span>
+                  <span className="text-gray-600">Thời Gian Bay Tối Đa</span>
+                  <span className="font-medium">{drone.maxFlightTimeMinutes} phút</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Current Battery</span>
+                  <span className="text-gray-600">Pin Hiện Tại</span>
                   <span className={`font-medium ${
                     drone.batteryLevel > 70 ? 'text-green-600' :
                     drone.batteryLevel > 30 ? 'text-yellow-600' : 'text-red-600'
@@ -337,10 +338,10 @@ function DroneDetailModal({ drone, onClose }) {
             </div>
 
             <div>
-              <h4 className="text-lg font-medium mb-4">Status Information</h4>
+              <h4 className="text-lg font-medium mb-4">Thông Tin Trạng Thái</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Current Status</span>
+                  <span className="text-gray-600">Trạng Thái Hiện Tại</span>
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {formatDroneStatus(drone.status)}
                   </span>
@@ -350,11 +351,11 @@ function DroneDetailModal({ drone, onClose }) {
                   <span className="font-medium">{drone.restaurant?.name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Registration Date</span>
+                  <span className="text-gray-600">Ngày Đăng Ký</span>
                   <span className="font-medium">{formatDateTime(drone.createdAt)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Last Updated</span>
+                  <span className="text-gray-600">Cập Nhật Lần Cuối</span>
                   <span className="font-medium">{formatDateTime(drone.lastUpdatedAt)}</span>
                 </div>
               </div>
@@ -364,19 +365,19 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Current Location */}
           {drone.currentLocation && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Current Location</h4>
+              <h4 className="text-lg font-medium mb-4">Vị Trí Hiện Tại</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-gray-400" />
                   <div>
                     <p className="text-gray-900">
-                      Latitude: {drone.currentLocation.lat.toFixed(6)}
+                      Vĩ độ: {drone.currentLocation.lat.toFixed(6)}
                     </p>
                     <p className="text-gray-900">
-                      Longitude: {drone.currentLocation.lng.toFixed(6)}
+                      Kinh độ: {drone.currentLocation.lng.toFixed(6)}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Last updated: {formatDateTime(drone.currentLocation.timestamp)}
+                      Cập nhật lần cuối: {formatDateTime(drone.currentLocation.timestamp)}
                     </p>
                   </div>
                 </div>
@@ -387,30 +388,30 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Current Mission */}
           {drone.currentMission && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Current Mission</h4>
+              <h4 className="text-lg font-medium mb-4">Nhiệm Vụ Hiện Tại</h4>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mission ID
+                      ID Nhiệm Vụ
                     </label>
                     <p className="text-gray-900">#{drone.currentMission.missionNumber}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Order Number
+                      Số Đơn Hàng
                     </label>
                     <p className="text-gray-900">#{drone.currentMission.orderNumber}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mission Status
+                      Trạng Thái Nhiệm Vụ
                     </label>
                     <p className="text-gray-900">{drone.currentMission.status}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Started At
+                      Bắt Đầu Lúc
                     </label>
                     <p className="text-gray-900">{formatDateTime(drone.currentMission.startedAt)}</p>
                   </div>
@@ -421,13 +422,13 @@ function DroneDetailModal({ drone, onClose }) {
 
           {/* Mission History */}
           <div>
-            <h4 className="text-lg font-medium mb-4">Recent Missions</h4>
+            <h4 className="text-lg font-medium mb-4">Nhiệm Vụ Gần Đây</h4>
             <div className="space-y-3">
               {drone.recentMissions?.length > 0 ? (
                 drone.recentMissions.map((mission, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900">Mission #{mission.missionNumber}</p>
+                      <p className="font-medium text-gray-900">Nhiệm vụ #{mission.missionNumber}</p>
                       <p className="text-sm text-gray-600">
                         Order #{mission.orderNumber} • {formatDateTime(mission.startedAt)}
                       </p>
@@ -444,7 +445,7 @@ function DroneDetailModal({ drone, onClose }) {
               ) : (
                 <div className="text-center py-8">
                   <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No recent missions</p>
+                  <p className="text-gray-500">Không có nhiệm vụ gần đây</p>
                 </div>
               )}
             </div>
@@ -453,7 +454,7 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Notes */}
           {drone.notes && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Ghi chú</h4>
+              <h4 className="text-lg font-medium mb-4">Ghi Chú</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-900">{drone.notes}</p>
               </div>

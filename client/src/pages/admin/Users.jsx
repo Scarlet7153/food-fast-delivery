@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { formatDateTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -36,11 +37,11 @@ function AdminUsers() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['admin-users'])
-        toast.success('User status updated successfully')
+        toast.success('Cập nhật trạng thái người dùng thành công')
         setShowUserModal(false)
       },
       onError: (error) => {
-        toast.error('Failed to update user status')
+        toast.error('Không thể cập nhật trạng thái người dùng')
       }
     }
   )
@@ -48,17 +49,17 @@ function AdminUsers() {
   const users = usersData?.data?.users || []
 
   const roleOptions = [
-    { value: 'all', label: 'All Roles' },
-    { value: 'customer', label: 'Customers' },
-    { value: 'restaurant', label: 'Nhà hàng' },
-    { value: 'admin', label: 'Administrators' },
+    { value: 'all', label: 'Tất Cả Vai Trò' },
+    { value: 'customer', label: 'Khách Hàng' },
+    { value: 'restaurant', label: 'Nhà Hàng' },
+    { value: 'admin', label: 'Quản Trị Viên' },
   ]
 
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Hoạt động' },
-    { value: 'suspended', label: 'Suspended' },
-    { value: 'pending', label: 'Đang chờ' },
+    { value: 'all', label: 'Tất Cả Trạng Thái' },
+    { value: 'active', label: 'Hoạt Động' },
+    { value: 'suspended', label: 'Bị Khóa' },
+    { value: 'pending', label: 'Chờ Xử Lý' },
   ]
 
   const handleViewUser = (user) => {
@@ -128,7 +129,7 @@ function AdminUsers() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Quản Lý Người Dùng</h1>
         <p className="text-gray-600 mt-1">
-          Manage platform users and their access
+          Quản lý người dùng nền tảng và quyền truy cập
         </p>
       </div>
 
@@ -140,7 +141,7 @@ function AdminUsers() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users by name, email, or ID..."
+              placeholder="Tìm kiếm người dùng theo tên, email hoặc ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -182,22 +183,22 @@ function AdminUsers() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User
+                  Người Dùng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
+                  Vai Trò
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng Thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Joined
+                  Tham Gia
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Active
+                  Hoạt Động Cuối
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành Động
                 </th>
               </tr>
             </thead>
@@ -274,7 +275,7 @@ function AdminUsers() {
                       {formatDateTime(user.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.lastActiveAt ? formatDateTime(user.lastActiveAt) : 'Never'}
+                      {user.lastActiveAt ? formatDateTime(user.lastActiveAt) : 'Chưa bao giờ'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -291,12 +292,12 @@ function AdminUsers() {
                   <td colSpan="6" className="px-6 py-12 text-center">
                     <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      No users found
+                      Không tìm thấy người dùng
                     </h3>
                     <p className="text-gray-500">
                       {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                        ? 'No users match your current filters.'
-                        : 'No users have been registered yet.'
+                        ? 'Không có người dùng nào phù hợp với bộ lọc.'
+                        : 'Chưa có người dùng nào được đăng ký.'
                       }
                     </p>
                   </td>
@@ -381,7 +382,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
       <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">User Details</h2>
+            <h2 className="text-xl font-semibold">Chi Tiết Người Dùng</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -394,11 +395,11 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
         <div className="p-6 space-y-6">
           {/* User Information */}
           <div>
-            <h3 className="text-lg font-medium mb-4">User Information</h3>
+            <h3 className="text-lg font-medium mb-4">Thông Tin Người Dùng</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  Họ Và Tên
                 </label>
                 <p className="text-gray-900">{user.name}</p>
               </div>
@@ -410,13 +411,13 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
+                  Số Điện Thoại
                 </label>
-                <p className="text-gray-900">{user.phone || 'Not provided'}</p>
+                <p className="text-gray-900">{user.phone || 'Chưa cung cấp'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
+                  Vai Trò
                 </label>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
                   {user.role}
@@ -424,7 +425,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
+                  Trạng Thái
                 </label>
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(user.status)}
@@ -435,7 +436,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Member Since
+                  Thành Viên Từ
                 </label>
                 <p className="text-gray-900">{formatDateTime(user.createdAt)}</p>
               </div>
@@ -445,17 +446,17 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
           {/* Restaurant Information (if applicable) */}
           {user.role === 'restaurant' && user.restaurant && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Restaurant Information</h3>
+              <h3 className="text-lg font-medium mb-4">Thông Tin Nhà Hàng</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Restaurant Name
+                    Tên Nhà Hàng
                   </label>
                   <p className="text-gray-900">{user.restaurant.name}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Restaurant Status
+                    Trạng Thái Nhà Hàng
                   </label>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     user.restaurant.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -471,22 +472,22 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
 
           {/* Account Statistics */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Account Statistics</h3>
+            <h3 className="text-lg font-medium mb-4">Thống Kê Tài Khoản</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Total Orders</p>
+                <p className="text-sm text-gray-600">Tổng Đơn Hàng</p>
                 <p className="text-2xl font-bold text-gray-900">{user.orderCount || 0}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Total Spent</p>
+                <p className="text-sm text-gray-600">Tổng Chi Tiêu</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {user.totalSpent ? `$${user.totalSpent.toFixed(2)}` : '$0.00'}
                 </p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Hoạt động cuối</p>
+                <p className="text-sm text-gray-600">Hoạt Động Cuối</p>
                 <p className="text-sm font-medium text-gray-900">
-                  {user.lastActiveAt ? formatDateTime(user.lastActiveAt) : 'Never'}
+                  {user.lastActiveAt ? formatDateTime(user.lastActiveAt) : 'Chưa bao giờ'}
                 </p>
               </div>
             </div>
@@ -495,36 +496,36 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
           {/* Status Management */}
           {user.status !== 'suspended' && (
             <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-medium mb-4">Manage User Status</h3>
+              <h3 className="text-lg font-medium mb-4">Quản Lý Trạng Thái Người Dùng</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Action
+                    Hành Động
                   </label>
                   <select
                     value={action}
                     onChange={(e) => setAction(e.target.value)}
                     className="input w-full"
                   >
-                    <option value="">Select action</option>
-                    <option value="suspend">Suspend User</option>
-                    <option value="activate">Activate User</option>
+                    <option value="">Chọn hành động</option>
+                    <option value="suspend">Khóa Người Dùng</option>
+                    <option value="activate">Kích Hoạt Người Dùng</option>
                     {user.role === 'restaurant' && (
-                      <option value="approve_restaurant">Approve Restaurant</option>
+                      <option value="approve_restaurant">Duyệt Nhà Hàng</option>
                     )}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason (Optional)
+                    Lý Do (Tùy chọn)
                   </label>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="input w-full"
                     rows={3}
-                    placeholder="Enter reason for this action..."
+                    placeholder="Nhập lý do cho hành động này..."
                   />
                 </div>
 
@@ -535,14 +536,14 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
                     className="btn btn-outline"
                     disabled={isUpdating}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={isUpdating || !action}
                   >
-                    {isUpdating ? 'Updating...' : 'Update Status'}
+                    {isUpdating ? 'Đang cập nhật...' : 'Cập Nhật Trạng Thái'}
                   </button>
                 </div>
               </div>

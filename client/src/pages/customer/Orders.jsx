@@ -7,6 +7,8 @@ import {
   Truck, CheckCircle, XCircle, AlertCircle
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
+import toast from 'react-hot-toast'
+import { t } from '../../utils/translations'
 
 function Orders() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -30,7 +32,7 @@ function Orders() {
   const orders = ordersData?.data?.orders || []
 
   const statusOptions = [
-    { value: 'all', label: 'All Orders' },
+    { value: 'all', label: 'Tất Cả Đơn' },
     { value: 'PLACED', label: 'Đã đặt' },
     { value: 'CONFIRMED', label: 'Đã xác nhận' },
     { value: 'COOKING', label: 'Đang nấu' },
@@ -41,19 +43,19 @@ function Orders() {
   ]
 
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'total', label: 'Highest Amount' },
-    { value: 'status', label: 'By Status' },
+    { value: 'newest', label: 'Mới Nhất' },
+    { value: 'oldest', label: 'Cũ Nhất' },
+    { value: 'total', label: 'Số Tiền Cao' },
+    { value: 'status', label: 'Theo Trạng Thái' },
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Đơn Hàng Của Tôi</h1>
         <p className="text-gray-600 mt-1">
-          Track your orders and delivery status
+          Theo dõi đơn hàng và trạng thái giao hàng
         </p>
       </div>
 
@@ -65,7 +67,7 @@ function Orders() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders by restaurant name or order ID..."
+              placeholder="Tìm kiếm đơn hàng theo tên nhà hàng hoặc mã đơn..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -104,7 +106,7 @@ function Orders() {
             className="btn btn-outline flex items-center space-x-2"
           >
             <Clock className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>Tải Lại</span>
           </button>
         </div>
       </div>
@@ -141,12 +143,12 @@ function Orders() {
               <Truck className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No orders found
+              Không tìm thấy đơn hàng
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'No orders match your current filters.'
-                : 'You haven\'t placed any orders yet.'
+                ? 'Không có đơn hàng nào phù hợp với bộ lọc.'
+                : 'Bạn chưa đặt đơn hàng nào.'
               }
             </p>
             {searchQuery || statusFilter !== 'all' ? (
@@ -157,11 +159,11 @@ function Orders() {
                 }}
                 className="btn btn-primary"
               >
-                Clear Filters
+                Xóa Bộ Lọc
               </button>
             ) : (
               <Link to="/customer/restaurants" className="btn btn-primary">
-                Browse Restaurants
+                Xem Nhà Hàng
               </Link>
             )}
           </div>
@@ -229,7 +231,7 @@ function OrderCard({ order }) {
                   {order.restaurant?.name}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Order #{order.orderNumber}
+                  Đơn #{order.orderNumber}
                 </p>
               </div>
               <div className="flex items-center space-x-2">
@@ -243,7 +245,7 @@ function OrderCard({ order }) {
             {/* Order Details */}
             <div className="space-y-1 text-sm text-gray-600 mb-3">
               <div className="flex items-center space-x-4">
-                <span>{order.items.length} items</span>
+                <span>{order.items.length} món</span>
                 <span>•</span>
                 <span>{formatCurrency(order.totalAmount)}</span>
                 <span>•</span>
@@ -273,7 +275,7 @@ function OrderCard({ order }) {
               ))}
               {order.items.length > 3 && (
                 <span className="text-xs text-gray-500">
-                  +{order.items.length - 3} more
+                  +{order.items.length - 3} món khác
                 </span>
               )}
             </div>
@@ -309,7 +311,7 @@ function OrderCard({ order }) {
               onClick={() => handleCancelOrder(order._id)}
               className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
             >
-              Cancel
+              Hủy
             </button>
           )}
 
@@ -319,7 +321,7 @@ function OrderCard({ order }) {
               className="btn btn-primary btn-sm flex items-center space-x-1"
             >
               <Star className="h-4 w-4" />
-              <span>Rate</span>
+              <span>Đánh Giá</span>
             </button>
           )}
         </div>
@@ -330,28 +332,28 @@ function OrderCard({ order }) {
 
 // Helper functions
 async function handleCancelOrder(orderId) {
-  if (window.confirm('Are you sure you want to cancel this order?')) {
+  if (window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
     try {
       await orderService.cancelOrder(orderId, 'Cancelled by customer')
-      toast.success('Order cancelled successfully')
+      toast.success('Hủy đơn hàng thành công')
       // Refresh orders list
       window.location.reload()
     } catch (error) {
-      toast.error('Failed to cancel order')
+      toast.error('Không thể hủy đơn hàng')
     }
   }
 }
 
 async function handleRateOrder(orderId) {
-  const rating = window.prompt('Rate this order (1-5 stars):')
+  const rating = window.prompt('Đánh giá đơn hàng này (1-5 sao):')
   if (rating && rating >= 1 && rating <= 5) {
     try {
       await orderService.rateOrder(orderId, { rating: parseInt(rating) })
-      toast.success('Thank you for your rating!')
+      toast.success('Cảm ơn bạn đã đánh giá!')
       // Refresh orders list
       window.location.reload()
     } catch (error) {
-      toast.error('Failed to submit rating')
+      toast.error('Không thể gửi đánh giá')
     }
   }
 }
