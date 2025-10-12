@@ -2,7 +2,7 @@
 export const CLOUDINARY_CONFIG = {
   // Get from environment variables
   cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
-  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'food_delivery',
+  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'food-delivery',
   
   // Upload endpoint
   get uploadUrl() {
