@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { 
   Save, Edit, X, MapPin, Phone, Clock, DollarSign,
-  Image, Truck, Settings as SettingsIcon, User
+  Image, Truck, Info, User
 } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -170,7 +170,7 @@ function RestaurantSettings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cài Đặt Nhà Hàng</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Thông Tin Nhà Hàng</h1>
           <p className="text-gray-600 mt-1">
             Quản lý thông tin nhà hàng và cài đặt giao hàng
           </p>
@@ -202,7 +202,7 @@ function RestaurantSettings() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200 shadow-sm hover:shadow-md"
             >
               <Edit className="h-4 w-4" />
-              <span>Sửa Cài Đặt</span>
+              <span>Sửa Thông Tin</span>
             </button>
           )}
         </div>

@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
-  BarChart3, Users, Building2, ShoppingBag, Zap, MapPin, 
+  BarChart3, Users, Building2, ShoppingBag, Plane, MapPin, 
   Settings, User, Bell, LogOut, Shield, Activity
 } from 'lucide-react'
 
@@ -18,7 +18,7 @@ function AdminLayout() {
     { name: 'Người Dùng', href: '/admin/users', icon: Users },
     { name: 'Nhà Hàng', href: '/admin/restaurants', icon: Building2 },
     { name: 'Đơn Hàng', href: '/admin/orders', icon: ShoppingBag },
-    { name: 'Drone', href: '/admin/drones', icon: Zap },
+    { name: 'Drone', href: '/admin/drones', icon: Plane },
     { name: 'Giao Hàng', href: '/admin/missions', icon: MapPin },
     { name: 'Cài Đặt', href: '/admin/settings', icon: Settings },
   ]

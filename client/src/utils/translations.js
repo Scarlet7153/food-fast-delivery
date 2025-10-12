@@ -30,7 +30,7 @@ export const translations = {
   'Thực Đơn': 'Thực Đơn',
   'Drone': 'Drone',
   'Giao Hàng': 'Giao Hàng',
-  'Cài Đặt': 'Cài Đặt',
+  'Thông Tin': 'Thông Tin',
   
   // Admin Interface
   'Quản Lý Người Dùng': 'Quản Lý Người Dùng',

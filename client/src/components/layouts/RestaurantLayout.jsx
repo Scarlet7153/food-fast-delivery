@@ -2,8 +2,8 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
-  BarChart3, ShoppingBag, Utensils, Zap, MapPin, 
-  Settings, User, Bell, LogOut
+  BarChart3, ShoppingBag, Utensils, Plane, MapPin, 
+  Info, User, Bell, LogOut
 } from 'lucide-react'
 
 function RestaurantLayout() {
@@ -17,9 +17,9 @@ function RestaurantLayout() {
     { name: 'Bảng Điều Khiển', href: '/restaurant', icon: BarChart3 },
     { name: 'Đơn Hàng', href: '/restaurant/orders', icon: ShoppingBag },
     { name: 'Thực Đơn', href: '/restaurant/menu', icon: Utensils },
-    { name: 'Drone', href: '/restaurant/drones', icon: Zap },
+    { name: 'Drone', href: '/restaurant/drones', icon: Plane },
     { name: 'Giao Hàng', href: '/restaurant/missions', icon: MapPin },
-    { name: 'Cài Đặt', href: '/restaurant/settings', icon: Settings },
+    { name: 'Thông Tin', href: '/restaurant/settings', icon: Info },
   ]
 
   return (
