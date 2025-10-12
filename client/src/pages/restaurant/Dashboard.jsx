@@ -4,7 +4,7 @@ import {
   ShoppingBag, DollarSign, Clock, Users, TrendingUp,
   Truck, AlertTriangle, CheckCircle, Package
 } from 'lucide-react'
-import { formatCurrency, formatDateTime } from '../../utils/formatters'
+import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import { t } from '../../utils/translations'
 
 function RestaurantDashboard() {
@@ -98,10 +98,16 @@ function RestaurantDashboard() {
               <p className="text-2xl font-bold text-gray-900">
                 {stats.totalOrders || 0}
               </p>
-              <p className="text-sm text-green-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +12% so với tuần trước
-              </p>
+              {stats.totalOrders > 0 ? (
+                <p className="text-sm text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +12% so với tuần trước
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 mt-1">
+                  Chưa có dữ liệu
+                </p>
+              )}
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <ShoppingBag className="h-6 w-6 text-blue-600" />
@@ -116,10 +122,16 @@ function RestaurantDashboard() {
               <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(stats.todayRevenue || 0)}
               </p>
-              <p className="text-sm text-green-600 flex items-center mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +8% so với hôm qua
-              </p>
+              {stats.todayRevenue > 0 ? (
+                <p className="text-sm text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +8% so với hôm qua
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 mt-1">
+                  Chưa có doanh thu
+                </p>
+              )}
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <DollarSign className="h-6 w-6 text-green-600" />
@@ -136,7 +148,7 @@ function RestaurantDashboard() {
               </p>
               <p className="text-sm text-blue-600 flex items-center mt-1">
                 <Clock className="h-3 w-3 mr-1" />
-                Đang tiến hành
+                {stats.activeOrders > 0 ? 'Đang tiến hành' : 'Không có đơn xử lý'}
               </p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -150,7 +162,7 @@ function RestaurantDashboard() {
             <div>
               <p className="text-sm font-medium text-gray-600">Đánh Giá TB</p>
               <p className="text-2xl font-bold text-gray-900">
-                {stats.averageRating?.toFixed(1) || '4.5'}
+                {stats.totalReviews > 0 ? (stats.averageRating?.toFixed(1) || '0.0') : '--'}
               </p>
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <Users className="h-3 w-3 mr-1" />
@@ -195,8 +207,8 @@ function RestaurantDashboard() {
               <div key={item.status} className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                  <span className="text-sm font-medium text-gray-700 capitalize">
-                    {item.status.toLowerCase().replace('_', ' ')}
+                  <span className="text-sm font-medium text-gray-700">
+                    {formatOrderStatus(item.status)}
                   </span>
                 </div>
                 <span className="text-sm font-semibold text-gray-900">
@@ -271,83 +283,6 @@ function RestaurantDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Thao Tác Nhanh
-          </h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">Thêm Món Ăn</span>
-              <span className="text-gray-400">→</span>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">Quản Lý Drone</span>
-              <span className="text-gray-400">→</span>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-sm font-medium text-gray-700">Xem Báo Cáo</span>
-              <span className="text-gray-400">→</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Trạng Thái Hệ Thống
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Trạng Thái API</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Hoạt Động</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Mạng Drone</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Đã Kết Nối</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Cổng Thanh Toán</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">Hoạt Động</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Tổng Kết Hôm Nay
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Đơn Hoàn Thành</span>
-              <span className="text-sm font-medium text-gray-900">
-                {stats.todayCompleted || 0}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Thời Gian Chuẩn Bị TB</span>
-              <span className="text-sm font-medium text-gray-900">
-                {stats.averagePrepTime || 0} phút
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Tỉ Lệ Thành Công</span>
-              <span className="text-sm font-medium text-green-600">
-                {(stats.successRate || 0).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

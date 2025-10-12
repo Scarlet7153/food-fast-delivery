@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
+import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { ShoppingCart, User, MapPin, Search } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 
@@ -8,6 +9,9 @@ function CustomerLayout() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { getTotalItems, getTotal } = useCartStore()
+  
+  // Use auth guard to check token expiration
+  useAuthGuard()
 
   const navigation = [
     { name: 'Trang Chủ', href: '/customer', icon: MapPin },

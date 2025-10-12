@@ -149,7 +149,7 @@ function RestaurantDrones() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="btn btn-primary flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200 shadow-sm hover:shadow-md"
         >
           <Plus className="h-4 w-4" />
           <span>Đăng Ký Drone</span>
@@ -189,10 +189,10 @@ function RestaurantDrones() {
           {/* Refresh Button */}
           <button
             onClick={() => refetch()}
-            className="btn btn-outline flex items-center space-x-2"
+            className="bg-gray-100 hover:bg-gray-200 text-blue-600 border border-gray-300 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200"
           >
             <Clock className="h-4 w-4" />
-            <span>Tải Lại</span>
+            <span>Làm Mới</span>
           </button>
         </div>
       </div>
@@ -260,7 +260,7 @@ function RestaurantDrones() {
             ) : (
               <button
                 onClick={() => setShowAddModal(true)}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
               >
                 Đăng Ký Drone
               </button>
@@ -369,7 +369,7 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         {drone.currentMission && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900">Nhiệm Vụ Đang Thực Hiện</span>
+              <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
               <span className="text-xs text-blue-700">
                 #{drone.currentMission.orderNumber}
               </span>

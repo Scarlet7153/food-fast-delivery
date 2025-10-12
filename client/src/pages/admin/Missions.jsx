@@ -80,9 +80,9 @@ function AdminMissions() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Nhiệm Vụ Giao Hàng</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Giao Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Theo dõi tất cả nhiệm vụ giao hàng trên nền tảng
+          Theo dõi tất cả đơn giao hàng trên nền tảng
         </p>
       </div>
 
@@ -94,7 +94,7 @@ function AdminMissions() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm nhiệm vụ theo ID, số đơn hàng hoặc drone..."
+              placeholder="Tìm kiếm đơn giao theo ID, số đơn hàng hoặc drone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -137,7 +137,7 @@ function AdminMissions() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nhiệm Vụ
+                  Đơn Giao
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Đơn Hàng
@@ -246,12 +246,12 @@ function AdminMissions() {
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Không tìm thấy nhiệm vụ
+                      Không tìm thấy đơn giao
                     </h3>
                     <p className="text-gray-500">
                       {searchQuery || statusFilter !== 'all' || restaurantFilter !== 'all'
-                        ? 'Không có nhiệm vụ nào phù hợp với bộ lọc.'
-                        : 'Chưa có nhiệm vụ giao hàng nào được tạo.'
+                        ? 'Không có đơn giao nào phù hợp với bộ lọc.'
+                        : 'Chưa có đơn giao hàng nào được tạo.'
                       }
                     </p>
                   </td>
@@ -280,7 +280,7 @@ function MissionDetailModal({ mission, onClose }) {
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Nhiệm Vụ #{mission.missionNumber}</h2>
+            <h2 className="text-xl font-semibold">Đơn Giao #{mission.missionNumber}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -294,7 +294,7 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Mission Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Chi Tiết Nhiệm Vụ</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Chi Tiết Đơn Giao</h3>
               <p className="text-sm text-gray-600">ID: #{mission.missionNumber}</p>
               <p className="text-sm text-gray-600">Trạng thái: {formatMissionStatus(mission.status)}</p>
               <p className="text-sm text-gray-600">
@@ -327,12 +327,12 @@ function MissionDetailModal({ mission, onClose }) {
 
           {/* Mission Timeline */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Lịch Sử Nhiệm Vụ</h3>
+            <h3 className="text-lg font-medium mb-4">Lịch Sử Đơn Giao</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Tạo Nhiệm Vụ</p>
+                  <p className="text-sm font-medium text-gray-900">Tạo Đơn Giao</p>
                   <p className="text-xs text-gray-500">{formatDateTime(mission.createdAt)}</p>
                 </div>
               </div>
@@ -341,7 +341,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Bắt Đầu Nhiệm Vụ</p>
+                    <p className="text-sm font-medium text-gray-900">Bắt Đầu Giao Hàng</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.startedAt)}</p>
                   </div>
                 </div>
@@ -351,7 +351,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Hoàn Thành Nhiệm Vụ</p>
+                    <p className="text-sm font-medium text-gray-900">Hoàn Thành Giao Hàng</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.deliveredAt)}</p>
                   </div>
                 </div>
@@ -361,7 +361,7 @@ function MissionDetailModal({ mission, onClose }) {
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Nhiệm Vụ Thất Bại</p>
+                    <p className="text-sm font-medium text-gray-900">Đơn Giao Thất Bại</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.failedAt)}</p>
                   </div>
                 </div>
@@ -405,7 +405,7 @@ function MissionDetailModal({ mission, onClose }) {
           {/* Mission Notes */}
           {mission.notes && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Ghi Chú Nhiệm Vụ</h3>
+              <h3 className="text-lg font-medium mb-4">Ghi Chú Đơn Giao</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-900">{mission.notes}</p>
               </div>

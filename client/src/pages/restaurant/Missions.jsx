@@ -35,10 +35,10 @@ function RestaurantMissions() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Cập nhật trạng thái nhiệm vụ thành công')
+        toast.success('Cập nhật trạng thái đơn giao thành công')
       },
       onError: (error) => {
-        toast.error('Không thể cập nhật trạng thái nhiệm vụ')
+        toast.error('Không thể cập nhật trạng thái đơn giao')
       }
     }
   )
@@ -60,7 +60,7 @@ function RestaurantMissions() {
   const missions = missionsData?.data?.missions || []
 
   const statusOptions = [
-    { value: 'all', label: 'Tất Cả Nhiệm Vụ' },
+    { value: 'all', label: 'Tất Cả Đơn Giao' },
     { value: 'PENDING', label: 'Chờ Xử Lý' },
     { value: 'ASSIGNED', label: 'Đã Phân Công' },
     { value: 'IN_PROGRESS', label: 'Đang Thực Hiện' },
@@ -119,9 +119,9 @@ function RestaurantMissions() {
       case 'PENDING':
         return { status: 'ASSIGNED', label: 'Phân Công Drone', icon: Truck }
       case 'ASSIGNED':
-        return { status: 'IN_PROGRESS', label: 'Bắt Đầu Nhiệm Vụ', icon: Clock }
+        return { status: 'IN_PROGRESS', label: 'Bắt Đầu Giao Hàng', icon: Clock }
       case 'IN_PROGRESS':
-        return { status: 'COMPLETED', label: 'Hoàn Thành Nhiệm Vụ', icon: CheckCircle }
+        return { status: 'COMPLETED', label: 'Hoàn Thành Giao Hàng', icon: CheckCircle }
       default:
         return null
     }
@@ -131,9 +131,9 @@ function RestaurantMissions() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Nhiệm Vụ Giao Hàng</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Giao Hàng</h1>
         <p className="text-gray-600 mt-1">
-          Quản lý nhiệm vụ giao hàng bằng drone và theo dõi tiến độ
+          Quản lý đơn giao hàng bằng drone và theo dõi tiến độ
         </p>
       </div>
 
@@ -145,7 +145,7 @@ function RestaurantMissions() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm nhiệm vụ theo số đơn hoặc tên khách hàng..."
+              placeholder="Tìm kiếm đơn giao theo số đơn hoặc tên khách hàng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -181,10 +181,10 @@ function RestaurantMissions() {
           {/* Refresh Button */}
           <button
             onClick={() => refetch()}
-            className="btn btn-outline flex items-center space-x-2"
+            className="bg-gray-100 hover:bg-gray-200 text-blue-600 border border-gray-300 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200"
           >
             <Clock className="h-4 w-4" />
-            <span>Tải Lại</span>
+            <span>Làm Mới</span>
           </button>
         </div>
       </div>
@@ -230,12 +230,12 @@ function RestaurantMissions() {
               <Truck className="h-12 w-12 mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Không tìm thấy nhiệm vụ
+              Không tìm thấy đơn giao
             </h3>
             <p className="text-gray-500 mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'Không có nhiệm vụ nào phù hợp với bộ lọc.'
-                : 'Chưa có nhiệm vụ giao hàng nào được tạo.'
+                ? 'Không có đơn giao nào phù hợp với bộ lọc.'
+                : 'Chưa có đơn giao hàng nào được tạo.'
               }
             </p>
             {searchQuery || statusFilter !== 'all' ? (
@@ -290,7 +290,7 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="font-semibold text-gray-900">
-                  Nhiệm Vụ #{mission.missionNumber}
+                  Đơn Giao #{mission.missionNumber}
                 </h3>
                 <p className="text-sm text-gray-600">
                   Đơn: #{mission.order?.orderNumber}

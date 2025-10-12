@@ -29,7 +29,7 @@ export const translations = {
   'Đơn Hàng': 'Đơn Hàng',
   'Thực Đơn': 'Thực Đơn',
   'Drone': 'Drone',
-  'Nhiệm Vụ': 'Nhiệm Vụ',
+  'Giao Hàng': 'Giao Hàng',
   'Cài Đặt': 'Cài Đặt',
   
   // Admin Interface
@@ -37,7 +37,7 @@ export const translations = {
   'Quản Lý Nhà Hàng': 'Quản Lý Nhà Hàng',
   'Quản Lý Đơn Hàng': 'Quản Lý Đơn Hàng',
   'Quản Lý Đội Drone': 'Quản Lý Đội Drone',
-  'Nhiệm Vụ Giao Hàng': 'Nhiệm Vụ Giao Hàng',
+  'Giao Hàng': 'Giao Hàng',
   'Cài Đặt Hệ Thống': 'Cài Đặt Hệ Thống',
   
   // Status

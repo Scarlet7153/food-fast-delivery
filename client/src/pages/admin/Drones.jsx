@@ -243,7 +243,7 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-1">
             <Activity className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Nhiệm Vụ Đang Thực Hiện</span>
+            <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
           </div>
           <p className="text-sm text-blue-700">
             Order #{drone.currentMission.orderNumber}
@@ -388,12 +388,12 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Current Mission */}
           {drone.currentMission && (
             <div>
-              <h4 className="text-lg font-medium mb-4">Nhiệm Vụ Hiện Tại</h4>
+              <h4 className="text-lg font-medium mb-4">Đơn Giao Hiện Tại</h4>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ID Nhiệm Vụ
+                      ID Đơn Giao
                     </label>
                     <p className="text-gray-900">#{drone.currentMission.missionNumber}</p>
                   </div>
@@ -405,7 +405,7 @@ function DroneDetailModal({ drone, onClose }) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Trạng Thái Nhiệm Vụ
+                      Trạng Thái Đơn Giao
                     </label>
                     <p className="text-gray-900">{drone.currentMission.status}</p>
                   </div>
@@ -422,13 +422,13 @@ function DroneDetailModal({ drone, onClose }) {
 
           {/* Mission History */}
           <div>
-            <h4 className="text-lg font-medium mb-4">Nhiệm Vụ Gần Đây</h4>
+            <h4 className="text-lg font-medium mb-4">Đơn Giao Gần Đây</h4>
             <div className="space-y-3">
               {drone.recentMissions?.length > 0 ? (
                 drone.recentMissions.map((mission, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900">Nhiệm vụ #{mission.missionNumber}</p>
+                      <p className="font-medium text-gray-900">Đơn giao #{mission.missionNumber}</p>
                       <p className="text-sm text-gray-600">
                         Order #{mission.orderNumber} • {formatDateTime(mission.startedAt)}
                       </p>
@@ -445,7 +445,7 @@ function DroneDetailModal({ drone, onClose }) {
               ) : (
                 <div className="text-center py-8">
                   <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Không có nhiệm vụ gần đây</p>
+                  <p className="text-gray-500">Không có đơn giao gần đây</p>
                 </div>
               )}
             </div>

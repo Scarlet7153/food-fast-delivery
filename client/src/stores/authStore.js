@@ -197,8 +197,28 @@ const useAuthStore = create(
         
         if (user && accessToken) {
           try {
-            const parsedUser = JSON.parse(user)
-            set({ user: parsedUser, isAuthenticated: true })
+            // Check if token is expired
+            const payload = JSON.parse(atob(accessToken.split('.')[1]))
+            const currentTime = Date.now() / 1000
+            
+            if (payload.exp < currentTime) {
+              // Token is expired, try to refresh
+              try {
+                await authService.refreshToken()
+                const parsedUser = JSON.parse(user)
+                set({ user: parsedUser, isAuthenticated: true })
+              } catch (refreshError) {
+                // Refresh failed, logout
+                localStorage.removeItem('user')
+                localStorage.removeItem('accessToken')
+                localStorage.removeItem('refreshToken')
+                set({ user: null, isAuthenticated: false })
+              }
+            } else {
+              // Token is valid
+              const parsedUser = JSON.parse(user)
+              set({ user: parsedUser, isAuthenticated: true })
+            }
           } catch (error) {
             console.error('Error parsing user from localStorage:', error)
             localStorage.removeItem('user')
@@ -207,6 +227,15 @@ const useAuthStore = create(
             set({ user: null, isAuthenticated: false })
           }
         }
+      },
+
+      // Force logout (for token expiration)
+      forceLogout: () => {
+        set({ user: null, isAuthenticated: false })
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
       },
     }),
     {

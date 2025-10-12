@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
   BarChart3, Users, Building2, ShoppingBag, Zap, MapPin, 
   Settings, User, Bell, LogOut, Shield, Activity
@@ -8,6 +9,9 @@ import {
 function AdminLayout() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  
+  // Use auth guard to check token expiration
+  useAuthGuard()
 
   const navigation = [
     { name: 'Bảng Điều Khiển', href: '/admin', icon: BarChart3 },
@@ -15,7 +19,7 @@ function AdminLayout() {
     { name: 'Nhà Hàng', href: '/admin/restaurants', icon: Building2 },
     { name: 'Đơn Hàng', href: '/admin/orders', icon: ShoppingBag },
     { name: 'Drone', href: '/admin/drones', icon: Zap },
-    { name: 'Nhiệm Vụ', href: '/admin/missions', icon: MapPin },
+    { name: 'Giao Hàng', href: '/admin/missions', icon: MapPin },
     { name: 'Cài Đặt', href: '/admin/settings', icon: Settings },
   ]
 

@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
   BarChart3, ShoppingBag, Utensils, Zap, MapPin, 
   Settings, User, Bell, LogOut
@@ -8,13 +9,16 @@ import {
 function RestaurantLayout() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  
+  // Use auth guard to check token expiration
+  useAuthGuard()
 
   const navigation = [
     { name: 'Bảng Điều Khiển', href: '/restaurant', icon: BarChart3 },
     { name: 'Đơn Hàng', href: '/restaurant/orders', icon: ShoppingBag },
     { name: 'Thực Đơn', href: '/restaurant/menu', icon: Utensils },
     { name: 'Drone', href: '/restaurant/drones', icon: Zap },
-    { name: 'Nhiệm Vụ', href: '/restaurant/missions', icon: MapPin },
+    { name: 'Giao Hàng', href: '/restaurant/missions', icon: MapPin },
     { name: 'Cài Đặt', href: '/restaurant/settings', icon: Settings },
   ]
 

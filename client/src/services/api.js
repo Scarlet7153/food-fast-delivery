@@ -1,5 +1,6 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../stores/authStore'
 
 // Create axios instance
 const api = axios.create({
@@ -49,12 +50,21 @@ api.interceptors.response.use(
           // Retry original request
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return api(originalRequest)
+        } else {
+          // No refresh token available, logout immediately
+          const { logout } = useAuthStore.getState()
+          await logout()
+          
+          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          window.location.href = '/login'
+          return Promise.reject(error)
         }
       } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
+        // Refresh failed, logout user
+        const { logout } = useAuthStore.getState()
+        await logout()
+        
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }

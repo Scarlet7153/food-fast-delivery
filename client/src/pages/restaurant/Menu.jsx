@@ -8,6 +8,7 @@ import {
 import { formatCurrency, formatWeight } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
+import ImageUpload from '../../components/ImageUpload'
 
 function RestaurantMenu() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -111,7 +112,7 @@ function RestaurantMenu() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="btn btn-primary flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200 shadow-sm hover:shadow-md"
         >
           <Plus className="h-4 w-4" />
           <span>Thêm Món Ăn</span>
@@ -216,7 +217,7 @@ function RestaurantMenu() {
             ) : (
               <button
                 onClick={() => setShowAddModal(true)}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
               >
                 Thêm Món Ăn
               </button>
@@ -481,14 +482,12 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL Hình Ảnh
+                Hình Ảnh Sản Phẩm
               </label>
-              <input
-                type="url"
+              <ImageUpload
                 value={formData.imageUrl}
-                onChange={(e) => handleChange('imageUrl', e.target.value)}
-                className="input w-full"
-                placeholder="https://example.com/image.jpg"
+                onChange={(value) => handleChange('imageUrl', value)}
+                disabled={isLoading}
               />
             </div>
 

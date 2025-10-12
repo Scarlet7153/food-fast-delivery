@@ -371,7 +371,7 @@ function OrderDetailModal({ order, onClose }) {
           {/* Mission Information */}
           {order.deliveryMission && (
             <div>
-              <h3 className="text-lg font-medium mb-4">Nhiệm Vụ Giao Hàng</h3>
+              <h3 className="text-lg font-medium mb-4">Đơn Giao Hàng</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -382,7 +382,7 @@ function OrderDetailModal({ order, onClose }) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Trạng Thái Nhiệm Vụ
+                      Trạng Thái Đơn Giao
                     </label>
                     <p className="text-gray-900">{order.deliveryMission.status}</p>
                   </div>
