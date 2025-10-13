@@ -60,7 +60,10 @@ function RestaurantMenu() {
   const updateItemMutation = useMutation(
     async ({ itemId, itemData }) => {
       const restaurant = await restaurantService.getMyRestaurant()
-      return restaurantService.updateMenuItem(restaurant.restaurant._id, itemId, itemData)
+      if (!restaurant?.data?.restaurant?._id) {
+        throw new Error('Restaurant not found')
+      }
+      return restaurantService.updateMenuItem(restaurant.data.restaurant._id, itemId, itemData)
     },
     {
       onSuccess: () => {
@@ -78,7 +81,10 @@ function RestaurantMenu() {
   const deleteItemMutation = useMutation(
     async (itemId) => {
       const restaurant = await restaurantService.getMyRestaurant()
-      return restaurantService.deleteMenuItem(restaurant.restaurant._id, itemId)
+      if (!restaurant?.data?.restaurant?._id) {
+        throw new Error('Restaurant not found')
+      }
+      return restaurantService.deleteMenuItem(restaurant.data.restaurant._id, itemId)
     },
     {
       onSuccess: () => {

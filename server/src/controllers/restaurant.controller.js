@@ -387,6 +387,148 @@ const createRestaurant = async (req, res) => {
   }
 };
 
+
+// Create menu item (for restaurant owners)
+const createMenuItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const itemData = req.body;
+
+    // Check if restaurant belongs to user
+    const restaurant = await Restaurant.findOne({ 
+      _id: id, 
+      ownerUserId: req.user._id 
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found or you do not have permission to access it'
+      });
+    }
+
+    // Add restaurant ID to item data
+    itemData.restaurantId = id;
+
+    const menuItem = new MenuItem(itemData);
+    await menuItem.save();
+
+    logger.info(`Menu item created: ${menuItem.name} for restaurant ${restaurant.name}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Menu item created successfully',
+      data: {
+        menuItem
+      }
+    });
+
+  } catch (error) {
+    logger.error('Create menu item error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create menu item'
+    });
+  }
+};
+
+// Update menu item (for restaurant owners)
+const updateMenuItem = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+    const updateData = req.body;
+
+    // Check if restaurant belongs to user
+    const restaurant = await Restaurant.findOne({ 
+      _id: id, 
+      ownerUserId: req.user._id 
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found or you do not have permission to access it'
+      });
+    }
+
+    const menuItem = await MenuItem.findOneAndUpdate(
+      { _id: itemId, restaurantId: id },
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!menuItem) {
+      return res.status(404).json({
+        success: false,
+        error: 'Menu item not found'
+      });
+    }
+
+    logger.info(`Menu item updated: ${menuItem.name} for restaurant ${restaurant.name}`);
+
+    res.json({
+      success: true,
+      message: 'Menu item updated successfully',
+      data: {
+        menuItem
+      }
+    });
+
+  } catch (error) {
+    logger.error('Update menu item error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update menu item'
+    });
+  }
+};
+
+// Delete menu item (for restaurant owners)
+const deleteMenuItem = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+
+    // Check if restaurant belongs to user
+    const restaurant = await Restaurant.findOne({ 
+      _id: id, 
+      ownerUserId: req.user._id 
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found or you do not have permission to access it'
+      });
+    }
+
+    const menuItem = await MenuItem.findOneAndDelete({ 
+      _id: itemId, 
+      restaurantId: id 
+    });
+
+    if (!menuItem) {
+      return res.status(404).json({
+        success: false,
+        error: 'Menu item not found'
+      });
+    }
+
+    logger.info(`Menu item deleted: ${menuItem.name} for restaurant ${restaurant.name}`);
+
+    res.json({
+      success: true,
+      message: 'Menu item deleted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Delete menu item error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete menu item'
+    });
+  }
+};
+
 // Update restaurant (restaurant owner only)
 const updateRestaurant = async (req, res) => {
   try {
@@ -637,54 +779,6 @@ const rejectRestaurant = async (req, res) => {
   }
 };
 
-// Create menu item for restaurant
-const createMenuItem = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const menuItemData = req.body;
-
-    // Debug: Log received data
-    logger.info('Creating menu item with data:', menuItemData);
-
-    // Check if restaurant exists and user owns it
-    const restaurant = await Restaurant.findOne({ 
-      _id: id,
-      ownerUserId: req.user._id
-    });
-
-    if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        error: 'Restaurant not found or you do not have permission'
-      });
-    }
-
-    // Create menu item
-    const menuItem = new MenuItem({
-      restaurantId: id,
-      ...menuItemData
-    });
-
-    await menuItem.save();
-
-    logger.info(`Menu item created: ${menuItem.name} for restaurant ${restaurant.name}`);
-
-    res.status(201).json({
-      success: true,
-      message: 'Menu item created successfully',
-      data: {
-        menuItem
-      }
-    });
-
-  } catch (error) {
-    logger.error('Create menu item error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create menu item'
-    });
-  }
-};
 
 module.exports = {
   getRestaurants,
@@ -693,6 +787,8 @@ module.exports = {
   updateMyRestaurant,
   getRestaurantMenu,
   createMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
   createRestaurant,
   updateRestaurant,
   getRestaurantStats,

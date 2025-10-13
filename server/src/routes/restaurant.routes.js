@@ -16,6 +16,8 @@ router.post('/', auth, requireRole('restaurant'), validate(schemas.restaurant), 
 router.get('/:id', restaurantController.getRestaurant);
 router.get('/:id/menu', auth, requireRole('restaurant'), restaurantController.getRestaurantMenu);
 router.post('/:id/menu', auth, requireRole('restaurant'), validate(schemas.menuItem), restaurantController.createMenuItem);
+router.put('/:id/menu/:itemId', auth, requireRole('restaurant'), validate(schemas.menuItem), restaurantController.updateMenuItem);
+router.delete('/:id/menu/:itemId', auth, requireRole('restaurant'), restaurantController.deleteMenuItem);
 router.put('/:id', auth, requireRole('restaurant'), restaurantController.updateRestaurant);
 router.get('/:id/stats', auth, requireRole('restaurant'), restaurantController.getRestaurantStats);
 
@@ -25,4 +27,3 @@ router.patch('/admin/:id/approve', auth, requireRole('admin'), restaurantControl
 router.patch('/admin/:id/reject', auth, requireRole('admin'), restaurantController.rejectRestaurant);
 
 module.exports = router;
-
