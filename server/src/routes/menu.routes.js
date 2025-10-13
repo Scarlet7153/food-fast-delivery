@@ -4,6 +4,9 @@ const { auth, requireRole } = require('../middlewares/auth');
 const { validate, schemas } = require('../middlewares/validation');
 const menuController = require('../controllers/menu.controller');
 
+// Public routes
+router.get('/search', menuController.searchMenuItems);
+
 // Restaurant owner routes (protected)
 router.post('/', auth, requireRole('restaurant'), validate(schemas.menuItem), menuController.createMenuItem);
 router.get('/', auth, requireRole('restaurant'), menuController.getMenuItems);

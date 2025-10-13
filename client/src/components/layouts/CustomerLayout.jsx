@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
-import { ShoppingCart, User, MapPin, Search } from 'lucide-react'
+import { ShoppingCart, User } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 
 function CustomerLayout() {
@@ -14,9 +14,9 @@ function CustomerLayout() {
   useAuthGuard()
 
   const navigation = [
-    { name: 'Trang Chủ', href: '/customer', icon: MapPin },
-    { name: 'Nhà Hàng', href: '/customer/restaurants', icon: Search },
-    { name: 'Đơn Hàng', href: '/customer/orders', icon: User },
+    { name: 'Trang Chủ', href: '/customer' },
+    { name: 'Nhà Hàng', href: '/customer/restaurants' },
+    { name: 'Đơn Hàng', href: '/customer/orders' },
   ]
 
   return (
@@ -49,23 +49,22 @@ function CustomerLayout() {
 
             {/* Navigation */}
             <nav className="hidden md:flex space-x-8">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                )
-              })}
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
             </nav>
 
             {/* Right side */}
@@ -121,14 +120,13 @@ function CustomerLayout() {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-md text-base font-medium transition-colors block ${
                     isActive
                       ? 'bg-primary-100 text-primary-700'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
+                  {item.name}
                 </Link>
               )
             })}

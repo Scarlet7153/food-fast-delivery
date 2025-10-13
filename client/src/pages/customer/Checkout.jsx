@@ -530,21 +530,9 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
     {
       id: 'momo',
       name: 'Ví MoMo',
-      description: 'Thanh toán bằng ví MoMo',
+      description: 'Thanh toán qua ví điện tử MoMo',
       icon: '💳',
       recommended: true
-    },
-    {
-      id: 'credit_card',
-      name: 'Thẻ Tín Dụng',
-      description: 'Thanh toán bằng Visa, Mastercard',
-      icon: '💳'
-    },
-    {
-      id: 'bank_transfer',
-      name: 'Chuyển Khoản',
-      description: 'Chuyển khoản từ tài khoản ngân hàng',
-      icon: '🏦'
     }
   ]
 
@@ -557,41 +545,17 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
           <span>Phương thức thanh toán</span>
         </h3>
         
-        <div className="space-y-3">
-          {paymentMethods.map((method) => (
-            <label
-              key={method.id}
-              className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-                formData.paymentMethod === method.id
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={method.id}
-                checked={formData.paymentMethod === method.id}
-                onChange={(e) => onChange('paymentMethod', e.target.value)}
-                className="sr-only"
-              />
-              
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{method.icon}</span>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium">{method.name}</span>
-                    {method.recommended && (
-                      <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-                        Đề xuất
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">{method.description}</p>
-                </div>
-              </div>
-            </label>
-          ))}
+        <div className="flex items-center p-4 border border-primary-500 bg-primary-50 rounded-lg">
+          <span className="text-2xl mr-3">💳</span>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">Ví MoMo</span>
+              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
+                Thanh toán an toàn
+              </span>
+            </div>
+            <p className="text-sm text-gray-600">Thanh toán qua ví điện tử MoMo</p>
+          </div>
         </div>
       </div>
 

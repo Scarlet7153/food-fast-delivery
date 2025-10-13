@@ -1,29 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { Link } from 'react-router-dom'
 import { restaurantService } from '../../services/restaurantService'
-import { Search, Star, Clock, MapPin, Filter, Grid, List } from 'lucide-react'
+import { Search, Clock, MapPin, Filter, Grid, List } from 'lucide-react'
 import { formatCurrency, formatDistance } from '../../utils/formatters'
-import { t } from '../../utils/translations'
 
 function Restaurants() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('rating')
+  const [sortBy, setSortBy] = useState('distance')
   const [viewMode, setViewMode] = useState('grid')
   const [showFilters, setShowFilters] = useState(false)
 
+  // Debounce search query - minimal delay for smooth UX
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 100) // 100ms - just enough to prevent too many requests
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Fetch restaurants
-  const { data: restaurantsData, isLoading } = useQuery(
-    ['restaurants', { search: searchQuery, category: selectedCategory, sortBy }],
+  const { data: restaurantsData, isLoading, isFetching } = useQuery(
+    ['restaurants', { search: debouncedSearch, category: selectedCategory, sortBy }],
     () => restaurantService.getRestaurants({
-      search: searchQuery,
+      search: debouncedSearch,
       category: selectedCategory !== 'all' ? selectedCategory : undefined,
       sortBy,
       limit: 20
     }),
     {
-      staleTime: 5 * 60 * 1000,
+      staleTime: 30 * 1000, // 30 seconds
+      enabled: true,
+      keepPreviousData: true, // Keep old data while fetching new data to prevent flickering
     }
   )
 
@@ -34,15 +45,12 @@ function Restaurants() {
     { id: 'all', name: 'Tất Cả Danh Mục' },
     { id: 'fastfood', name: 'Đồ Ăn Nhanh' },
     { id: 'pizza', name: 'Pizza' },
-    { id: 'asian', name: 'Món Á' },
-    { id: 'healthy', name: 'Ăn Kiêng' },
     { id: 'dessert', name: 'Tráng Miệng' },
     { id: 'beverages', name: 'Đồ Uống' },
   ]
 
   // Sort options
   const sortOptions = [
-    { value: 'rating', label: 'Đánh Giá Cao' },
     { value: 'distance', label: 'Gần Nhất' },
     { value: 'deliveryTime', label: 'Giao Nhanh Nhất' },
     { value: 'name', label: 'Tên A-Z' },
@@ -69,8 +77,13 @@ function Restaurants() {
               placeholder="Tìm kiếm nhà hàng, món ăn..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10 w-full"
+              className="input pl-10 pr-10 w-full"
             />
+            {isFetching && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="loading-spinner h-5 w-5"></div>
+              </div>
+            )}
           </div>
 
           {/* Sort */}
@@ -220,8 +233,12 @@ function Restaurants() {
 
 // Restaurant Grid Card Component
 function RestaurantGridCard({ restaurant }) {
-  const deliveryFee = restaurant.deliverySettings?.baseRate || 10000
-  const estimatedTime = restaurant.deliverySettings?.estimatedTime || '25-35'
+  // Safe access for restaurant properties
+  const deliveryFee = restaurant?.deliverySettings?.baseRate || 10000
+  const estimatedTime = restaurant?.deliverySettings?.estimatedTime || '25-35'
+  const restaurantName = restaurant?.name || 'Nhà hàng'
+  const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
+  const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
 
   return (
     <Link
@@ -231,33 +248,28 @@ function RestaurantGridCard({ restaurant }) {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         <div className="aspect-w-16 aspect-h-9 bg-gray-200">
           <img
-            src={restaurant.imageUrl || '/api/placeholder/400/225'}
-            alt={restaurant.name}
+            src={restaurantImage}
+            alt={restaurantName}
             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              e.target.src = '/placeholder-restaurant.jpg'
+            }}
           />
         </div>
 
         <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-              {restaurant.name}
-            </h3>
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-              <span className="text-sm font-medium text-gray-700">
-                {restaurant.rating?.toFixed(1) || '4.5'}
-              </span>
-            </div>
-          </div>
+          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">
+            {restaurantName}
+          </h3>
 
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {restaurant.description}
+            {restaurantDescription}
           </p>
 
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <MapPin className="h-4 w-4" />
-              <span>{formatDistance(restaurant.distance || 1500)}</span>
+              <span>{formatDistance(restaurant?.distance || 1500)}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="h-4 w-4" />
@@ -281,8 +293,12 @@ function RestaurantGridCard({ restaurant }) {
 
 // Restaurant List Card Component
 function RestaurantListCard({ restaurant }) {
-  const deliveryFee = restaurant.deliverySettings?.baseRate || 10000
-  const estimatedTime = restaurant.deliverySettings?.estimatedTime || '25-35'
+  // Safe access for restaurant properties
+  const deliveryFee = restaurant?.deliverySettings?.baseRate || 10000
+  const estimatedTime = restaurant?.deliverySettings?.estimatedTime || '25-35'
+  const restaurantName = restaurant?.name || 'Nhà hàng'
+  const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
+  const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
 
   return (
     <Link
@@ -292,44 +308,39 @@ function RestaurantListCard({ restaurant }) {
       <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         <div className="w-32 h-24 bg-gray-200 flex-shrink-0">
           <img
-            src={restaurant.imageUrl || '/api/placeholder/400/225'}
-            alt={restaurant.name}
+            src={restaurantImage}
+            alt={restaurantName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              e.target.src = '/placeholder-restaurant.jpg'
+            }}
           />
         </div>
 
         <div className="flex-1 p-4">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-              {restaurant.name}
-            </h3>
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-              <span className="text-sm font-medium text-gray-700">
-                {restaurant.rating?.toFixed(1) || '4.5'}
-              </span>
-            </div>
-          </div>
+          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">
+            {restaurantName}
+          </h3>
 
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {restaurant.description}
+            {restaurantDescription}
           </p>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <div className="flex items-center space-x-1">
                 <MapPin className="h-4 w-4" />
-                <span>{formatDistance(restaurant.distance || 1500)}</span>
+                <span>{formatDistance(restaurant?.distance || 1500)}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-              <span>{estimatedTime} phút</span>
+                <span>{estimatedTime} phút</span>
+              </div>
+              <span>Phí giao: {formatCurrency(deliveryFee)}</span>
             </div>
-            <span>Phí giao: {formatCurrency(deliveryFee)}</span>
-          </div>
-          <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-            Giao bằng Drone
-          </span>
+            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
+              Giao bằng Drone
+            </span>
           </div>
         </div>
       </div>

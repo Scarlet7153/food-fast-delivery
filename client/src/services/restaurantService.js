@@ -19,6 +19,12 @@ export const restaurantService = {
     return response.data
   },
 
+  // Search menu items (public)
+  async searchMenuItems(params = {}) {
+    const response = await api.get('/menu/search', { params })
+    return response.data
+  },
+
   // Create restaurant (restaurant owner)
   async createRestaurant(restaurantData) {
     const response = await api.post('/restaurants', restaurantData)

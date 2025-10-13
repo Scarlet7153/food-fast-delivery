@@ -409,7 +409,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
 
   const categories = [
     'Khai Vị', 'Món Chính', 'Tráng Miệng', 'Đồ Uống', 
-    'Đồ Ăn Nhanh', 'Ăn Kiêng', 'Món Á', 'Món Ý'
+    'Đồ Ăn Nhanh', 'Món Ý'
   ]
 
   return (

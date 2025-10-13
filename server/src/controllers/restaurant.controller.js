@@ -20,10 +20,28 @@ const getRestaurants = async (req, res) => {
     } = req.query;
 
     let query = { active: true, approved: true };
+    let restaurantIdsFromSearch = [];
     
-    // Text search
+    // Text search - use regex for partial matching
     if (search) {
-      query.$text = { $search: search };
+      // Search in menu items (by name or description)
+      const menuItems = await MenuItem.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ],
+        available: true
+      }).distinct('restaurantId');
+      
+      restaurantIdsFromSearch = menuItems;
+
+      // Combine: search in restaurants OR have matching menu items
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { address: { $regex: search, $options: 'i' } },
+        { _id: { $in: restaurantIdsFromSearch } }
+      ];
     }
 
     // Filter by category (if menu items have categories)
@@ -32,7 +50,17 @@ const getRestaurants = async (req, res) => {
         category: new RegExp(category, 'i'),
         available: true
       });
-      query._id = { $in: restaurantsWithCategory };
+      
+      // If both search and category, find intersection
+      if (search && restaurantIdsFromSearch.length > 0) {
+        const intersection = restaurantsWithCategory.filter(id => 
+          restaurantIdsFromSearch.some(searchId => searchId.equals(id))
+        );
+        query._id = { $in: intersection };
+        delete query.$or; // Remove $or since we're using specific IDs
+      } else {
+        query._id = { $in: restaurantsWithCategory };
+      }
     }
 
     // Build sort object

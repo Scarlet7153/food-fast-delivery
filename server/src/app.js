@@ -63,7 +63,8 @@ class Application {
     // API routes
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/restaurants', restaurantRoutes);
-    this.app.use('/api/restaurant/menu', menuRoutes);
+    this.app.use('/api/menu', menuRoutes); // Public menu routes
+    this.app.use('/api/restaurant/menu', menuRoutes); // Restaurant owner routes (for backward compatibility)
     this.app.use('/api/orders', orderRoutes);
     this.app.use('/api/payments', paymentRoutes);
     this.app.use('/api/restaurant/drones', droneRoutes);

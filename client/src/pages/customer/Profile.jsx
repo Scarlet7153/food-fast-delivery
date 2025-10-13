@@ -34,7 +34,7 @@ function Profile() {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        address: user.address || ''
+        address: typeof user.address === 'object' ? user.address?.text || '' : user.address || ''
       })
     }
   }, [user])
@@ -99,7 +99,7 @@ function Profile() {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        address: user.address || ''
+        address: typeof user.address === 'object' ? user.address?.text || '' : user.address || ''
       })
     }
     setIsEditing(false)
@@ -262,19 +262,12 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Địa Chỉ Email
             </label>
-            {isEditing ? (
-              <input
-                type="email"
-                value={profileForm.email}
-                onChange={(e) => onFormChange('email', e.target.value)}
-                className="input w-full"
-                required
-              />
-            ) : (
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-900">{user.email}</span>
-              </div>
+            <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+              <Mail className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-900">{user.email}</span>
+            </div>
+            {isEditing && (
+              <p className="text-xs text-gray-500 mt-1">Email không thể thay đổi</p>
             )}
           </div>
 
@@ -327,7 +320,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
             <div className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg">
               <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
               <span className="text-gray-900">
-                {user.address || 'Chưa cung cấp'}
+                {typeof user.address === 'object' ? user.address?.text || 'Chưa cung cấp' : user.address || 'Chưa cung cấp'}
               </span>
             </div>
           )}
@@ -346,7 +339,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary whitespace-nowrap px-6"
               disabled={isLoading}
             >
               {isLoading ? (

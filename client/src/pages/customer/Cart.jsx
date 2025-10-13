@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatWeight } from '../../utils/formatters'
 import toast from 'react-hot-toast'
-import { t } from '../../utils/translations'
 
 function Cart() {
   const navigate = useNavigate()

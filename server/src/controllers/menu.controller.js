@@ -390,6 +390,72 @@ const getCategories = async (req, res) => {
   }
 };
 
+// Search menu items (public)
+const searchMenuItems = async (req, res) => {
+  try {
+    const { 
+      search, 
+      category, 
+      featured, 
+      limit = 12,
+      sortBy = 'popularity'
+    } = req.query;
+
+    let query = { available: true };
+
+    // Search by name or description
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } }
+      ];
+    }
+
+    // Filter by category
+    if (category && category !== 'all') {
+      query.category = new RegExp(category, 'i');
+    }
+
+    // Filter by featured
+    if (featured === 'true') {
+      query.featured = true;
+    }
+
+    // Build sort
+    const sort = {};
+    if (sortBy === 'popularity') {
+      sort['popularity.orderCount'] = -1;
+      sort['popularity.rating.average'] = -1;
+    } else if (sortBy === 'price-asc') {
+      sort.price = 1;
+    } else if (sortBy === 'price-desc') {
+      sort.price = -1;
+    } else {
+      sort.createdAt = -1;
+    }
+
+    const menuItems = await MenuItem.find(query)
+      .populate('restaurantId', 'name address imageUrl rating deliverySettings')
+      .sort(sort)
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      data: {
+        menuItems
+      }
+    });
+
+  } catch (error) {
+    logger.error('Search menu items error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to search menu items'
+    });
+  }
+};
+
 module.exports = {
   createMenuItem,
   getMenuItems,
@@ -398,6 +464,7 @@ module.exports = {
   deleteMenuItem,
   updateMenuItemStatus,
   updateMenuItemStock,
-  getCategories
+  getCategories,
+  searchMenuItems
 };
 

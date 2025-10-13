@@ -4,12 +4,11 @@ import { useQuery } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { useCartStore } from '../../stores/cartStore'
 import { 
-  Star, Clock, MapPin, Phone, Plus, Minus, 
+  Clock, MapPin, Phone, Plus, Minus, 
   ShoppingCart, Heart, Share2, Filter, Grid, List 
 } from 'lucide-react'
 import { formatCurrency, formatDistance, formatTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
-import { t } from '../../utils/translations'
 
 function RestaurantDetail() {
   const { id } = useParams()
@@ -46,7 +45,6 @@ function RestaurantDetail() {
   const categories = menuData?.data?.categories || ['all']
 
   // Safe access for restaurant properties
-  const rating = currentRestaurant?.rating?.average || currentRestaurant?.rating || 4.5
   const restaurantName = currentRestaurant?.name || 'Nhà hàng'
   const restaurantDescription = currentRestaurant?.description || 'Chưa có mô tả'
 
@@ -152,12 +150,6 @@ function RestaurantDetail() {
               <p className="text-gray-600 mb-3">
                 {restaurantDescription}
               </p>
-            </div>
-            <div className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
-              <Star className="h-4 w-4 fill-current" />
-              <span className="font-medium">
-                {typeof rating === 'number' ? rating.toFixed(1) : '4.5'}
-              </span>
             </div>
           </div>
 
