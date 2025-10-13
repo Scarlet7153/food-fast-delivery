@@ -11,6 +11,8 @@ import AdminLayout from './components/layouts/AdminLayout'
 // Auth Pages
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import CustomerRegister from './pages/auth/CustomerRegister'
+import RestaurantRegister from './pages/auth/RestaurantRegister'
 
 // Customer Pages
 import CustomerHome from './pages/customer/Home'
@@ -86,7 +88,9 @@ function App() {
             <Login />
           </AuthLayout>
         } />
-        <Route path="/register" element={
+        <Route path="/register" element={<CustomerRegister />} />
+        <Route path="/register/restaurant" element={<RestaurantRegister />} />
+        <Route path="/register/old" element={
           <AuthLayout>
             <Register />
           </AuthLayout>

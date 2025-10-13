@@ -17,7 +17,12 @@ const logger = require('../utils/logger');
 // Register new user
 const register = async (req, res) => {
   try {
-    const { email, password, name, phone, role } = req.body;
+    const { 
+      email, password, name, phone, role,
+      // Restaurant-specific fields
+      restaurantName, restaurantAddress, restaurantPhone, 
+      restaurantDescription, imageUrl 
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -39,28 +44,45 @@ const register = async (req, res) => {
 
     await user.save();
 
-    // Generate tokens
-    const { accessToken, refreshToken } = generateTokenPair(user._id);
-    await saveRefreshToken(user._id, refreshToken);
-
-    // If restaurant role, create restaurant profile
+    // If restaurant role, create restaurant profile (pending approval)
     if (role === 'restaurant') {
       const restaurant = new Restaurant({
         ownerUserId: user._id,
-        name: `${name}'s Restaurant`,
-        address: 'Please update restaurant address',
+        name: restaurantName || `${name}'s Restaurant`,
+        address: restaurantAddress || 'Please update restaurant address',
+        phone: restaurantPhone || phone,
+        description: restaurantDescription || '',
+        imageUrl: imageUrl || '',
         location: {
           type: 'Point',
-          coordinates: [0, 0] // Default location, needs to be updated
-        }
+          coordinates: [106.6297, 10.8231] // Default to Ho Chi Minh City center
+        },
+        approved: false,  // Restaurant needs admin approval
+        active: false     // Not active until approved
       });
       await restaurant.save();
 
       user.restaurantId = restaurant._id;
       await user.save();
+
+      logger.info(`New restaurant registered (pending approval): ${user.email} - ${restaurantName}`);
+
+      // For restaurant, return success without tokens (they can't login until approved)
+      return res.status(201).json({
+        success: true,
+        message: 'Restaurant registered successfully. Please wait for admin approval.',
+        data: {
+          user: user.toSummary(),
+          requiresApproval: true
+        }
+      });
     }
 
-    logger.info(`New user registered: ${user.email} (${user.role})`);
+    // For customer, generate tokens and allow immediate login
+    const { accessToken, refreshToken } = generateTokenPair(user._id);
+    await saveRefreshToken(user._id, refreshToken);
+
+    logger.info(`New customer registered: ${user.email}`);
 
     res.status(201).json({
       success: true,
@@ -110,6 +132,18 @@ const login = async (req, res) => {
         success: false,
         error: 'Invalid credentials'
       });
+    }
+
+    // Check if restaurant is approved (for restaurant owners)
+    if (user.role === 'restaurant' && user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId);
+      if (restaurant && !restaurant.approved) {
+        return res.status(403).json({
+          success: false,
+          error: 'Your restaurant is pending approval. Please wait for admin approval.',
+          pendingApproval: true
+        });
+      }
     }
 
     // Update last login

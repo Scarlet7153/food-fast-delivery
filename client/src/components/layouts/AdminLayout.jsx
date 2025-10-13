@@ -3,7 +3,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
   BarChart3, Users, Building2, ShoppingBag, Plane, MapPin, 
-  Settings, User, Bell, LogOut, Shield, Activity
+  Settings, User, Bell, LogOut, Shield, Activity, Zap
 } from 'lucide-react'
 
 function AdminLayout() {

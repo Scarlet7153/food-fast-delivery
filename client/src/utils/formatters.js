@@ -29,21 +29,29 @@ export const formatDate = (date, options = {}) => {
 
 // Format date and time
 export const formatDateTime = (date) => {
+  if (!date) return 'Chưa có'
+  const dateObj = new Date(date)
+  if (isNaN(dateObj.getTime())) return 'Không hợp lệ'
+  
   return new Intl.DateTimeFormat('vi-VN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date))
+  }).format(dateObj)
 }
 
 // Format time only
 export const formatTime = (date) => {
+  if (!date) return 'Chưa có'
+  const dateObj = new Date(date)
+  if (isNaN(dateObj.getTime())) return 'Không hợp lệ'
+  
   return new Intl.DateTimeFormat('vi-VN', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date))
+  }).format(dateObj)
 }
 
 // Format relative time (e.g., "2 hours ago")
