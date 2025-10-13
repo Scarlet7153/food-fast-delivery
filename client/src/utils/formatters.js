@@ -1,5 +1,8 @@
 // Format currency to VND
 export const formatCurrency = (amount) => {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return '0₫'
+  }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
@@ -102,6 +105,9 @@ export const formatWeight = (grams) => {
 
 // Format distance
 export const formatDistance = (meters) => {
+  if (meters === null || meters === undefined || isNaN(meters)) {
+    return '0m'
+  }
   if (meters < 1000) {
     return `${Math.round(meters)}m`
   }

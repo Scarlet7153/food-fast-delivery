@@ -175,32 +175,19 @@ function CustomerHome() {
         )}
       </div>
 
-      {/* Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FeatureCard
-          icon={<Zap className="h-8 w-8 text-yellow-500" />}
-          title="Giao Hàng Siêu Nhanh"
-          description="Drone giao đồ ăn trong 15-30 phút, nhanh hơn nhiều so với phương thức giao hàng truyền thống."
-        />
-        <FeatureCard
-          icon={<Package className="h-8 w-8 text-green-500" />}
-          title="Không Tiếp Xúc"
-          description="Giao hàng an toàn, không tiếp xúc ngay tại cửa nhà với công nghệ drone tiên tiến."
-        />
-        <FeatureCard
-          icon={<Star className="h-8 w-8 text-blue-500" />}
-          title="Chất Lượng Cao Cấp"
-          description="Đồ ăn được đóng gói cẩn thận và giao trong tình trạng tốt nhất."
-        />
-      </div>
     </div>
   )
 }
 
 // Restaurant Card Component
 function RestaurantCard({ restaurant }) {
-  const deliveryFee = restaurant.deliverySettings?.baseRate || 10000
-  const estimatedTime = restaurant.deliverySettings?.estimatedTime || '25-35'
+  // Safely access nested properties with fallbacks
+  const deliveryFee = restaurant?.deliverySettings?.baseRate || 10000
+  const estimatedTime = restaurant?.deliverySettings?.estimatedTime || '25-35'
+  const rating = restaurant?.rating?.average || restaurant?.rating || 4.5
+  const restaurantName = restaurant?.name || 'Nhà hàng'
+  const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
+  const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
 
   return (
     <Link
@@ -211,9 +198,12 @@ function RestaurantCard({ restaurant }) {
         {/* Restaurant Image */}
         <div className="aspect-w-16 aspect-h-9 bg-gray-200">
           <img
-            src={restaurant.imageUrl || '/api/placeholder/400/225'}
-            alt={restaurant.name}
+            src={restaurantImage}
+            alt={restaurantName}
             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              e.target.src = '/placeholder-restaurant.jpg'
+            }}
           />
         </div>
 
@@ -221,28 +211,28 @@ function RestaurantCard({ restaurant }) {
         <div className="p-4">
           <div className="flex items-start justify-between mb-2">
             <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-              {restaurant.name}
+              {restaurantName}
             </h3>
             <div className="flex items-center space-x-1">
               <Star className="h-4 w-4 text-yellow-400 fill-current" />
               <span className="text-sm font-medium text-gray-700">
-                {restaurant.rating?.toFixed(1) || '4.5'}
+                {typeof rating === 'number' ? rating.toFixed(1) : '4.5'}
               </span>
             </div>
           </div>
 
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {restaurant.description}
+            {restaurantDescription}
           </p>
 
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <MapPin className="h-4 w-4" />
-              <span>{formatDistance(restaurant.distance || 1500)}</span>
+              <span>{formatDistance(restaurant?.distance || 1500)}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="h-4 w-4" />
-              <span>{estimatedTime} min</span>
+              <span>{estimatedTime} phút</span>
             </div>
           </div>
 
@@ -257,23 +247,6 @@ function RestaurantCard({ restaurant }) {
         </div>
       </div>
     </Link>
-  )
-}
-
-// Feature Card Component
-function FeatureCard({ icon, title, description }) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-      <div className="flex justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-        {title}
-      </h3>
-      <p className="text-gray-600 text-sm">
-        {description}
-      </p>
-    </div>
   )
 }
 

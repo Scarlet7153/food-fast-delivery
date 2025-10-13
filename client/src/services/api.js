@@ -105,11 +105,13 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle other errors
-    if (error.response?.data?.error) {
-      toast.error(error.response.data.error)
-    } else if (error.message) {
-      toast.error(error.message)
+    // Handle other errors (skip 401 errors as they're handled above)
+    if (error.response?.status !== 401) {
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error)
+      } else if (error.message && error.message !== 'Network Error') {
+        toast.error(error.message)
+      }
     }
 
     return Promise.reject(error)

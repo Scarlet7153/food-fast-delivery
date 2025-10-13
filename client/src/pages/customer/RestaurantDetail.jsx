@@ -45,6 +45,11 @@ function RestaurantDetail() {
   const menuItems = menuData?.data?.menuItems || []
   const categories = menuData?.data?.categories || ['all']
 
+  // Safe access for restaurant properties
+  const rating = currentRestaurant?.rating?.average || currentRestaurant?.rating || 4.5
+  const restaurantName = currentRestaurant?.name || 'Nhà hàng'
+  const restaurantDescription = currentRestaurant?.description || 'Chưa có mô tả'
+
   // Check if this is the same restaurant as in cart
   const isSameRestaurant = restaurantId === id
 
@@ -104,9 +109,12 @@ function RestaurantDetail() {
         {/* Restaurant Image */}
         <div className="relative h-64 md:h-80">
           <img
-            src={currentRestaurant.imageUrl || '/api/placeholder/800/400'}
-            alt={currentRestaurant.name}
+            src={currentRestaurant?.imageUrl || '/placeholder-restaurant.jpg'}
+            alt={restaurantName}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = '/placeholder-restaurant.jpg'
+            }}
           />
           <div className="absolute inset-0 bg-black bg-opacity-30"></div>
           
@@ -139,16 +147,16 @@ function RestaurantDetail() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {currentRestaurant.name}
+                {restaurantName}
               </h1>
               <p className="text-gray-600 mb-3">
-                {currentRestaurant.description}
+                {restaurantDescription}
               </p>
             </div>
             <div className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
               <Star className="h-4 w-4 fill-current" />
               <span className="font-medium">
-                {currentRestaurant.rating?.toFixed(1) || '4.5'}
+                {typeof rating === 'number' ? rating.toFixed(1) : '4.5'}
               </span>
             </div>
           </div>

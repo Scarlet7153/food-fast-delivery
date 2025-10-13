@@ -1,44 +1,86 @@
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { authService } from '../services/authService'
+import toast from 'react-hot-toast'
 
 // Hook to check token expiration and auto logout
 export const useAuthGuard = () => {
   const { logout, isAuthenticated } = useAuthStore()
 
   useEffect(() => {
-    const checkTokenExpiration = async () => {
-      if (!isAuthenticated) return
+    if (!isAuthenticated) return
 
+    let refreshTimeout = null
+
+    const scheduleTokenRefresh = () => {
       const accessToken = localStorage.getItem('accessToken')
       if (!accessToken) {
-        await logout()
+        logout()
         return
       }
 
+      // Check if token is expired or will expire soon
+      if (isTokenExpired(accessToken)) {
+        // Token already expired, try to refresh immediately
+        handleTokenRefresh()
+        return
+      }
+
+      // Get token expiration time
+      const expirationTime = getTokenExpirationTime(accessToken)
+      if (!expirationTime) {
+        logout()
+        return
+      }
+
+      // Schedule refresh 5 minutes before expiration
+      const now = Date.now()
+      const timeUntilExpiry = expirationTime.getTime() - now
+      const refreshTime = Math.max(0, timeUntilExpiry - 5 * 60 * 1000) // 5 minutes before expiration
+
+      console.log(`Token will be refreshed in ${Math.round(refreshTime / 1000 / 60)} minutes`)
+
+      refreshTimeout = setTimeout(() => {
+        handleTokenRefresh()
+      }, refreshTime)
+    }
+
+    const handleTokenRefresh = async () => {
       try {
-        // Try to get profile to check if token is valid
-        await authService.getProfile()
-      } catch (error) {
-        if (error.response?.status === 401) {
-          // Token is invalid, try to refresh
-          try {
-            await authService.refreshToken()
-          } catch (refreshError) {
-            // Refresh failed, logout
-            await logout()
-          }
+        const refreshToken = localStorage.getItem('refreshToken')
+        if (!refreshToken) {
+          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          await logout()
+          return
         }
+
+        // Try to refresh token
+        const response = await authService.refreshToken()
+        const { accessToken, refreshToken: newRefreshToken } = response.data
+
+        localStorage.setItem('accessToken', accessToken)
+        localStorage.setItem('refreshToken', newRefreshToken)
+
+        console.log('Token refreshed successfully')
+        
+        // Schedule next refresh
+        scheduleTokenRefresh()
+      } catch (error) {
+        console.error('Token refresh failed:', error)
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        await logout()
       }
     }
 
-    // Check token on mount
-    checkTokenExpiration()
+    // Initial schedule
+    scheduleTokenRefresh()
 
-    // Set up interval to check token periodically (every 5 minutes)
-    const interval = setInterval(checkTokenExpiration, 5 * 60 * 1000)
-
-    return () => clearInterval(interval)
+    // Cleanup
+    return () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
+    }
   }, [isAuthenticated, logout])
 }
 
@@ -50,8 +92,8 @@ export const isTokenExpired = (token) => {
     const payload = JSON.parse(atob(token.split('.')[1]))
     const currentTime = Date.now() / 1000
     
-    // Check if token is expired (with 30 seconds buffer)
-    return payload.exp < (currentTime + 30)
+    // Check if token is expired (already past expiration time)
+    return payload.exp < currentTime
   } catch (error) {
     console.error('Error decoding token:', error)
     return true

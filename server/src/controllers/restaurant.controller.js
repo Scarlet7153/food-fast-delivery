@@ -312,7 +312,10 @@ const getRestaurantMenu = async (req, res) => {
         restaurant: {
           _id: restaurant._id,
           name: restaurant.name,
+          description: restaurant.description,
           address: restaurant.address,
+          phone: restaurant.phone,
+          imageUrl: restaurant.imageUrl,
           rating: restaurant.rating,
           active: restaurant.active,
           approved: restaurant.approved,
