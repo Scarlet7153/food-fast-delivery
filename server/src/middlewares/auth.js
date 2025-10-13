@@ -35,7 +35,10 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    logger.error('Auth middleware error:', error);
+    // Only log non-token-expired errors to reduce log spam
+    if (error.name !== 'TokenExpiredError') {
+      logger.error('Auth middleware error:', error);
+    }
     
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({

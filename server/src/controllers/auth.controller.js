@@ -8,7 +8,8 @@ const {
   removeAllRefreshTokens,
   isRefreshTokenValid,
   generatePasswordResetToken,
-  verifyPasswordResetToken
+  verifyPasswordResetToken,
+  verifyRefreshToken
 } = require('../utils/jwt');
 const { calculateDistance } = require('../utils/geo');
 const logger = require('../utils/logger');
@@ -153,7 +154,7 @@ const refreshToken = async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = verifyPasswordResetToken(refreshToken);
+    const decoded = verifyRefreshToken(refreshToken);
     const user = await User.findById(decoded.userId);
     
     if (!user || !user.active) {
@@ -189,10 +190,13 @@ const refreshToken = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Token refresh error:', error);
+    // Only log non-token-expired errors to reduce log spam
+    if (!error.message.includes('expired') && !error.message.includes('Invalid')) {
+      logger.error('Token refresh error:', error);
+    }
     res.status(401).json({
       success: false,
-      error: 'Invalid refresh token'
+      error: 'Invalid or expired refresh token'
     });
   }
 };

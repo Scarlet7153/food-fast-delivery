@@ -25,6 +25,22 @@ api.interceptors.request.use(
   }
 )
 
+// Track ongoing refresh requests to prevent multiple simultaneous refreshes
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  
+  failedQueue = []
+}
+
 // Response interceptor to handle errors and token refresh
 api.interceptors.response.use(
   (response) => {
@@ -34,7 +50,20 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => {
+          return Promise.reject(err)
+        })
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
 
       try {
         const refreshToken = localStorage.getItem('refreshToken')
@@ -47,11 +76,14 @@ api.interceptors.response.use(
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', newRefreshToken)
 
+          processQueue(null, accessToken)
+
           // Retry original request
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return api(originalRequest)
         } else {
           // No refresh token available, logout immediately
+          processQueue(error, null)
           const { logout } = useAuthStore.getState()
           await logout()
           
@@ -61,12 +93,15 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         // Refresh failed, logout user
+        processQueue(refreshError, null)
         const { logout } = useAuthStore.getState()
         await logout()
         
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
         window.location.href = '/login'
         return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
 
