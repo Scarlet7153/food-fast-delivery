@@ -3,7 +3,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
   BarChart3, Users, Building2, ShoppingBag, Plane, MapPin, 
-  Settings, User, Bell, LogOut, Shield, Activity, Zap
+  User, Bell, LogOut, Shield
 } from 'lucide-react'
 
 function AdminLayout() {
@@ -20,7 +20,6 @@ function AdminLayout() {
     { name: 'Đơn Hàng', href: '/admin/orders', icon: ShoppingBag },
     { name: 'Drone', href: '/admin/drones', icon: Plane },
     { name: 'Giao Hàng', href: '/admin/missions', icon: MapPin },
-    { name: 'Cài Đặt', href: '/admin/settings', icon: Settings },
   ]
 
   return (
@@ -101,12 +100,6 @@ function AdminLayout() {
 
             {/* Header Actions */}
             <div className="flex items-center space-x-4">
-              {/* System Status */}
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Hệ Thống Hoạt Động</span>
-              </div>
-
               {/* Notifications */}
               <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 <Bell className="h-5 w-5" />
@@ -114,18 +107,6 @@ function AdminLayout() {
                   5
                 </span>
               </button>
-
-              {/* Quick Stats */}
-              <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center space-x-1">
-                  <Activity className="h-4 w-4" />
-                  <span>Người dùng: 247</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Zap className="h-4 w-4" />
-                  <span>Drone hoạt động: 12</span>
-                </div>
-              </div>
             </div>
           </div>
         </header>

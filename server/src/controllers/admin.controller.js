@@ -721,20 +721,29 @@ const getAllDrones = async (req, res) => {
       page = 1, 
       limit = 20, 
       status, 
-      restaurantId,
+      restaurant,
+      search,
       maintenance 
     } = req.query;
 
     const query = {};
     
-    if (status) query.status = status;
-    if (restaurantId) query.restaurantId = restaurantId;
+    if (status && status !== 'all') query.status = status;
+    if (restaurant && restaurant !== 'all') query.restaurantId = restaurant;
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { model: { $regex: search, $options: 'i' } },
+        { serialNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
     if (maintenance === 'due') {
       query['maintenance.nextMaintenance'] = { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) };
     }
 
+    // Get drones with populated data
     const drones = await Drone.find(query)
-      .populate('restaurantId', 'name address')
+      .populate('restaurant', 'name address')
       .populate('currentMission', 'status orderId')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit) * 1)
@@ -742,10 +751,16 @@ const getAllDrones = async (req, res) => {
 
     const total = await Drone.countDocuments(query);
 
+    // Get all restaurants for filter
+    const restaurants = await Restaurant.find({ approved: true })
+      .select('name')
+      .sort({ name: 1 });
+
     res.json({
       success: true,
       data: {
         drones,
+        restaurants,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -760,6 +775,49 @@ const getAllDrones = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get drones'
+    });
+  }
+};
+
+// Get single drone (admin)
+const getDrone = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const drone = await Drone.findById(id)
+      .populate('restaurant', 'name address phone')
+      .populate('currentMission', 'status orderId');
+
+    if (!drone) {
+      return res.status(404).json({
+        success: false,
+        error: 'Drone not found'
+      });
+    }
+
+    // Get recent missions for this drone
+    const recentMissions = await DeliveryMission.find({
+      droneId: drone._id
+    })
+    .populate('orderId', 'orderNumber totalAmount')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+    res.json({
+      success: true,
+      data: {
+        drone: {
+          ...drone.toObject(),
+          recentMissions
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get drone error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get drone'
     });
   }
 };
@@ -1029,6 +1087,7 @@ module.exports = {
   getAllOrders,
   getOrderStatistics,
   getAllDrones,
+  getDrone,
   getDroneStatistics,
   getAllMissions,
   getMissionStatistics,

@@ -30,6 +30,7 @@ router.get('/orders/statistics', adminController.getOrderStatistics);
 // Drone monitoring
 router.get('/drones', adminController.getAllDrones);
 router.get('/drones/statistics', adminController.getDroneStatistics);
+router.get('/drones/:id', adminController.getDrone);
 
 // Mission monitoring
 router.get('/missions', adminController.getAllMissions);

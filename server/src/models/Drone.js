@@ -12,16 +12,18 @@ const droneSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'Name cannot exceed 50 characters']
   },
-  serial: {
+  serialNumber: {
     type: String,
     required: false,
     unique: false,
+    sparse: true,
     trim: true,
-    maxlength: [20, 'Serial number cannot exceed 20 characters']
+    maxlength: [50, 'Serial number cannot exceed 50 characters']
   },
   model: {
     type: String,
     trim: true,
+    default: 'Standard Delivery Drone',
     maxlength: [50, 'Model cannot exceed 50 characters']
   },
   status: {
@@ -30,18 +32,45 @@ const droneSchema = new mongoose.Schema({
     default: 'IDLE',
     required: true,
   },
+  // Battery
+  batteryLevel: {
+    type: Number,
+    default: 100,
+    min: [0, 'Battery level cannot be negative'],
+    max: [100, 'Battery level cannot exceed 100']
+  },
   // Physical specifications
   maxPayloadGrams: {
     type: Number,
     required: [true, 'Maximum payload is required'],
+    default: 1000,
     min: [100, 'Maximum payload must be at least 100 grams'],
     max: [10000, 'Maximum payload cannot exceed 10000 grams']
   },
   maxRangeMeters: {
     type: Number,
     required: [true, 'Range is required'],
+    default: 5000,
     min: [1000, 'Range must be at least 1000 meters'],
     max: [50000, 'Range cannot exceed 50000 meters']
+  },
+  maxFlightTimeMinutes: {
+    type: Number,
+    default: 30,
+    min: [5, 'Flight time must be at least 5 minutes'],
+    max: [120, 'Flight time cannot exceed 120 minutes']
+  },
+  // Location
+  currentLocation: {
+    type: {
+      lat: Number,
+      lng: Number,
+      timestamp: {
+        type: Date,
+        default: Date.now
+      }
+    },
+    required: false
   },
   // Maintenance and health
   maintenance: {
@@ -136,8 +165,7 @@ const droneSchema = new mongoose.Schema({
 
 // Indexes
 droneSchema.index({ restaurantId: 1, status: 1 });
-droneSchema.index({ serial: 1 });
-droneSchema.index({ location: '2dsphere' });
+droneSchema.index({ serialNumber: 1 });
 droneSchema.index({ 'maintenance.nextMaintenance': 1 });
 
 // Virtual for restaurant info
@@ -158,10 +186,15 @@ droneSchema.virtual('mission', {
 
 // Virtual for battery status
 droneSchema.virtual('batteryStatus').get(function() {
-  if (this.batteryPercent >= 80) return 'HIGH';
-  if (this.batteryPercent >= 50) return 'MEDIUM';
-  if (this.batteryPercent >= 20) return 'LOW';
+  if (this.batteryLevel >= 80) return 'HIGH';
+  if (this.batteryLevel >= 50) return 'MEDIUM';
+  if (this.batteryLevel >= 20) return 'LOW';
   return 'CRITICAL';
+});
+
+// Virtual for lastUpdatedAt (alias for updatedAt)
+droneSchema.virtual('lastUpdatedAt').get(function() {
+  return this.updatedAt;
 });
 
 // Virtual for maintenance status
@@ -180,7 +213,7 @@ droneSchema.virtual('maintenanceStatus').get(function() {
 // Instance method to check if drone is available
 droneSchema.methods.isAvailable = function() {
   return this.status === 'IDLE' && 
-         this.batteryPercent >= this.settings.lowBatteryThreshold &&
+         this.batteryLevel >= this.settings.lowBatteryThreshold &&
          this.maintenance.healthStatus !== 'CRITICAL' &&
          this.maintenanceStatus !== 'OVERDUE';
 };
@@ -236,11 +269,12 @@ droneSchema.methods.isPointInPolygon = function(x, y, polygon) {
 };
 
 // Instance method to update location
-droneSchema.methods.updateLocation = function(longitude, latitude, altitude = 0, heading = 0) {
-  this.location.coordinates = [longitude, latitude];
-  this.location.altitude = altitude;
-  this.location.heading = heading;
-  this.location.lastUpdated = new Date();
+droneSchema.methods.updateLocation = function(lat, lng) {
+  this.currentLocation = {
+    lat,
+    lng,
+    timestamp: new Date()
+  };
   
   return this.save();
 };
@@ -302,7 +336,7 @@ droneSchema.statics.findAvailable = function(restaurantId, minBattery = 30) {
   return this.find({
     restaurantId,
     status: 'IDLE',
-    batteryPercent: { $gte: minBattery },
+    batteryLevel: { $gte: minBattery },
     'maintenance.healthStatus': { $ne: 'CRITICAL' },
     $or: [
       { 'maintenance.nextMaintenance': { $exists: false } },
@@ -311,24 +345,9 @@ droneSchema.statics.findAvailable = function(restaurantId, minBattery = 30) {
   });
 };
 
-// Static method to find drones near location
-droneSchema.statics.findNearby = function(longitude, latitude, maxDistanceKm = 5, restaurantId) {
-  const query = {
-    location: {
-      $near: {
-        $geometry: {
-          type: 'Point',
-          coordinates: [longitude, latitude]
-        },
-        $maxDistance: maxDistanceKm * 1000 // Convert km to meters
-      }
-    }
-  };
-  
-  if (restaurantId) {
-    query.restaurantId = restaurantId;
-  }
-  
+// Static method to find drones near location (simplified - no geospatial index needed)
+droneSchema.statics.findNearby = function(restaurantId, maxDistanceKm = 5) {
+  const query = { restaurantId };
   return this.find(query);
 };
 

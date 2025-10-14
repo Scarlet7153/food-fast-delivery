@@ -1,4 +1,5 @@
 import api from './api'
+import axios from 'axios'
 
 export const authService = {
   // Register new user
@@ -55,7 +56,9 @@ export const authService = {
       throw new Error('No refresh token available')
     }
 
-    const response = await api.post('/auth/refresh', { refreshToken })
+    // Use axios directly to avoid interceptor loop
+    const baseURL = import.meta.env.VITE_API_URL || '/api'
+    const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken })
     return response.data
   },
 

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { adminService } from '../../services/adminService'
+import toast from 'react-hot-toast'
 import { 
-  Search, Filter, Truck, Battery, MapPin, Activity, 
-  CheckCircle, XCircle, AlertTriangle, Eye, Settings
+  Search, Filter, Truck, MapPin, Activity, 
+  CheckCircle, XCircle, AlertTriangle, Eye, Settings, Battery
 } from 'lucide-react'
 import { formatDateTime, formatDroneStatus, formatWeight, formatDistance } from '../../utils/formatters'
 import { t } from '../../utils/translations'
@@ -77,12 +78,6 @@ function AdminDrones() {
       default:
         return 'bg-gray-100 text-gray-800'
     }
-  }
-
-  const getBatteryColor = (batteryLevel) => {
-    if (batteryLevel > 70) return 'text-green-500'
-    if (batteryLevel > 30) return 'text-yellow-500'
-    return 'text-red-500'
   }
 
   return (
@@ -160,7 +155,6 @@ function AdminDrones() {
               onView={handleViewDrone}
               getStatusIcon={getStatusIcon}
               getStatusColor={getStatusColor}
-              getBatteryColor={getBatteryColor}
             />
           ))
         ) : (
@@ -193,7 +187,7 @@ function AdminDrones() {
 }
 
 // Drone Card Component
-function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryColor }) {
+function DroneCard({ drone, onView, getStatusIcon, getStatusColor }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
       {/* Header */}
@@ -215,16 +209,6 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">Nhà hàng</span>
           <span className="font-medium text-gray-900">{drone.restaurant?.name}</span>
-        </div>
-        
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">Pin</span>
-          <div className="flex items-center space-x-1">
-            <Battery className={`h-4 w-4 ${getBatteryColor(drone.batteryLevel)}`} />
-            <span className={`font-medium ${getBatteryColor(drone.batteryLevel)}`}>
-              {drone.batteryLevel}%
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center justify-between text-sm">
@@ -279,7 +263,28 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor, getBatteryCol
 }
 
 // Drone Detail Modal Component
-function DroneDetailModal({ drone, onClose }) {
+function DroneDetailModal({ drone: initialDrone, onClose }) {
+  const [drone, setDrone] = useState(initialDrone)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fetch full drone details with recent missions
+  useEffect(() => {
+    const fetchDroneDetails = async () => {
+      try {
+        setIsLoading(true)
+        const response = await adminService.getDroneById(initialDrone._id)
+        setDrone(response.data.drone)
+      } catch (error) {
+        console.error('Error fetching drone details:', error)
+        toast.error('Failed to load drone details')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDroneDetails()
+  }, [initialDrone._id])
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -324,15 +329,6 @@ function DroneDetailModal({ drone, onClose }) {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Thời Gian Bay Tối Đa</span>
                   <span className="font-medium">{drone.maxFlightTimeMinutes} phút</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Pin Hiện Tại</span>
-                  <span className={`font-medium ${
-                    drone.batteryLevel > 70 ? 'text-green-600' :
-                    drone.batteryLevel > 30 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {drone.batteryLevel}%
-                  </span>
                 </div>
               </div>
             </div>
@@ -423,32 +419,43 @@ function DroneDetailModal({ drone, onClose }) {
           {/* Mission History */}
           <div>
             <h4 className="text-lg font-medium mb-4">Đơn Giao Gần Đây</h4>
-            <div className="space-y-3">
-              {drone.recentMissions?.length > 0 ? (
-                drone.recentMissions.map((mission, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Đơn giao #{mission.missionNumber}</p>
-                      <p className="text-sm text-gray-600">
-                        Order #{mission.orderNumber} • {formatDateTime(mission.startedAt)}
-                      </p>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      mission.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                      mission.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {mission.status}
-                    </span>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="p-3 bg-gray-50 rounded-lg animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Không có đơn giao gần đây</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {drone.recentMissions?.length > 0 ? (
+                  drone.recentMissions.map((mission) => (
+                    <div key={mission._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">Đơn giao #{mission._id.slice(-6)}</p>
+                        <p className="text-sm text-gray-600">
+                          Order #{mission.orderId?.orderNumber || 'N/A'} • {formatDateTime(mission.createdAt)}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        mission.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        mission.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {mission.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Không có đơn giao gần đây</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notes */}

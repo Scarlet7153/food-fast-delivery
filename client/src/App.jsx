@@ -39,7 +39,6 @@ import AdminRestaurants from './pages/admin/Restaurants'
 import AdminOrders from './pages/admin/Orders'
 import AdminDrones from './pages/admin/Drones'
 import AdminMissions from './pages/admin/Missions'
-import AdminSettings from './pages/admin/Settings'
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }) {
@@ -141,7 +140,6 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="drones" element={<AdminDrones />} />
           <Route path="missions" element={<AdminMissions />} />
-          <Route path="settings" element={<AdminSettings />} />
         </Route>
 
         {/* Error Routes */}

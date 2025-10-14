@@ -20,12 +20,10 @@ class SocketService {
 
     this.socket.on('connect', () => {
       this.isConnected = true
-      console.log('Socket connected:', this.socket.id)
     })
 
     this.socket.on('disconnect', (reason) => {
       this.isConnected = false
-      console.log('Socket disconnected:', reason)
     })
 
     this.socket.on('error', (error) => {

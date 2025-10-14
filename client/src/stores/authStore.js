@@ -197,30 +197,44 @@ const useAuthStore = create(
         
         if (user && accessToken) {
           try {
+            // Parse user first
+            const parsedUser = JSON.parse(user)
+            
             // Check if token is expired
-            const payload = JSON.parse(atob(accessToken.split('.')[1]))
+            const parts = accessToken.split('.')
+            if (parts.length !== 3) {
+              throw new Error('Invalid token format')
+            }
+            
+            const payload = JSON.parse(atob(parts[1]))
             const currentTime = Date.now() / 1000
             
             if (payload.exp < currentTime) {
               // Token is expired, try to refresh
               try {
-                await authService.refreshToken()
-                const parsedUser = JSON.parse(user)
+                const response = await authService.refreshToken()
+                const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data
+                
+                localStorage.setItem('accessToken', newAccessToken)
+                if (newRefreshToken) {
+                  localStorage.setItem('refreshToken', newRefreshToken)
+                }
+                
                 set({ user: parsedUser, isAuthenticated: true })
               } catch (refreshError) {
-                // Refresh failed, logout
+                // Refresh failed, clear auth state
                 localStorage.removeItem('user')
                 localStorage.removeItem('accessToken')
                 localStorage.removeItem('refreshToken')
                 set({ user: null, isAuthenticated: false })
               }
             } else {
-              // Token is valid
-              const parsedUser = JSON.parse(user)
+              // Token is still valid
               set({ user: parsedUser, isAuthenticated: true })
             }
           } catch (error) {
-            console.error('Error parsing user from localStorage:', error)
+            console.error('Error initializing auth:', error)
+            // Clear invalid data
             localStorage.removeItem('user')
             localStorage.removeItem('accessToken')
             localStorage.removeItem('refreshToken')

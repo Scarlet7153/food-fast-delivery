@@ -10,6 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "seed": "node scripts/seed.js",
+    "seed:users": "node scripts/seed-users.js",
     "clear-db": "node scripts/clear-db.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"

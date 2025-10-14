@@ -99,10 +99,6 @@ function RestaurantMenu() {
 
   const menuItems = menuData?.data?.menuItems || []
   const categories = menuData?.data?.categories || ['all']
-  
-  // Debug: Check data structure
-  console.log('Menu data:', menuData)
-  console.log('Menu items:', menuItems)
 
   const handleDeleteItem = (itemId, itemName) => {
     if (window.confirm(`Bạn có chắc muốn xóa "${itemName}"?`)) {

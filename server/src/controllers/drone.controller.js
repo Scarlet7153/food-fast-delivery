@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 // Create drone
 const createDrone = async (req, res) => {
   try {
-    const { name, serial, model, maxPayloadGrams, maxRangeMeters, status } = req.body;
+    const { name, serialNumber, model, maxPayloadGrams, maxRangeMeters, maxFlightTimeMinutes, batteryLevel, status } = req.body;
 
     // Check if user has a restaurant
     if (!req.user.restaurantId) {
@@ -16,8 +16,8 @@ const createDrone = async (req, res) => {
     }
 
     // Check if serial number is unique (only if provided)
-    if (serial) {
-      const existingDrone = await Drone.findOne({ serial });
+    if (serialNumber) {
+      const existingDrone = await Drone.findOne({ serialNumber });
       if (existingDrone) {
         return res.status(400).json({
           success: false,
@@ -29,16 +29,18 @@ const createDrone = async (req, res) => {
     const drone = new Drone({
       restaurantId: req.user.restaurantId,
       name,
-      serial: serial || `DRONE-${Date.now()}`, // Generate serial if not provided
+      serialNumber: serialNumber || `DRONE-${Date.now()}`, // Generate serial if not provided
       model,
       maxPayloadGrams,
       maxRangeMeters,
+      maxFlightTimeMinutes,
+      batteryLevel: batteryLevel || 100,
       status: status || 'IDLE'
     });
 
     await drone.save();
 
-    logger.info(`Drone created: ${drone.name} (${drone.serial}) for restaurant ${req.user.restaurantId}`);
+    logger.info(`Drone created: ${drone.name} (${drone.serialNumber}) for restaurant ${req.user.restaurantId}`);
 
     res.status(201).json({
       success: true,
@@ -74,7 +76,7 @@ const getDrones = async (req, res) => {
     if (status) query.status = status;
     if (available === 'true') {
       query.status = 'IDLE';
-      query.batteryPercent = { $gte: 30 };
+      query.batteryLevel = { $gte: 30 };
       query['maintenance.healthStatus'] = { $ne: 'CRITICAL' };
     }
 
@@ -183,9 +185,9 @@ const updateDrone = async (req, res) => {
     }
 
     // Check if serial number is unique (if being updated)
-    if (updateData.serial && updateData.serial !== drone.serial) {
+    if (updateData.serialNumber && updateData.serialNumber !== drone.serialNumber) {
       const existingDrone = await Drone.findOne({ 
-        serial: updateData.serial,
+        serialNumber: updateData.serialNumber,
         _id: { $ne: id }
       });
       if (existingDrone) {
@@ -202,7 +204,7 @@ const updateDrone = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    logger.info(`Drone updated: ${updatedDrone.name} (${updatedDrone.serial})`);
+    logger.info(`Drone updated: ${updatedDrone.name} (${updatedDrone.serialNumber})`);
 
     res.json({
       success: true,
@@ -269,7 +271,7 @@ const deleteDrone = async (req, res) => {
 
     await Drone.findByIdAndDelete(id);
 
-    logger.info(`Drone deleted: ${drone.name} (${drone.serial})`);
+    logger.info(`Drone deleted: ${drone.name} (${drone.serialNumber})`);
 
     res.json({
       success: true,
@@ -336,7 +338,7 @@ const updateDroneStatus = async (req, res) => {
 const updateDroneLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { longitude, latitude, altitude = 0, heading = 0 } = req.body;
+    const { lat, lng } = req.body;
 
     if (!req.user.restaurantId) {
       return res.status(400).json({
@@ -358,17 +360,9 @@ const updateDroneLocation = async (req, res) => {
       });
     }
 
-    // Check if location is within geofence
-    if (!drone.isWithinGeofence(latitude, longitude)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Location is outside drone geofence'
-      });
-    }
+    await drone.updateLocation(lat, lng);
 
-    await drone.updateLocation(longitude, latitude, altitude, heading);
-
-    logger.info(`Drone location updated: ${drone.name} - ${latitude}, ${longitude}`);
+    logger.info(`Drone location updated: ${drone.name} - ${lat}, ${lng}`);
 
     res.json({
       success: true,
@@ -391,12 +385,20 @@ const updateDroneLocation = async (req, res) => {
 const updateDroneBattery = async (req, res) => {
   try {
     const { id } = req.params;
-    const { batteryPercent } = req.body;
+    const { batteryLevel } = req.body;
 
     if (!req.user.restaurantId) {
       return res.status(400).json({
         success: false,
         error: 'You need to have a restaurant to update drone battery'
+      });
+    }
+
+    // Validate battery level
+    if (batteryLevel < 0 || batteryLevel > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'Battery level must be between 0 and 100'
       });
     }
 
@@ -413,9 +415,10 @@ const updateDroneBattery = async (req, res) => {
       });
     }
 
-    await drone.updateBattery(batteryPercent);
+    drone.batteryLevel = batteryLevel;
+    await drone.save();
 
-    logger.info(`Drone battery updated: ${drone.name} - ${batteryPercent}%`);
+    logger.info(`Drone battery updated: ${drone.name} - ${batteryLevel}%`);
 
     res.json({
       success: true,
@@ -501,7 +504,7 @@ const getAllDrones = async (req, res) => {
     }
 
     const drones = await Drone.find(query)
-      .populate('restaurantId', 'name address')
+      .populate('restaurant', 'name address')
       .populate('currentMission', 'status orderId')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit) * 1)
@@ -559,7 +562,7 @@ const getDroneStatistics = async (req, res) => {
           maintenanceDrones: {
             $sum: { $cond: [{ $eq: ['$status', 'MAINTENANCE'] }, 1, 0] }
           },
-          averageBattery: { $avg: '$batteryPercent' },
+          averageBattery: { $avg: '$batteryLevel' },
           averageFlightHours: { $avg: '$maintenance.totalFlightHours' }
         }
       }

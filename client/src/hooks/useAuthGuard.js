@@ -38,8 +38,6 @@ export const useAuthGuard = () => {
       const timeUntilExpiry = expirationTime.getTime() - now
       const refreshTime = Math.max(0, timeUntilExpiry - 5 * 60 * 1000) // 5 minutes before expiration
 
-      console.log(`Token will be refreshed in ${Math.round(refreshTime / 1000 / 60)} minutes`)
-
       refreshTimeout = setTimeout(() => {
         handleTokenRefresh()
       }, refreshTime)
@@ -60,8 +58,6 @@ export const useAuthGuard = () => {
 
         localStorage.setItem('accessToken', accessToken)
         localStorage.setItem('refreshToken', newRefreshToken)
-
-        console.log('Token refreshed successfully')
         
         // Schedule next refresh
         scheduleTokenRefresh()
