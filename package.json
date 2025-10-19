@@ -15,13 +15,25 @@
     "seed": "cd server && npm run seed",
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
-    "test:client": "cd client && npm test"
+    "test:client": "cd client && npm test",
+    "microservices:start": "concurrently \"npm run start:api-gateway\" \"npm run start:auth\" \"npm run start:user\" \"npm run start:restaurant\" \"npm run start:order\" \"npm run start:drone\" \"npm run start:payment\" \"npm run start:notification\"",
+    "start:api-gateway": "cd services/api-gateway && npm run dev",
+    "start:auth": "cd services/auth-service && npm run dev",
+    "start:user": "cd services/user-service && npm run dev",
+    "start:restaurant": "cd services/restaurant-service && npm run dev",
+    "start:order": "cd services/order-service && npm run dev",
+    "start:drone": "cd services/drone-service && npm run dev",
+    "start:payment": "cd services/payment-service && npm run dev",
+    "start:notification": "cd services/notification-service && npm run dev",
+    "test:microservices": "node test-microservices.js"
   },
   "keywords": ["drone", "delivery", "food", "mern", "react", "nodejs"],
   "author": "Fast Food Delivery Team",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "axios": "^1.6.2",
+    "colors": "^1.4.0"
   }
 }
 

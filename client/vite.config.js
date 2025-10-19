@@ -15,11 +15,11 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:3000', // API Gateway
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:3007', // Notification Service (Socket.IO)
         changeOrigin: true,
         ws: true,
       },
