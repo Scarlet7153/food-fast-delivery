@@ -11,7 +11,7 @@ class SocketService {
       return this.socket
     }
 
-    this.socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000', {
+    this.socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3007', {
       auth: {
         token
       },
