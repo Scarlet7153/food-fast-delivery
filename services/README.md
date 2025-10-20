@@ -63,25 +63,16 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Transaction history
   - Integration với MoMo và other payment gateways
 
-### 8. Notification Service (Port 3007)
-- **Chức năng**: Gửi thông báo real-time
-- **Nhiệm vụ**:
-  - WebSocket connections
-  - Push notifications
-  - Email notifications
-  - SMS notifications
-  - Real-time order updates
 
 ## Cơ sở dữ liệu
 
 Mỗi service có database riêng biệt:
-- `ffdd_auth` - Auth Service
-- `ffdd_users` - User Service  
-- `ffdd_restaurants` - Restaurant Service
-- `ffdd_orders` - Order Service
-- `ffdd_drones` - Drone Service
-- `ffdd_payments` - Payment Service
-- `ffdd_notifications` - Notification Service
+- `drone_auth` - Auth Service
+- `drone_users` - User Service  
+- `drone_restaurants` - Restaurant Service
+- `drone_orders` - Order Service
+- `drone_drones` - Drone Service
+- `drone_payments` - Payment Service
 
 ## Cách chạy
 
