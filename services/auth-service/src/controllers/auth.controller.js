@@ -417,12 +417,38 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Get user profile
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: { user: user.toSummary() }
+    });
+  } catch (error) {
+    logger.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get profile'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   refreshToken,
   logout,
   logoutAll,
+  getProfile,
   verifyToken,
   forgotPassword,
   resetPassword

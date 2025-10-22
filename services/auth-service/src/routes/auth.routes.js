@@ -13,10 +13,10 @@ router.post('/logout-all', auth, authController.logoutAll);
 router.post('/forgot-password', validate(schemas.forgotPassword), authController.forgotPassword);
 router.post('/reset-password', validate(schemas.resetPassword), authController.resetPassword);
 
+// Protected routes
+router.get('/me', auth, authController.getProfile);
+
 // Token verification (for API Gateway)
 router.get('/verify', authController.verifyToken);
-
-// Protected routes
-router.put('/change-password', auth, validate(schemas.changePassword), authController.changePassword);
 
 module.exports = router;

@@ -16,18 +16,25 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    match: [/^[0-9]{10,11}$/, 'Phone number must be 10-11 digits']
   },
   role: {
     type: String,
     enum: ['customer', 'restaurant', 'admin'],
-    default: 'customer'
+    default: 'customer',
+    required: true
   },
   active: {
     type: Boolean,
     default: true
   },
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant'
+  },
   address: {
+    text: String,
     street: String,
     city: String,
     state: String,

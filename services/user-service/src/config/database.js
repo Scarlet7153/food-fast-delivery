@@ -4,10 +4,14 @@ const logger = require('../utils/logger');
 
 const connect = async () => {
   try {
-    await mongoose.connect(config.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const options = {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      bufferCommands: false,
+    };
+
+    await mongoose.connect(config.MONGODB_URI, options);
     
     logger.info('Connected to MongoDB - User Service');
   } catch (error) {

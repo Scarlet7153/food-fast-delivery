@@ -22,31 +22,59 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    match: [/^[0-9]{10,11}$/, 'Phone number must be 10-11 digits']
   },
   role: {
     type: String,
     enum: ['customer', 'restaurant', 'admin'],
-    default: 'customer'
+    default: 'customer',
+    required: true
   },
   active: {
     type: Boolean,
     default: true
   },
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant'
+  },
+  address: {
+    text: String,
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        default: [106.6297, 10.8231], // Default to Ho Chi Minh City center
+        index: '2dsphere'
+      }
+    }
+  },
   lastLogin: {
     type: Date
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  refreshTokens: [{
+    token: String,
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      expires: 604800 // 7 days
+    }
+  }]
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
+
+// Indexes
+userSchema.index({ role: 1 });
+userSchema.index({ restaurantId: 1 });
+userSchema.index({ 'address.location': '2dsphere' });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
