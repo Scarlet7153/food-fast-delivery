@@ -17,9 +17,11 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3000', // API Gateway
         changeOrigin: true,
+        timeout: 60000, // 60 seconds timeout
+        proxyTimeout: 60000, // 60 seconds proxy timeout
       },
       '/socket.io': {
-        target: 'http://localhost:3007', // Notification Service (Socket.IO)
+        target: 'http://localhost:4000', // Original monolith server (Socket.IO)
         changeOrigin: true,
         ws: true,
       },
