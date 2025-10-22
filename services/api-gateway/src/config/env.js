@@ -11,7 +11,6 @@ const config = {
   ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || 'http://localhost:3004',
   DRONE_SERVICE_URL: process.env.DRONE_SERVICE_URL || 'http://localhost:3005',
   PAYMENT_SERVICE_URL: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006',
-  NOTIFICATION_SERVICE_URL: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3007',
   
   // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET || 'your_jwt_secret_key_here',

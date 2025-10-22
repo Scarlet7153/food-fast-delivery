@@ -34,9 +34,9 @@ class APIGateway {
     });
     this.app.use(limiter);
 
-    // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true }));
+    // Body parsing - SKIP for /api routes (let proxy handle it)
+    // this.app.use(express.json({ limit: '10mb' }));
+    // this.app.use(express.urlencoded({ extended: true }));
 
     // Request logging
     this.app.use((req, res, next) => {
@@ -59,18 +59,28 @@ class APIGateway {
     this.app.use('/api/auth', createProxyMiddleware({
       target: config.AUTH_SERVICE_URL,
       changeOrigin: true,
-      pathRewrite: {
-        '^/api/auth': '/api/auth'
+      logLevel: 'debug',
+      onProxyReq: (proxyReq, req, res) => {
+        logger.info(`[API Gateway] Proxying ${req.method} ${req.path} to ${config.AUTH_SERVICE_URL}`);
+      },
+      onProxyRes: (proxyRes, req, res) => {
+        logger.info(`[API Gateway] Received response from Auth Service: ${proxyRes.statusCode}`);
+      },
+      onError: (err, req, res) => {
+        logger.error('[API Gateway] Proxy error:', err);
+        res.status(504).json({ 
+          success: false, 
+          error: 'Gateway timeout',
+          message: 'The upstream service did not respond in time'
+        });
       }
     }));
 
-    // Protected routes with authentication middleware
-    this.app.use('/api', this.authenticateToken.bind(this));
-
-    // User service routes
-    this.app.use('/api/users', createProxyMiddleware({
+    // User service routes (protected)
+    this.app.use('/api/users', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL,
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/users': '/api/users'
       }
@@ -80,51 +90,94 @@ class APIGateway {
     this.app.use('/api/restaurants', createProxyMiddleware({
       target: config.RESTAURANT_SERVICE_URL,
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/restaurants': '/api/restaurants'
       }
     }));
 
-    // Order service routes
-    this.app.use('/api/orders', createProxyMiddleware({
+    // Menu routes (public)
+    this.app.use('/api/menu', createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/menu': '/api/menu'
+      }
+    }));
+
+    // Restaurant menu routes (backward compatibility)
+    this.app.use('/api/restaurant/menu', createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurant/menu': '/api/restaurant/menu'
+      }
+    }));
+
+    // Order service routes (protected)
+    this.app.use('/api/orders', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.ORDER_SERVICE_URL,
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/orders': '/api/orders'
       }
     }));
 
-    // Drone service routes
-    this.app.use('/api/drones', createProxyMiddleware({
+    // Drone service routes (protected)
+    this.app.use('/api/drones', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.DRONE_SERVICE_URL,
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/drones': '/api/drones'
       }
     }));
 
-    // Payment service routes
-    this.app.use('/api/payments', createProxyMiddleware({
+    // Restaurant drone routes (protected)
+    this.app.use('/api/restaurant/drones', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurant/drones': '/api/restaurant/drones'
+      }
+    }));
+
+    // Restaurant mission routes (protected)
+    this.app.use('/api/restaurant/missions', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurant/missions': '/api/restaurant/missions'
+      }
+    }));
+
+    // Payment service routes (protected, except /methods)
+    this.app.use('/api/payments', (req, res, next) => {
+      // Allow /methods without authentication
+      if (req.path === '/methods') {
+        return next();
+      }
+      // Require authentication for other payment routes
+      return this.authenticateToken(req, res, next);
+    }, createProxyMiddleware({
       target: config.PAYMENT_SERVICE_URL,
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/payments': '/api/payments'
       }
     }));
 
-    // Notification service routes
-    this.app.use('/api/notifications', createProxyMiddleware({
-      target: config.NOTIFICATION_SERVICE_URL,
-      changeOrigin: true,
-      pathRewrite: {
-        '^/api/notifications': '/api/notifications'
-      }
-    }));
-
-    // Admin routes
-    this.app.use('/api/admin', createProxyMiddleware({
+    // Admin routes (protected)
+    this.app.use('/api/admin', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL, // Admin functionality in user service
       changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/admin': '/api/admin'
       }
@@ -159,7 +212,12 @@ class APIGateway {
         return res.status(403).json({ message: 'Invalid token' });
       }
     } catch (error) {
-      logger.error('Token verification failed:', error.message);
+      logger.error('Token verification failed:', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        token: token ? `${token.substring(0, 20)}...` : 'null'
+      });
       return res.status(403).json({ message: 'Token verification failed' });
     }
   }
