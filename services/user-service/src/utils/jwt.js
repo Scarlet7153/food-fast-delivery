@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
-const axios = require('axios');
+const User = require('../models/User');
 
 // Generate access token
-const generateAccessToken = (userId) => {
+const generateAccessToken = (userId, role) => {
   return jwt.sign(
-    { userId },
+    { userId, role },
     config.JWT_SECRET,
     { expiresIn: config.JWT_EXPIRES_IN }
   );
@@ -15,7 +15,7 @@ const generateAccessToken = (userId) => {
 const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId, type: 'refresh' },
-    config.JWT_SECRET,
+    config.JWT_REFRESH_SECRET,
     { expiresIn: config.JWT_REFRESH_EXPIRES_IN }
   );
 };
@@ -32,7 +32,7 @@ const verifyAccessToken = (token) => {
 // Verify refresh token
 const verifyRefreshToken = (token) => {
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const decoded = jwt.verify(token, config.JWT_REFRESH_SECRET);
     if (decoded.type !== 'refresh') {
       throw new Error('Invalid refresh token');
     }
@@ -43,8 +43,8 @@ const verifyRefreshToken = (token) => {
 };
 
 // Generate token pair
-const generateTokenPair = (userId) => {
-  const accessToken = generateAccessToken(userId);
+const generateTokenPair = (userId, role) => {
+  const accessToken = generateAccessToken(userId, role);
   const refreshToken = generateRefreshToken(userId);
   
   return {
@@ -54,11 +54,16 @@ const generateTokenPair = (userId) => {
   };
 };
 
-// Save refresh token to user service
+// Save refresh token to database
 const saveRefreshToken = async (userId, refreshToken) => {
   try {
-    await axios.post(`${config.USER_SERVICE_URL}/api/users/${userId}/refresh-tokens`, {
-      token: refreshToken
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        refreshTokens: {
+          token: refreshToken,
+          createdAt: new Date()
+        }
+      }
     });
   } catch (error) {
     throw new Error('Failed to save refresh token');
@@ -68,8 +73,10 @@ const saveRefreshToken = async (userId, refreshToken) => {
 // Remove refresh token
 const removeRefreshToken = async (userId, refreshToken) => {
   try {
-    await axios.delete(`${config.USER_SERVICE_URL}/api/users/${userId}/refresh-tokens`, {
-      data: { token: refreshToken }
+    await User.findByIdAndUpdate(userId, {
+      $pull: {
+        refreshTokens: { token: refreshToken }
+      }
     });
   } catch (error) {
     throw new Error('Failed to remove refresh token');
@@ -79,7 +86,9 @@ const removeRefreshToken = async (userId, refreshToken) => {
 // Remove all refresh tokens for user
 const removeAllRefreshTokens = async (userId) => {
   try {
-    await axios.delete(`${config.USER_SERVICE_URL}/api/users/${userId}/refresh-tokens/all`);
+    await User.findByIdAndUpdate(userId, {
+      $set: { refreshTokens: [] }
+    });
   } catch (error) {
     throw new Error('Failed to remove all refresh tokens');
   }
@@ -88,10 +97,10 @@ const removeAllRefreshTokens = async (userId) => {
 // Check if refresh token is valid
 const isRefreshTokenValid = async (userId, refreshToken) => {
   try {
-    const response = await axios.post(`${config.USER_SERVICE_URL}/api/users/${userId}/refresh-tokens/validate`, {
-      token: refreshToken
-    });
-    return response.data.valid;
+    const user = await User.findById(userId);
+    if (!user) return false;
+    
+    return user.refreshTokens.some(rt => rt.token === refreshToken);
   } catch (error) {
     return false;
   }
@@ -113,7 +122,7 @@ const verifyPasswordResetToken = (token) => {
     if (decoded.type !== 'password-reset') {
       throw new Error('Invalid password reset token');
     }
-    return decoded;
+    return decoded.userId;
   } catch (error) {
     throw new Error('Invalid or expired password reset token');
   }
@@ -132,3 +141,8 @@ module.exports = {
   generatePasswordResetToken,
   verifyPasswordResetToken
 };
+
+
+
+
+

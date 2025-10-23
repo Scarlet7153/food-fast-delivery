@@ -4,33 +4,33 @@ services:
   # MongoDB Database
   mongo:
     image: mongo:7.0
-    container_name: ffdd-mongo
+    container_name: drone-mongo
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: ffdd
+      MONGO_INITDB_DATABASE: drone
     volumes:
       - mongo_data:/data/db
       - ./server/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
-      - ffdd-network
+      - drone-network
 
   # Backend API Server
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: ffdd-server
+    container_name: drone-server
     restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
       NODE_ENV: production
       PORT: 4000
-      MONGO_URI: mongodb://admin:password123@mongo:27017/ffdd?authSource=admin
+      MONGO_URI: mongodb://admin:password123@mongo:27017/drone?authSource=admin
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
       CLIENT_URL: http://localhost:5173
@@ -46,14 +46,14 @@ services:
       - ./server:/app
       - /app/node_modules
     networks:
-      - ffdd-network
+      - drone-network
 
   # Frontend React App
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: ffdd-client
+    container_name: drone-client
     restart: unless-stopped
     ports:
       - "5173:5173"
@@ -66,12 +66,12 @@ services:
       - ./client:/app
       - /app/node_modules
     networks:
-      - ffdd-network
+      - drone-network
 
   # Nginx Reverse Proxy (Optional for production)
   nginx:
     image: nginx:alpine
-    container_name: ffdd-nginx
+    container_name: drone-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -83,12 +83,12 @@ services:
       - server
       - client
     networks:
-      - ffdd-network
+      - drone-network
 
 volumes:
   mongo_data:
 
 networks:
-  ffdd-network:
+  drone-network:
     driver: bridge
 

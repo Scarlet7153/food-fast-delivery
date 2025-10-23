@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 class APIGateway {
   constructor() {
     this.app = express();
+    this.authLimiter = null; // Initialize authLimiter
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
@@ -26,13 +27,23 @@ class APIGateway {
       credentials: true
     }));
 
-    // Rate limiting
-    const limiter = rateLimit({
+    // Rate limiting - General
+    const generalLimiter = rateLimit({
       windowMs: config.RATE_LIMIT_WINDOW_MS,
       max: config.RATE_LIMIT_MAX_REQUESTS,
       message: 'Too many requests from this IP, please try again later.'
     });
-    this.app.use(limiter);
+
+    // Rate limiting - Auth routes (more lenient)
+    this.authLimiter = rateLimit({
+      windowMs: 60000, // 1 minute
+      max: 20, // 20 requests per minute for auth
+      message: 'Too many authentication attempts, please try again later.',
+      skipSuccessfulRequests: true // Don't count successful requests
+    });
+
+    // Apply general rate limiting to all routes
+    this.app.use(generalLimiter);
 
     // Body parsing - SKIP for /api routes (let proxy handle it)
     // this.app.use(express.json({ limit: '10mb' }));
@@ -55,16 +66,16 @@ class APIGateway {
       });
     });
 
-    // Authentication routes (no auth required)
-    this.app.use('/api/auth', createProxyMiddleware({
-      target: config.AUTH_SERVICE_URL,
+    // Authentication routes (no auth required) - now handled by User Service
+    this.app.use('/api/auth', this.authLimiter, createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
       changeOrigin: true,
       logLevel: 'debug',
       onProxyReq: (proxyReq, req, res) => {
-        logger.info(`[API Gateway] Proxying ${req.method} ${req.path} to ${config.AUTH_SERVICE_URL}`);
+        logger.info(`[API Gateway] Proxying ${req.method} ${req.path} to ${config.USER_SERVICE_URL}`);
       },
       onProxyRes: (proxyRes, req, res) => {
-        logger.info(`[API Gateway] Received response from Auth Service: ${proxyRes.statusCode}`);
+        logger.info(`[API Gateway] Received response from User Service: ${proxyRes.statusCode}`);
       },
       onError: (err, req, res) => {
         logger.error('[API Gateway] Proxy error:', err);
@@ -83,6 +94,34 @@ class APIGateway {
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/users': '/api/users'
+      }
+    }));
+
+    // User profile routes (protected)
+    this.app.use('/api/auth/me', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/auth/me': '/api/auth/me'
+      }
+    }));
+
+    this.app.use('/api/auth/profile', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/auth/profile': '/api/auth/profile'
+      }
+    }));
+
+    this.app.use('/api/auth/change-password', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/auth/change-password': '/api/auth/change-password'
       }
     }));
 
@@ -173,6 +212,36 @@ class APIGateway {
       }
     }));
 
+    // Order service routes (protected)
+    this.app.use('/api/orders', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/orders': '/api/orders'
+      }
+    }));
+
+    // Restaurant service routes (protected)
+    this.app.use('/api/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurants': '/api/restaurants'
+      }
+    }));
+
+    // Menu service routes (protected)
+    this.app.use('/api/menu', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/menu': '/api/restaurants/menu'
+      }
+    }));
+
     // Admin routes (protected)
     this.app.use('/api/admin', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL, // Admin functionality in user service
@@ -180,6 +249,86 @@ class APIGateway {
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/admin': '/api/admin'
+      }
+    }));
+
+    // Admin drone routes (protected)
+    this.app.use('/api/admin/drones', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/drones': '/api/admin/drones'
+      }
+    }));
+
+    // Admin mission routes (protected)
+    this.app.use('/api/admin/missions', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/missions': '/api/admin/missions'
+      }
+    }));
+
+    // Admin order routes (protected)
+    this.app.use('/api/admin/orders', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/orders': '/api/admin/orders'
+      }
+    }));
+
+    // Admin orders all route (protected)
+    this.app.use('/api/admin/orders/all', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/orders/all': '/api/admin/orders/all'
+      }
+    }));
+
+    // Admin restaurant routes (protected)
+    this.app.use('/api/admin/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/restaurants': '/api/admin/restaurants'
+      }
+    }));
+
+    // Admin restaurants pending route (protected)
+    this.app.use('/api/admin/restaurants/pending', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/restaurants/pending': '/api/admin/restaurants/pending'
+      }
+    }));
+
+    // Admin analytics routes (protected)
+    this.app.use('/api/admin/analytics', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL, // Analytics in user service
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/analytics': '/api/admin/analytics'
+      }
+    }));
+
+    // Admin system routes (protected)
+    this.app.use('/api/admin/system', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL, // System stats in user service
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/admin/system': '/api/admin/system'
       }
     }));
   }
@@ -198,15 +347,15 @@ class APIGateway {
     }
 
     try {
-      // Verify token with auth service
-      const response = await axios.get(`${config.AUTH_SERVICE_URL}/api/auth/verify`, {
+      // Verify token with user service
+      const response = await axios.get(`${config.USER_SERVICE_URL}/api/auth/verify`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.data.valid) {
-        req.user = response.data.user;
+      if (response.data.success) {
+        req.user = response.data.data.user;
         next();
       } else {
         return res.status(403).json({ message: 'Invalid token' });

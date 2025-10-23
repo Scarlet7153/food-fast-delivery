@@ -9,7 +9,7 @@ export const orderService = {
 
   // Get my orders (customer)
   async getMyOrders(params = {}) {
-    const response = await api.get('/orders/my-orders', { params })
+    const response = await api.get('/orders/user', { params })
     return response.data
   },
 

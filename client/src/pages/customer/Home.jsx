@@ -38,6 +38,7 @@ function CustomerHome() {
   const { data: featuredItemsData, isLoading: isLoadingFeatured } = useQuery(
     ['allMenuItems'],
     () => restaurantService.searchMenuItems({
+      search: 'featured', // Use a default search term
       limit: 12
     }),
     {

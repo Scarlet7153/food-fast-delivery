@@ -13,6 +13,9 @@ router.post('/logout-all', auth, authController.logoutAll);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
+// Token verification endpoint (for API Gateway)
+router.get('/verify', authController.verifyToken);
+
 // Protected routes
 router.get('/me', auth, authController.getProfile);
 router.put('/profile', auth, authController.updateProfile);

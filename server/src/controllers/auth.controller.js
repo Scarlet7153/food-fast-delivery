@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
+const config = require('../config/env');
 const { 
   generateTokenPair, 
   saveRefreshToken, 
@@ -589,6 +591,45 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+// Verify token (for API Gateway)
+const verifyToken = async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token required'
+      });
+    }
+
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password -refreshTokens');
+
+    if (!user || !user.active) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user
+      }
+    });
+
+  } catch (error) {
+    logger.error('Token verification error:', error);
+    res.status(401).json({
+      success: false,
+      error: 'Invalid token'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -601,6 +642,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getAllUsers,
-  updateUserStatus
+  updateUserStatus,
+  verifyToken
 };
 

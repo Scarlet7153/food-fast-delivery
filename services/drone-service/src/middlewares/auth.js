@@ -15,14 +15,14 @@ const auth = async (req, res, next) => {
     }
 
     // Verify token with auth service
-    const response = await axios.get(`${config.AUTH_SERVICE_URL}/api/auth/verify`, {
+    const response = await axios.get(`${config.USER_SERVICE_URL}/api/auth/verify`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
 
-    if (response.data.valid) {
-      req.user = response.data.user;
+    if (response.data.success) {
+      req.user = response.data.data.user;
       next();
     } else {
       return res.status(403).json({

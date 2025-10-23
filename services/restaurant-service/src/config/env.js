@@ -8,7 +8,6 @@ const config = {
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/ffdd_restaurants',
   
   // Service URLs
-  AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
   USER_SERVICE_URL: process.env.USER_SERVICE_URL || 'http://localhost:3002',
   ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || 'http://localhost:3004',
   

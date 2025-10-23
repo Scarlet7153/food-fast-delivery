@@ -13,6 +13,7 @@ router.get('/:id/delivery-fee', validate(schemas.calculateDeliveryFee), restaura
 router.get('/:restaurantId/menu', menuController.getMenuItems);
 router.get('/menu/item/:id', menuController.getMenuItemById);
 router.get('/:restaurantId/menu/popular', menuController.getPopularMenuItems);
+router.get('/menu/search', menuController.searchMenuItems);
 
 // Protected routes (Restaurant owners)
 router.post('/', auth, requireRole('restaurant'), validate(schemas.createRestaurant), restaurantController.createRestaurant);

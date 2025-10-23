@@ -13,25 +13,21 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Load balancing
   - Request/Response logging
 
-### 2. Auth Service (Port 3001)
-- **Chức năng**: Xử lý authentication và authorization
+### 2. User Service (Port 3002)
+- **Chức năng**: Quản lý authentication và thông tin người dùng
 - **Nhiệm vụ**:
   - User registration và login
   - JWT token generation và validation
   - Password reset
   - Refresh token management
   - Token verification cho API Gateway
-
-### 3. User Service (Port 3002)
-- **Chức năng**: Quản lý thông tin người dùng
-- **Nhiệm vụ**:
   - User profile management
   - User data storage
-  - Refresh token storage
   - Admin user management
   - User status management
+  - Restaurant owner registration
 
-### 4. Restaurant Service (Port 3003)
+### 3. Restaurant Service (Port 3003)
 - **Chức năng**: Quản lý nhà hàng và menu
 - **Nhiệm vụ**:
   - Restaurant registration và approval
@@ -39,7 +35,7 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Restaurant profile management
   - Location-based restaurant search
 
-### 5. Order Service (Port 3004)
+### 4. Order Service (Port 3004)
 - **Chức năng**: Xử lý đơn hàng
 - **Nhiệm vụ**:
   - Order creation và management
@@ -47,7 +43,7 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Order history
   - Integration với Payment và Drone services
 
-### 6. Drone Service (Port 3005)
+### 5. Drone Service (Port 3005)
 - **Chức năng**: Quản lý drone và delivery missions
 - **Nhiệm vụ**:
   - Drone fleet management
@@ -55,7 +51,7 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Real-time drone tracking
   - Mission status updates
 
-### 7. Payment Service (Port 3006)
+### 6. Payment Service (Port 3006)
 - **Chức năng**: Xử lý thanh toán
 - **Nhiệm vụ**:
   - Payment processing
@@ -63,37 +59,29 @@ Dự án đã được tái cấu trúc từ mô hình 3 lớp (monolith) sang k
   - Transaction history
   - Integration với MoMo và other payment gateways
 
-
 ## Cơ sở dữ liệu
 
 Mỗi service có database riêng biệt:
-- `drone_auth` - Auth Service
-- `drone_users` - User Service  
-- `drone_restaurants` - Restaurant Service
-- `drone_orders` - Order Service
-- `drone_drones` - Drone Service
-- `drone_payments` - Payment Service
+- `ffdd_auth` - User Service (bao gồm cả auth)
+- `ffdd_restaurants` - Restaurant Service
+- `ffdd_orders` - Order Service
+- `ffdd_drones` - Drone Service
+- `ffdd_payments` - Payment Service
 
 ## Cách chạy
 
-### 1. Chạy tất cả services với Docker Compose
+### 1. Chạy tất cả services cùng lúc
 
 ```bash
-# Chạy tất cả microservices
-docker-compose -f docker-compose.microservices.yml up -d
-
-# Xem logs
-docker-compose -f docker-compose.microservices.yml logs -f
-
-# Dừng tất cả services
-docker-compose -f docker-compose.microservices.yml down
+# Từ thư mục root của dự án
+npm run microservices:start
 ```
 
 ### 2. Chạy từng service riêng lẻ
 
 ```bash
 # Vào thư mục service
-cd services/auth-service
+cd services/user-service
 
 # Cài đặt dependencies
 npm install
@@ -112,9 +100,8 @@ npm run dev
 - `GET /api/orders/*` - Order endpoints
 - `GET /api/drones/*` - Drone endpoints
 - `GET /api/payments/*` - Payment endpoints
-- `GET /api/notifications/*` - Notification endpoints
 
-### Auth Service (http://localhost:3001)
+### User Service (http://localhost:3002) - includes Auth functionality
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/refresh` - Refresh token

@@ -315,6 +315,83 @@ const updateMenuItemRating = async (req, res) => {
   }
 };
 
+// Search menu items across all restaurants
+const searchMenuItems = async (req, res) => {
+  try {
+    const { search, category, minPrice, maxPrice, featured, page = 1, limit = 20 } = req.query;
+    
+    // Allow search without search term if category is provided
+    if (!search && !category) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search term or category is required'
+      });
+    }
+    
+    const options = {
+      category,
+      featured: featured === 'true',
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    };
+    
+    let menuItems;
+    
+    if (search) {
+      // Use text search when search term is provided
+      menuItems = await MenuItem.search(search, options);
+    } else {
+      // When no search term, find by category and other filters across all restaurants
+      const query = { available: true };
+      
+      if (options.category) {
+        query.category = options.category;
+      }
+      
+      if (options.featured) {
+        query.featured = options.featured;
+      }
+      
+      if (options.minPrice || options.maxPrice) {
+        query.price = {};
+        if (options.minPrice) query.price.$gte = options.minPrice;
+        if (options.maxPrice) query.price.$lte = options.maxPrice;
+      }
+      
+      // Only get items from active and approved restaurants
+      const activeRestaurants = await Restaurant.find({ active: true, approved: true }).select('_id');
+      const restaurantIds = activeRestaurants.map(r => r._id);
+      query.restaurantId = { $in: restaurantIds };
+      
+      menuItems = await MenuItem.find(query)
+        .populate('restaurantId', 'name active approved')
+        .sort({ featured: -1, 'popularity.rating.average': -1, name: 1 })
+        .limit(options.limit);
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        menuItems,
+        pagination: {
+          page: options.page,
+          limit: options.limit,
+          total: menuItems.length
+        }
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Search menu items error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to search menu items'
+    });
+  }
+};
+
 module.exports = {
   getMenuItems,
   getMenuItemById,
@@ -323,5 +400,6 @@ module.exports = {
   deleteMenuItem,
   updateStock,
   getPopularMenuItems,
-  updateMenuItemRating
+  updateMenuItemRating,
+  searchMenuItems
 };

@@ -21,7 +21,7 @@ export const restaurantService = {
 
   // Search menu items (public)
   async searchMenuItems(params = {}) {
-    const response = await api.get('/menu/search', { params })
+    const response = await api.get('/restaurants/menu/search', { params })
     return response.data
   },
 

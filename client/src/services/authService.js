@@ -58,7 +58,7 @@ export const authService = {
 
     // Use axios directly to avoid interceptor loop
     const baseURL = import.meta.env.VITE_API_URL || '/api'
-    const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken })
+    const response = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken })
     return response.data
   },
 
@@ -69,10 +69,10 @@ export const authService = {
   },
 
   // Reset password
-  async resetPassword(token, newPassword) {
+  async resetPassword(token, password) {
     const response = await api.post('/auth/reset-password', { 
       token, 
-      newPassword 
+      password 
     })
     return response.data
   }
