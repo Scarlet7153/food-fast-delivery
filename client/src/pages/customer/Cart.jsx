@@ -6,6 +6,7 @@ import {
   MapPin, Clock, CreditCard, Truck
 } from 'lucide-react'
 import { formatCurrency, formatWeight } from '../../utils/formatters'
+import { t } from '../../utils/translations'
 import toast from 'react-hot-toast'
 
 function Cart() {
