@@ -21,7 +21,7 @@ const useCartStore = create(
             restaurantId: restaurant._id,
             restaurant
           })
-          toast.success(`Switched to ${restaurant.name}`)
+          toast.success(`Đã chuyển sang ${restaurant.name}`)
         } else if (!state.restaurantId) {
           set({
             restaurantId: restaurant._id,
@@ -41,7 +41,7 @@ const useCartStore = create(
               : cartItem
           )
           set({ items: updatedItems })
-          toast.success(`${item.name} quantity updated`)
+          toast.success(`Đã cập nhật số lượng ${item.name}`)
         } else {
           // Add new item
           const newItem = {
@@ -54,7 +54,7 @@ const useCartStore = create(
             specialInstructions: ''
           }
           set({ items: [...state.items, newItem] })
-          toast.success(`${item.name} added to cart`)
+          toast.success(`Đã thêm ${item.name} vào giỏ`)
         }
       },
 
@@ -64,7 +64,7 @@ const useCartStore = create(
           item => item.menuItemId !== menuItemId
         )
         set({ items: updatedItems })
-        toast.success('Item removed from cart')
+        toast.success('Đã xóa món khỏi giỏ')
       },
 
       updateQuantity: (menuItemId, quantity) => {
@@ -98,11 +98,16 @@ const useCartStore = create(
           restaurantId: null, 
           restaurant: null 
         })
-        toast.success('Cart cleared')
+        toast.success('Đã xóa toàn bộ giỏ hàng')
       },
 
       // Computed values
       getTotalItems: () => {
+        const { items } = get()
+        return items.length
+      },
+
+      getTotalQuantity: () => {
         const { items } = get()
         return items.reduce((total, item) => total + item.quantity, 0)
       },

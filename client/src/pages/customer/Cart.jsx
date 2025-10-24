@@ -8,6 +8,7 @@ import {
 import { formatCurrency, formatWeight } from '../../utils/formatters'
 import { t } from '../../utils/translations'
 import toast from 'react-hot-toast'
+import ConfirmationModal from '../../components/ConfirmationModal'
 
 function Cart() {
   const navigate = useNavigate()
@@ -26,6 +27,13 @@ function Cart() {
   } = useCartStore()
 
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    type: 'warning'
+  })
 
   const handleQuantityChange = (menuItemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -36,17 +44,31 @@ function Cart() {
   }
 
   const handleRemoveItem = (menuItemId, itemName) => {
-    if (window.confirm(`Xóa ${itemName} khỏi giỏ hàng?`)) {
-      removeItem(menuItemId)
-      toast.success('Đã xóa khỏi giỏ hàng')
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa sản phẩm',
+      message: `Bạn có chắc muốn xóa "${itemName}" khỏi giỏ hàng?`,
+      onConfirm: () => {
+        removeItem(menuItemId)
+        toast.success('Đã xóa khỏi giỏ hàng')
+        setConfirmModal({ ...confirmModal, isOpen: false })
+      },
+      type: 'danger'
+    })
   }
 
   const handleClearCart = () => {
-    if (window.confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) {
-      clearCart()
-      toast.success('Đã xóa giỏ hàng')
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa toàn bộ giỏ hàng',
+      message: 'Bạn có chắc muốn xóa toàn bộ giỏ hàng? Hành động này không thể hoàn tác.',
+      onConfirm: () => {
+        clearCart()
+        toast.success('Đã xóa giỏ hàng')
+        setConfirmModal({ ...confirmModal, isOpen: false })
+      },
+      type: 'danger'
+    })
   }
 
   const handleCheckout = () => {
@@ -246,6 +268,18 @@ function Cart() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+      />
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useQuery } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { useCartStore } from '../../stores/cartStore'
 import { 
-  Clock, MapPin, Phone, Plus, Minus, 
+  Clock, MapPin, Phone, Plus, 
   ShoppingCart, Heart, Share2, Filter, Grid, List 
 } from 'lucide-react'
 import { formatCurrency, formatDistance, formatTime } from '../../utils/formatters'
@@ -55,11 +55,9 @@ function RestaurantDetail() {
     if (!isSameRestaurant && restaurantId) {
       if (window.confirm('Bạn có món từ nhà hàng khác trong giỏ. Bạn có muốn xóa và thêm món từ nhà hàng này?')) {
         addItem(item, currentRestaurant)
-        toast.success(`Đã thêm ${item.name} vào giỏ`)
       }
     } else {
       addItem(item, currentRestaurant)
-      toast.success(`Đã thêm ${item.name} vào giỏ`)
     }
   }
 
@@ -287,8 +285,6 @@ function RestaurantDetail() {
 
 // Menu Item Grid Card
 function MenuItemGridCard({ item, onAddToCart }) {
-  const { getItemQuantity, updateQuantity } = useCartStore()
-  const quantity = getItemQuantity(item._id)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -319,31 +315,13 @@ function MenuItemGridCard({ item, onAddToCart }) {
         )}
 
         <div className="flex items-center justify-between">
-          {quantity > 0 ? (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => updateQuantity(item._id, quantity - 1)}
-                className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="font-medium">{quantity}</span>
-              <button
-                onClick={() => updateQuantity(item._id, quantity + 1)}
-                className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => onAddToCart(item)}
-              className="btn btn-primary btn-sm flex items-center space-x-1"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add</span>
-            </button>
-          )}
+          <button
+            onClick={() => onAddToCart(item)}
+            className="btn btn-primary btn-sm flex items-center space-x-1"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Thêm</span>
+          </button>
         </div>
       </div>
     </div>
@@ -352,8 +330,6 @@ function MenuItemGridCard({ item, onAddToCart }) {
 
 // Menu Item List Card
 function MenuItemListCard({ item, onAddToCart }) {
-  const { getItemQuantity, updateQuantity } = useCartStore()
-  const quantity = getItemQuantity(item._id)
 
   return (
     <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -383,31 +359,13 @@ function MenuItemListCard({ item, onAddToCart }) {
             {item.prepTime && <span>Chuẩn bị: {item.prepTime}p</span>}
           </div>
 
-          {quantity > 0 ? (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => updateQuantity(item._id, quantity - 1)}
-                className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="font-medium">{quantity}</span>
-              <button
-                onClick={() => updateQuantity(item._id, quantity + 1)}
-                className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => onAddToCart(item)}
-              className="btn btn-primary btn-sm flex items-center space-x-1"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Thêm</span>
-            </button>
-          )}
+          <button
+            onClick={() => onAddToCart(item)}
+            className="btn btn-primary btn-sm flex items-center space-x-1"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Thêm</span>
+          </button>
         </div>
       </div>
     </div>
