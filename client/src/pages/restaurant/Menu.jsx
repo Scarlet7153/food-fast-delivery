@@ -92,11 +92,27 @@ function RestaurantMenu() {
   // Get unique categories from menu items
   const categories = ['all', ...new Set(allMenuItems.map(item => item.category).filter(Boolean))]
   
+  // Function to normalize Vietnamese text (remove diacritics)
+  const normalizeText = (text) => {
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+  }
+
   // Filter menu items based on search and category
   const menuItems = allMenuItems.filter(item => {
-    const matchesSearch = !searchQuery || 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    if (!searchQuery) {
+      const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter
+      return matchesCategory
+    }
+    
+    const normalizedSearch = normalizeText(searchQuery)
+    const normalizedName = normalizeText(item.name)
+    const normalizedDescription = normalizeText(item.description || '')
+    
+    const matchesSearch = normalizedName.includes(normalizedSearch) || 
+                         normalizedDescription.includes(normalizedSearch)
     
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter
     
