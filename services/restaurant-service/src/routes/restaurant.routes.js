@@ -16,7 +16,8 @@ router.get('/:restaurantId/menu/popular', menuController.getPopularMenuItems);
 router.get('/menu/search', menuController.searchMenuItems);
 
 // Protected routes (Restaurant owners)
-router.post('/', auth, requireRole('restaurant'), validate(schemas.createRestaurant), restaurantController.createRestaurant);
+// Note: POST / allows both authenticated users and internal service calls
+router.post('/', validate(schemas.createRestaurant), restaurantController.createRestaurant);
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateRestaurant), restaurantController.updateRestaurant);
 router.post('/:restaurantId/menu', auth, requireRole('restaurant'), validate(schemas.createMenuItem), menuController.createMenuItem);
 router.put('/menu/:id', auth, requireRole('restaurant'), validate(schemas.updateMenuItem), menuController.updateMenuItem);
@@ -24,7 +25,8 @@ router.delete('/menu/:id', auth, requireRole('restaurant'), menuController.delet
 router.patch('/menu/:id/stock', auth, requireRole('restaurant'), validate(schemas.updateStock), menuController.updateStock);
 
 // Admin only routes
-router.get('/admin/pending', auth, requireRole('admin'), restaurantController.getPendingRestaurants);
+router.get('/admin/restaurants', auth, requireRole('admin'), restaurantController.getAllRestaurants);
+router.get('/admin/restaurants/pending', auth, requireRole('admin'), restaurantController.getPendingRestaurants);
 router.patch('/:id/approve', auth, requireRole('admin'), validate(schemas.approveRestaurant), restaurantController.approveRestaurant);
 
 // Rating routes (Authenticated users)

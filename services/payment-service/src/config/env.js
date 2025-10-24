@@ -1,36 +1,33 @@
 require('dotenv').config();
 
 const config = {
-  PORT: process.env.PORT || 3006,
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV,
   
   // Database
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/ffdd_payments',
+  MONGODB_URI: process.env.MONGODB_URI,
+  
+  // JWT Configuration
+  JWT_SECRET: process.env.JWT_SECRET,
   
   // Service URLs
-  USER_SERVICE_URL: process.env.USER_SERVICE_URL || 'http://localhost:3002',
-  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || 'http://localhost:3004',
-  NOTIFICATION_SERVICE_URL: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3007',
+  USER_SERVICE_URL: process.env.USER_SERVICE_URL,
+  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL,
   
   // Client URL
-  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
+  CLIENT_URL: process.env.CLIENT_URL,
   
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
-  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
+  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS),
   
   // MoMo Payment Gateway
   MOMO_PARTNER_CODE: process.env.MOMO_PARTNER_CODE,
   MOMO_ACCESS_KEY: process.env.MOMO_ACCESS_KEY,
   MOMO_SECRET_KEY: process.env.MOMO_SECRET_KEY,
-  MOMO_ENDPOINT: process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create',
-  MOMO_RETURN_URL: process.env.MOMO_RETURN_URL || 'http://localhost:5173/payment/return',
-  MOMO_NOTIFY_URL: process.env.MOMO_NOTIFY_URL || 'http://localhost:3006/api/payments/momo/notify',
-  MOMO_IPN_URL: process.env.MOMO_IPN_URL || 'http://localhost:3006/api/payments/momo/ipn',
-  
-  // Payment Settings
-  PAYMENT_TIMEOUT_MINUTES: parseInt(process.env.PAYMENT_TIMEOUT_MINUTES) || 15,
-  REFUND_TIMEOUT_DAYS: parseInt(process.env.REFUND_TIMEOUT_DAYS) || 7
+  MOMO_ENDPOINT_CREATE: process.env.MOMO_ENDPOINT_CREATE,
+  MOMO_IPN_URL: process.env.MOMO_IPN_URL,
+  MOMO_RETURN_URL: process.env.MOMO_RETURN_URL
 };
 
 module.exports = config;

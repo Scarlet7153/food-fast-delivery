@@ -66,8 +66,8 @@ class APIGateway {
       });
     });
 
-    // Authentication routes (no auth required) - now handled by User Service
-    this.app.use('/api/auth', this.authLimiter, createProxyMiddleware({
+    // User routes (no auth required for register/login) - now handled by User Service
+    this.app.use('/api/user', this.authLimiter, createProxyMiddleware({
       target: config.USER_SERVICE_URL,
       changeOrigin: true,
       logLevel: 'debug',
@@ -98,40 +98,139 @@ class APIGateway {
     }));
 
     // User profile routes (protected)
-    this.app.use('/api/auth/me', this.authenticateToken.bind(this), createProxyMiddleware({
+    this.app.use('/api/user/me', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL,
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
-        '^/api/auth/me': '/api/auth/me'
+        '^/api/user/me': '/api/user/me'
       }
     }));
 
-    this.app.use('/api/auth/profile', this.authenticateToken.bind(this), createProxyMiddleware({
+    this.app.use('/api/user/profile', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL,
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
-        '^/api/auth/profile': '/api/auth/profile'
+        '^/api/user/profile': '/api/user/profile'
       }
     }));
 
-    this.app.use('/api/auth/change-password', this.authenticateToken.bind(this), createProxyMiddleware({
+    this.app.use('/api/user/change-password', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.USER_SERVICE_URL,
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
-        '^/api/auth/change-password': '/api/auth/change-password'
+        '^/api/user/change-password': '/api/user/change-password'
       }
     }));
 
-    // Restaurant service routes
+    // ===== ADMIN ROUTES (MUST BE FIRST TO AVOID CONFLICTS) =====
+    
+    // Admin routes (protected) - Order specific routes first
+    this.app.use('/api/admin/orders/all', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/orders/all': '/api/admin/orders/all'
+      }
+    }));
+
+    this.app.use('/api/admin/orders', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/orders': '/api/admin/orders'
+      }
+    }));
+
+    // Admin restaurant routes
+    this.app.use('/api/admin/restaurants/pending', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/restaurants/pending': '/api/admin/restaurants/pending'
+      }
+    }));
+
+    this.app.use('/api/admin/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/restaurants': '/api/admin/restaurants'
+      }
+    }));
+
+    // Admin drone routes
+    this.app.use('/api/admin/drones', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/drones': '/api/admin/drones'
+      }
+    }));
+
+    // Admin mission routes
+    this.app.use('/api/admin/missions', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/missions': '/api/admin/missions'
+      }
+    }));
+
+    // Admin analytics routes
+    this.app.use('/api/admin/analytics', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/analytics': '/api/admin/analytics'
+      }
+    }));
+
+    // Admin system routes
+    this.app.use('/api/admin/system', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin/system': '/api/admin/system'
+      }
+    }));
+
+    // General admin routes (must be last)
+    this.app.use('/api/admin', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.USER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000,
+      pathRewrite: {
+        '^/api/admin': '/api/admin'
+      }
+    }));
+
+    // ===== PUBLIC ROUTES =====
+    
+    // Restaurant service routes (public - for customer browsing)
     this.app.use('/api/restaurants', createProxyMiddleware({
       target: config.RESTAURANT_SERVICE_URL,
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/restaurants': '/api/restaurants'
+      },
+      // Skip protected routes - they will be handled by protected routes below
+      pathFilter: (pathname, req) => {
+        // Allow GET requests (public browsing)
+        if (req.method === 'GET') return true
+        // Skip POST/PUT/DELETE for restaurant owners - handled by protected routes
+        return false
       }
     }));
 
@@ -142,6 +241,16 @@ class APIGateway {
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/menu': '/api/menu'
+      }
+    }));
+    
+    // Restaurant menu search routes (public)
+    this.app.use('/api/restaurants/menu', createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurants/menu': '/api/restaurants/menu'
       }
     }));
 
@@ -155,6 +264,18 @@ class APIGateway {
       }
     }));
 
+    // ===== PROTECTED ROUTES =====
+    
+    // Restaurant-specific order routes (protected)
+    this.app.use('/api/orders/restaurant', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.ORDER_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/orders/restaurant': '/api/orders/restaurant'
+      }
+    }));
+    
     // Order service routes (protected)
     this.app.use('/api/orders', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.ORDER_SERVICE_URL,
@@ -195,6 +316,20 @@ class APIGateway {
       }
     }));
 
+    // Restaurant owner routes (protected)
+    this.app.use('/api/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.RESTAURANT_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurants': '/api/restaurants'
+      },
+      // Only handle POST/PUT/DELETE requests (restaurant owner operations)
+      pathFilter: (pathname, req) => {
+        return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
+      }
+    }));
+    
     // Payment service routes (protected, except /methods)
     this.app.use('/api/payments', (req, res, next) => {
       // Allow /methods without authentication
@@ -211,131 +346,11 @@ class APIGateway {
         '^/api/payments': '/api/payments'
       }
     }));
-
-    // Order service routes (protected)
-    this.app.use('/api/orders', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.ORDER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/orders': '/api/orders'
-      }
-    }));
-
-    // Restaurant service routes (protected)
-    this.app.use('/api/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.RESTAURANT_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/restaurants': '/api/restaurants'
-      }
-    }));
-
-    // Menu service routes (protected)
-    this.app.use('/api/menu', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.RESTAURANT_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/menu': '/api/restaurants/menu'
-      }
-    }));
-
-    // Admin routes (protected)
-    this.app.use('/api/admin', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL, // Admin functionality in user service
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin': '/api/admin'
-      }
-    }));
-
-    // Admin drone routes (protected)
-    this.app.use('/api/admin/drones', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.DRONE_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/drones': '/api/admin/drones'
-      }
-    }));
-
-    // Admin mission routes (protected)
-    this.app.use('/api/admin/missions', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.DRONE_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/missions': '/api/admin/missions'
-      }
-    }));
-
-    // Admin order routes (protected)
-    this.app.use('/api/admin/orders', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.ORDER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/orders': '/api/admin/orders'
-      }
-    }));
-
-    // Admin orders all route (protected)
-    this.app.use('/api/admin/orders/all', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.ORDER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/orders/all': '/api/admin/orders/all'
-      }
-    }));
-
-    // Admin restaurant routes (protected)
-    this.app.use('/api/admin/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.RESTAURANT_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/restaurants': '/api/admin/restaurants'
-      }
-    }));
-
-    // Admin restaurants pending route (protected)
-    this.app.use('/api/admin/restaurants/pending', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.RESTAURANT_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/restaurants/pending': '/api/admin/restaurants/pending'
-      }
-    }));
-
-    // Admin analytics routes (protected)
-    this.app.use('/api/admin/analytics', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL, // Analytics in user service
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/analytics': '/api/admin/analytics'
-      }
-    }));
-
-    // Admin system routes (protected)
-    this.app.use('/api/admin/system', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL, // System stats in user service
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/admin/system': '/api/admin/system'
-      }
-    }));
   }
 
   async authenticateToken(req, res, next) {
-    // Skip authentication for auth routes
-    if (req.path.startsWith('/auth')) {
+    // Skip authentication for user routes (handled by User Service)
+    if (req.path.startsWith('/user')) {
       return next();
     }
 
@@ -348,7 +363,7 @@ class APIGateway {
 
     try {
       // Verify token with user service
-      const response = await axios.get(`${config.USER_SERVICE_URL}/api/auth/verify`, {
+      const response = await axios.get(`${config.USER_SERVICE_URL}/api/user/verify`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

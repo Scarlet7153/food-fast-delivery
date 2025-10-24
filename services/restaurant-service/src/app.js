@@ -8,6 +8,7 @@ const logger = require('./utils/logger');
 
 // Import routes
 const restaurantRoutes = require('./routes/restaurant.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 class RestaurantService {
   constructor() {
@@ -58,6 +59,7 @@ class RestaurantService {
 
     // API routes
     this.app.use('/api/restaurants', restaurantRoutes);
+    this.app.use('/api/admin', adminRoutes);
 
     logger.info('Restaurant routes configured');
   }

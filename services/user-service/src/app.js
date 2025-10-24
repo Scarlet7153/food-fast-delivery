@@ -58,8 +58,7 @@ class UserService {
     });
 
     // API routes
-    this.app.use('/api/auth', userRoutes);  // Auth routes
-    this.app.use('/api/users', userRoutes); // User management routes
+    this.app.use('/api/user', userRoutes);  // User routes (auth + management)
     this.app.use('/api/admin', adminRoutes);
 
     logger.info('User routes configured');

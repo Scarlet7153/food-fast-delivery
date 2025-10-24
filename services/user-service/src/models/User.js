@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 6,
+    select: false
   },
   phone: {
     type: String,
@@ -33,20 +34,19 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant'
+  },
   address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
+    text: String,
     location: {
       type: {
         type: String,
-        enum: ['Point'],
-        default: 'Point'
+        enum: ['Point']
       },
       coordinates: {
-        type: [Number],
-        default: [106.6297, 10.8231] // Default to Ho Chi Minh City center
+        type: [Number] // [longitude, latitude]
       }
     }
   },
@@ -78,8 +78,18 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for geospatial queries
-userSchema.index({ 'address.location': '2dsphere' });
+// Indexes
+userSchema.index({ role: 1 });
+userSchema.index({ restaurantId: 1 });
+userSchema.index({ 'address.location': '2dsphere' }, { sparse: true });
+
+// Virtual for restaurant info (for restaurant users)
+userSchema.virtual('restaurant', {
+  ref: 'Restaurant',
+  localField: 'restaurantId',
+  foreignField: '_id',
+  justOne: true
+});
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

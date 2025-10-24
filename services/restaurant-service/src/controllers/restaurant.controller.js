@@ -359,6 +359,80 @@ const updateRating = async (req, res) => {
   }
 };
 
+// Reject restaurant (Admin only)
+const rejectRestaurant = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      id,
+      { 
+        status: 'rejected',
+        approved: false,
+        rejectionReason: reason || 'Application rejected by admin'
+      },
+      { new: true }
+    );
+    
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: { restaurant },
+      message: 'Restaurant rejected successfully'
+    });
+  } catch (error) {
+    logger.error('Reject restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reject restaurant'
+    });
+  }
+};
+
+// Update restaurant status (Admin only)
+const updateRestaurantStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, active } = req.body;
+    
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (typeof active !== 'undefined') updateData.active = active;
+    
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+    
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: { restaurant },
+      message: 'Restaurant status updated successfully'
+    });
+  } catch (error) {
+    logger.error('Update restaurant status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update restaurant status'
+    });
+  }
+};
+
 module.exports = {
   getAllRestaurants,
   getRestaurantById,
@@ -366,6 +440,8 @@ module.exports = {
   createRestaurant,
   updateRestaurant,
   approveRestaurant,
+  rejectRestaurant,
+  updateRestaurantStatus,
   getPendingRestaurants,
   calculateDeliveryFee,
   updateRating

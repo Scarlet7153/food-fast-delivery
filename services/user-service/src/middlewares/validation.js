@@ -17,8 +17,13 @@ const schemas = {
       'string.max': 'Name cannot exceed 50 characters',
       'any.required': 'Name is required'
     }),
-    phone: Joi.string().pattern(/^[0-9]{10,11}$/).optional().messages({
-      'string.pattern.base': 'Phone number must be 10-11 digits'
+    phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).when('role', {
+      is: 'restaurant',
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }).messages({
+      'string.pattern.base': 'Phone number format is invalid',
+      'any.required': 'Phone is required for restaurant registration'
     }),
     address: Joi.object({
       text: Joi.string().optional(),
@@ -44,8 +49,8 @@ const schemas = {
       then: Joi.required(),
       otherwise: Joi.optional()
     }),
-    restaurantDescription: Joi.string().max(500).optional(),
-    imageUrl: Joi.string().uri().optional()
+    restaurantDescription: Joi.string().max(500).allow('').optional(),
+    imageUrl: Joi.string().allow('').optional()
   }),
 
   login: Joi.object({

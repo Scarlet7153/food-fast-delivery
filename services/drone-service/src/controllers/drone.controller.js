@@ -437,9 +437,48 @@ const getDroneStatistics = async (req, res) => {
   }
 };
 
+// Get all drones (Admin only)
+const getAllDrones = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, restaurantId } = req.query;
+    
+    const query = {};
+    if (status) query.status = status;
+    if (restaurantId) query.restaurantId = restaurantId;
+    
+    const drones = await Drone.find(query)
+      .populate('restaurantId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const total = await Drone.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        drones,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Get all drones error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch drones'
+    });
+  }
+};
+
 module.exports = {
   getRestaurantDrones,
   getDroneById,
+  getAllDrones,
   createDrone,
   updateDrone,
   updateDroneStatus,

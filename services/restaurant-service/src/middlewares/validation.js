@@ -5,15 +5,17 @@ const schemas = {
   createRestaurant: Joi.object({
     ownerUserId: Joi.string().required(),
     name: Joi.string().min(2).max(100).required(),
-    description: Joi.string().max(500).optional(),
+    description: Joi.string().max(500).allow('').optional(),
     address: Joi.string().min(10).max(200).required(),
     phone: Joi.string().pattern(/^[0-9]{10,11}$/).required(),
-    email: Joi.string().email().optional(),
-    imageUrl: Joi.string().uri().optional(),
+    email: Joi.string().email().allow('').optional(),
+    imageUrl: Joi.string().uri().allow('').optional(),
     location: Joi.object({
       type: Joi.string().valid('Point').default('Point'),
-      coordinates: Joi.array().items(Joi.number()).length(2).required()
-    }).required(),
+      coordinates: Joi.array().items(Joi.number()).length(2).optional()
+    }).optional(),
+    approved: Joi.boolean().optional(),
+    active: Joi.boolean().optional(),
     deliverySettings: Joi.object({
       baseRate: Joi.number().min(0).optional(),
       ratePerKm: Joi.number().min(0).optional(),

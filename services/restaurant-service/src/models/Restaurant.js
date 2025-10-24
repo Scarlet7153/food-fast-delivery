@@ -27,13 +27,10 @@ const restaurantSchema = new mongoose.Schema({
   location: {
     type: {
       type: String,
-      enum: ['Point'],
-      default: 'Point'
+      enum: ['Point']
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: [true, 'Location coordinates are required'],
-      index: '2dsphere'
+      type: [Number] // [longitude, latitude]
     }
   },
   phone: {

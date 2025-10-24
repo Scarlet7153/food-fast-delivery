@@ -10,6 +10,7 @@ const logger = require('./utils/logger');
 
 // Import routes
 const droneRoutes = require('./routes/drone.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 class DroneService {
   constructor() {
@@ -70,6 +71,7 @@ class DroneService {
 
     // API routes
     this.app.use('/api/drones', droneRoutes);
+    this.app.use('/api/admin', adminRoutes);
 
     logger.info('Drone routes configured');
   }

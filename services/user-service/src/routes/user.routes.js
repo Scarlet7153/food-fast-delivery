@@ -9,7 +9,7 @@ const userController = require('../controllers/user.controller');
 // Authentication routes
 router.post('/register', validate(schemas.register), userController.register);
 router.post('/login', validate(schemas.login), userController.login);
-router.post('/refresh-token', validate(schemas.refreshToken), userController.refreshToken);
+router.post('/refresh', userController.refreshToken);
 router.post('/logout', auth, userController.logout);
 router.post('/logout-all', auth, userController.logoutAll);
 

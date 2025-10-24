@@ -14,8 +14,8 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Verify token with auth service
-    const response = await axios.get(`${config.USER_SERVICE_URL}/api/auth/verify`, {
+    // Verify token with user service
+    const response = await axios.get(`${config.USER_SERVICE_URL}/api/user/verify`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

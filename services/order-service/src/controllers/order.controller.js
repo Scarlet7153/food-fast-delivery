@@ -466,10 +466,50 @@ const rateOrder = async (req, res) => {
   }
 };
 
+// Get all orders (admin only)
+const getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, restaurantId } = req.query;
+    
+    const query = {};
+    if (status) query.status = status;
+    if (restaurantId) query.restaurantId = restaurantId;
+    
+    const orders = await Order.find(query)
+      .populate('userId', 'name email')
+      .populate('restaurantId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const total = await Order.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch orders'
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
+  getAllOrders,
   updateOrderStatus,
   cancelOrder,
   getRestaurantOrders,

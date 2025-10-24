@@ -441,10 +441,52 @@ function toRadians(degrees) {
   return degrees * (Math.PI / 180);
 }
 
+// Get all missions (Admin only)
+const getAllMissions = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status, restaurantId, droneId } = req.query;
+    
+    const query = {};
+    if (status) query.status = status;
+    if (restaurantId) query.restaurantId = restaurantId;
+    if (droneId) query.droneId = droneId;
+    
+    const missions = await DeliveryMission.find(query)
+      .populate('droneId', 'name model')
+      .populate('restaurantId', 'name')
+      .populate('orderId', 'orderNumber')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const total = await DeliveryMission.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        missions,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Get all missions error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch missions'
+    });
+  }
+};
+
 module.exports = {
   createMission,
   getRestaurantMissions,
   getMissionById,
+  getAllMissions,
   updateMissionStatus,
   addPathPoint,
   getMissionStatistics
