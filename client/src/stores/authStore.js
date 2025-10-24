@@ -40,6 +40,7 @@ const useAuthStore = create(
           return { success: true, user }
         } catch (error) {
           set({ isLoading: false })
+          // Don't show default error toast here, let the component handle specific errors
           throw error
         }
       },
@@ -50,9 +51,17 @@ const useAuthStore = create(
           set({ isLoading: true })
           
           const response = await authService.register(userData)
-          const { user, accessToken, refreshToken } = response.data
+          
+          // For restaurant registration, don't auto-login as they need approval
+          if (userData.role === 'restaurant') {
+            const { user } = response.data
+            set({ isLoading: false })
+            return { success: true, user }
+          }
 
-          // Store tokens and user data
+          // For other roles, auto-login as before
+          const { user, accessToken, refreshToken } = response.data
+          
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', refreshToken)
           localStorage.setItem('user', JSON.stringify(user))

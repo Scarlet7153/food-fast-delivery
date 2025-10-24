@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
-  BarChart3, Users, Building2, ShoppingBag, Plane, MapPin, 
+  Users, Building2, ShoppingBag, Plane, MapPin, 
   User, Bell, LogOut, Shield
 } from 'lucide-react'
 
@@ -14,7 +14,6 @@ function AdminLayout() {
   useAuthGuard()
 
   const navigation = [
-    { name: 'Bảng Điều Khiển', href: '/admin', icon: BarChart3 },
     { name: 'Người Dùng', href: '/admin/users', icon: Users },
     { name: 'Nhà Hàng', href: '/admin/restaurants', icon: Building2 },
     { name: 'Đơn Hàng', href: '/admin/orders', icon: ShoppingBag },
@@ -28,7 +27,7 @@ function AdminLayout() {
       <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
         {/* Logo */}
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
-          <Link to="/admin" className="flex items-center space-x-2">
+          <Link to="/admin/users" className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-red-600 rounded-lg flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>

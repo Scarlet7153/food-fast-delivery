@@ -46,7 +46,7 @@ export const useAuthGuard = () => {
     const handleTokenRefresh = async () => {
       try {
         const refreshToken = localStorage.getItem('refreshToken')
-        if (!refreshToken) {
+        if (!refreshToken || refreshToken.split('.').length !== 3) {
           toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
           await logout()
           return

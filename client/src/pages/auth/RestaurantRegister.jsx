@@ -51,9 +51,11 @@ function RestaurantRegister() {
 
     try {
       const { confirmPassword, ...registerData } = formData
+      console.log('Registering with data:', registerData)
       const response = await authService.register(registerData)
       
       if (response.success) {
+        // For restaurant registration, always show approval message
         toast.success('Đăng ký thành công! Vui lòng chờ admin xét duyệt.')
         // Redirect to login page instead of dashboard
         navigate('/login', { 

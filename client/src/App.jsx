@@ -33,7 +33,6 @@ import RestaurantMissions from './pages/restaurant/Missions'
 import RestaurantSettings from './pages/restaurant/Settings'
 
 // Admin Pages
-import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
 import AdminRestaurants from './pages/admin/Restaurants'
 import AdminOrders from './pages/admin/Orders'
@@ -134,7 +133,7 @@ function App() {
             <AdminLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<Navigate to="users" replace />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="restaurants" element={<AdminRestaurants />} />
           <Route path="orders" element={<AdminOrders />} />

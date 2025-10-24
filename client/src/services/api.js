@@ -49,6 +49,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
+    // Check if this is a pending approval error - don't try to refresh token
+    if (error.response?.status === 401 && error.response?.data?.data?.pendingApproval) {
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If already refreshing, queue this request
@@ -67,8 +72,8 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refreshToken')
-        if (refreshToken) {
-          const response = await axios.post(`${api.defaults.baseURL}/auth/refresh-token`, {
+        if (refreshToken && refreshToken.split('.').length === 3) {
+          const response = await axios.post(`${api.defaults.baseURL}/user/refresh`, {
             refreshToken
           })
 
@@ -95,6 +100,12 @@ api.interceptors.response.use(
         // Refresh failed, logout user
         processQueue(refreshError, null)
         const { logout } = useAuthStore.getState()
+        
+        // Clear potentially corrupted tokens
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        
         await logout()
         
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
@@ -105,8 +116,9 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle other errors (skip 401 errors as they're handled above)
-    if (error.response?.status !== 401) {
+    // Handle other errors (skip 401 and pending approval errors)
+    const isPendingApproval = error.response?.data?.data?.pendingApproval
+    if (error.response?.status !== 401 && !isPendingApproval) {
       if (error.response?.data?.error) {
         toast.error(error.response.data.error)
       } else if (error.message && error.message !== 'Network Error') {

@@ -23,7 +23,7 @@
     "start:order": "cd services/order-service && npm run dev",
     "start:drone": "cd services/drone-service && npm run dev",
     "start:payment": "cd services/payment-service && npm run dev",
-    "test:microservices": "node test-microservices.js"
+    "copy:env": "node copy-env.js"
   },
   "keywords": [
     "drone",
