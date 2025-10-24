@@ -27,6 +27,7 @@ import Profile from './pages/customer/Profile'
 // Restaurant Pages
 import RestaurantDashboard from './pages/restaurant/Dashboard'
 import RestaurantOrders from './pages/restaurant/Orders'
+import RestaurantOrderDetail from './pages/restaurant/OrderDetail'
 import RestaurantMenu from './pages/restaurant/Menu'
 import RestaurantDrones from './pages/restaurant/Drones'
 import RestaurantMissions from './pages/restaurant/Missions'
@@ -121,6 +122,7 @@ function App() {
         }>
           <Route index element={<RestaurantDashboard />} />
           <Route path="orders" element={<RestaurantOrders />} />
+          <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="menu" element={<RestaurantMenu />} />
           <Route path="drones" element={<RestaurantDrones />} />
           <Route path="missions" element={<RestaurantMissions />} />
