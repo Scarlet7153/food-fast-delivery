@@ -15,15 +15,13 @@ function RestaurantMenu() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch menu items
   const { data: menuData, isLoading } = useQuery(
-    ['restaurant-menu', { search: searchQuery, category: categoryFilter }],
-    () => restaurantService.getMyMenuItems({
-      search: searchQuery,
-      category: categoryFilter !== 'all' ? categoryFilter : undefined
-    }),
+    ['restaurant-menu'],
+    () => restaurantService.getMyMenuItems(),
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
@@ -88,14 +86,36 @@ function RestaurantMenu() {
     }
   )
 
-  const menuItems = menuData?.data?.menuItems || []
+  const allMenuItems = menuData?.data?.menuItems || []
   const restaurant = menuData?.data?.restaurant
-  const categories = menuData?.data?.categories || ['all']
+  
+  // Get unique categories from menu items
+  const categories = ['all', ...new Set(allMenuItems.map(item => item.category).filter(Boolean))]
+  
+  // Filter menu items based on search and category
+  const menuItems = allMenuItems.filter(item => {
+    const matchesSearch = !searchQuery || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter
+    
+    return matchesSearch && matchesCategory
+  })
 
   const handleDeleteItem = (itemId, itemName) => {
-    if (window.confirm(`Bạn có chắc muốn xóa "${itemName}"?`)) {
-      deleteItemMutation.mutate(itemId)
+    setDeleteConfirm({ itemId, itemName })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteItemMutation.mutate(deleteConfirm.itemId)
+      setDeleteConfirm(null)
     }
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null)
   }
 
 
@@ -238,6 +258,56 @@ function RestaurantMenu() {
           }}
           isLoading={createItemMutation.isLoading || updateItemMutation.isLoading}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa</h3>
+              <button
+                onClick={cancelDelete}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600">
+                Bạn có chắc muốn xóa món ăn <span className="font-semibold text-gray-900">"{deleteConfirm.itemName}"</span>?
+              </p>
+              <p className="text-sm text-red-600 mt-2">
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="btn btn-outline btn-md"
+                disabled={deleteItemMutation.isLoading}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="btn bg-red-600 hover:bg-red-700 text-white btn-md"
+                disabled={deleteItemMutation.isLoading}
+              >
+                {deleteItemMutation.isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Đang xóa...
+                  </>
+                ) : (
+                  'Xóa món ăn'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

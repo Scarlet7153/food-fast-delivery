@@ -86,12 +86,12 @@ export const restaurantService = {
   },
 
   async updateMenuItem(restaurantId, itemId, itemData) {
-    const response = await api.put(`/restaurants/${restaurantId}/menu/${itemId}`, itemData)
+    const response = await api.put(`/restaurants/menu/${itemId}`, itemData)
     return response.data
   },
 
   async deleteMenuItem(restaurantId, itemId) {
-    const response = await api.delete(`/restaurants/${restaurantId}/menu/${itemId}`)
+    const response = await api.delete(`/restaurants/menu/${itemId}`)
     return response.data
   }
 }
