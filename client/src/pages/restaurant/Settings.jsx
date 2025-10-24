@@ -21,9 +21,9 @@ function RestaurantSettings() {
     imageUrl: '',
     deliverySettings: {
       baseRate: 10000,
-      perKmRate: 2000,
-      estimatedTime: '25-35',
-      maxDistance: 10
+      ratePerKm: 2000,
+      estimatedPrepTime: 30,
+      maxDeliveryDistance: 10
     },
     operatingHours: {
       monday: { open: '08:00', close: '22:00', closed: false },
@@ -56,7 +56,9 @@ function RestaurantSettings() {
         toast.success('Cập nhật cài đặt nhà hàng thành công')
       },
       onError: (error) => {
-        toast.error('Không thể cập nhật cài đặt nhà hàng')
+        console.error('Update restaurant error:', error.response?.data)
+        const errorMessage = error.response?.data?.error || 'Không thể cập nhật cài đặt nhà hàng'
+        toast.error(errorMessage)
       }
     }
   )
@@ -74,9 +76,9 @@ function RestaurantSettings() {
         imageUrl: restaurant.imageUrl || '',
         deliverySettings: {
           baseRate: restaurant.deliverySettings?.baseRate || 10000,
-          perKmRate: restaurant.deliverySettings?.perKmRate || 2000,
-          estimatedTime: restaurant.deliverySettings?.estimatedTime || '25-35',
-          maxDistance: restaurant.deliverySettings?.maxDistance || 10
+          ratePerKm: restaurant.deliverySettings?.ratePerKm || 2000,
+          estimatedPrepTime: restaurant.deliverySettings?.estimatedPrepTime || 30,
+          maxDeliveryDistance: restaurant.deliverySettings?.maxDeliveryDistance || 10
         },
         operatingHours: restaurant.operatingHours || formData.operatingHours
       })
@@ -116,7 +118,10 @@ function RestaurantSettings() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    updateRestaurantMutation.mutate(formData)
+    
+    // Remove email field from update data (email cannot be changed)
+    const { email, ...updateData } = formData
+    updateRestaurantMutation.mutate(updateData)
   }
 
   const handleCancel = () => {
@@ -131,9 +136,9 @@ function RestaurantSettings() {
         imageUrl: restaurant.imageUrl || '',
         deliverySettings: {
           baseRate: restaurant.deliverySettings?.baseRate || 10000,
-          perKmRate: restaurant.deliverySettings?.perKmRate || 2000,
-          estimatedTime: restaurant.deliverySettings?.estimatedTime || '25-35',
-          maxDistance: restaurant.deliverySettings?.maxDistance || 10
+          ratePerKm: restaurant.deliverySettings?.ratePerKm || 2000,
+          estimatedPrepTime: restaurant.deliverySettings?.estimatedPrepTime || 30,
+          maxDeliveryDistance: restaurant.deliverySettings?.maxDeliveryDistance || 10
         },
         operatingHours: restaurant.operatingHours || formData.operatingHours
       })
@@ -378,15 +383,15 @@ function RestaurantSettings() {
               {isEditing ? (
                 <input
                   type="number"
-                  value={formData.deliverySettings.perKmRate}
-                  onChange={(e) => handleChange('deliverySettings.perKmRate', parseInt(e.target.value))}
+                  value={formData.deliverySettings.ratePerKm}
+                  onChange={(e) => handleChange('deliverySettings.ratePerKm', parseInt(e.target.value))}
                   className="input w-full"
                   min="0"
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <DollarSign className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formatCurrency(formData.deliverySettings.perKmRate)}/km</span>
+                  <span className="text-gray-900">{formatCurrency(formData.deliverySettings.ratePerKm)}/km</span>
                 </div>
               )}
             </div>
@@ -397,16 +402,17 @@ function RestaurantSettings() {
               </label>
               {isEditing ? (
                 <input
-                  type="text"
-                  value={formData.deliverySettings.estimatedTime}
-                  onChange={(e) => handleChange('deliverySettings.estimatedTime', e.target.value)}
+                  type="number"
+                  value={formData.deliverySettings.estimatedPrepTime}
+                  onChange={(e) => handleChange('deliverySettings.estimatedPrepTime', parseInt(e.target.value))}
                   className="input w-full"
-                  placeholder="e.g., 25-35"
+                  min="5"
+                  max="120"
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.deliverySettings.estimatedTime} phút</span>
+                  <span className="text-gray-900">{formData.deliverySettings.estimatedPrepTime} phút</span>
                 </div>
               )}
             </div>
@@ -418,15 +424,15 @@ function RestaurantSettings() {
               {isEditing ? (
                 <input
                   type="number"
-                  value={formData.deliverySettings.maxDistance}
-                  onChange={(e) => handleChange('deliverySettings.maxDistance', parseInt(e.target.value))}
+                  value={formData.deliverySettings.maxDeliveryDistance}
+                  onChange={(e) => handleChange('deliverySettings.maxDeliveryDistance', parseInt(e.target.value))}
                   className="input w-full"
                   min="1"
                 />
               ) : (
                 <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{formData.deliverySettings.maxDistance} km</span>
+                  <span className="text-gray-900">{formData.deliverySettings.maxDeliveryDistance} km</span>
                 </div>
               )}
             </div>

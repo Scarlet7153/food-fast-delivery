@@ -39,7 +39,9 @@ function RestaurantDrones() {
         toast.success('Đăng ký drone thành công')
       },
       onError: (error) => {
-        toast.error('Không thể đăng ký drone')
+        console.error('Create drone error:', error.response?.data)
+        const errorMessage = error.response?.data?.error || 'Không thể đăng ký drone'
+        toast.error(errorMessage)
       }
     }
   )
@@ -436,7 +438,14 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    // Remove status field when creating new drone (not editing)
+    const submitData = { ...formData }
+    if (!drone) {
+      delete submitData.status
+    }
+    
+    onSubmit(submitData)
   }
 
   const statusOptions = [
@@ -519,22 +528,24 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
             </div>
 
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng Thái
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="input w-full"
-              >
-                {statusOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {drone && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Trạng Thái
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleChange('status', e.target.value)}
+                  className="input w-full"
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
           </div>
 

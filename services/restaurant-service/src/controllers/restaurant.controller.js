@@ -11,12 +11,12 @@ const getAllRestaurants = async (req, res) => {
     
     // If user is admin, show all restaurants. Otherwise, only show active and approved
     let query = {};
-    if (req.user.role !== 'admin') {
+    if (!req.user || req.user.role !== 'admin') {
       query = { active: true, approved: true };
     }
     
     // Status filter (for admin)
-    if (status && req.user.role === 'admin') {
+    if (status && req.user && req.user.role === 'admin') {
       if (status === 'pending') {
         query.approved = false;
       } else if (status === 'approved') {
@@ -81,7 +81,7 @@ const getAllRestaurants = async (req, res) => {
       }
       
       // Fetch owner email if not present (for backwards compatibility)
-      if (!rest.ownerEmail && rest.ownerUserId && req.user.role === 'admin') {
+      if (!rest.ownerEmail && rest.ownerUserId && req.user && req.user.role === 'admin') {
         try {
           const userResponse = await axios.get(`${config.USER_SERVICE_URL}/api/admin/users/${rest.ownerUserId}`, {
             headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}

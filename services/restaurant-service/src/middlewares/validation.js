@@ -63,11 +63,10 @@ const schemas = {
 
   updateRestaurant: Joi.object({
     name: Joi.string().min(2).max(100).optional(),
-    description: Joi.string().max(500).optional(),
+    description: Joi.string().max(500).allow('').optional(),
     address: Joi.string().min(10).max(200).optional(),
     phone: Joi.string().pattern(/^[0-9]{10,11}$/).optional(),
-    email: Joi.string().email().optional(),
-    imageUrl: Joi.string().uri().optional(),
+    imageUrl: Joi.string().uri().allow('').optional(),
     location: Joi.object({
       type: Joi.string().valid('Point').default('Point'),
       coordinates: Joi.array().items(Joi.number()).length(2).optional()
@@ -77,6 +76,43 @@ const schemas = {
       ratePerKm: Joi.number().min(0).optional(),
       maxDeliveryDistance: Joi.number().min(1).optional(),
       estimatedPrepTime: Joi.number().min(5).max(120).optional()
+    }).optional(),
+    operatingHours: Joi.object({
+      monday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      tuesday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      wednesday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      thursday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      friday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      saturday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional(),
+      sunday: Joi.object({
+        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        closed: Joi.boolean().optional()
+      }).optional()
     }).optional()
   }),
 

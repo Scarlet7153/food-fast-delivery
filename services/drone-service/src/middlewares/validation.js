@@ -5,9 +5,9 @@ const schemas = {
   createDrone: Joi.object({
     name: Joi.string().min(2).max(50).required(),
     serialNumber: Joi.string().max(50).optional(),
-    model: Joi.string().max(50).optional(),
-    maxPayloadGrams: Joi.number().min(100).max(10000).optional(),
-    maxRangeMeters: Joi.number().min(1000).max(50000).optional(),
+    model: Joi.string().max(50).required(),
+    maxPayloadGrams: Joi.number().min(100).max(10000).required(),
+    maxRangeMeters: Joi.number().min(100).max(50000).required(),
     maxFlightTimeMinutes: Joi.number().min(5).max(120).optional(),
     settings: Joi.object({
       autoReturn: Joi.boolean().optional(),

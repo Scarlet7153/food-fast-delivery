@@ -51,7 +51,7 @@ const droneSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Range is required'],
     default: 5000,
-    min: [1000, 'Range must be at least 1000 meters'],
+    min: [100, 'Range must be at least 100 meters'],
     max: [50000, 'Range cannot exceed 50000 meters']
   },
   maxFlightTimeMinutes: {
