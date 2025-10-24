@@ -89,8 +89,8 @@ function RestaurantMenu() {
   const allMenuItems = menuData?.data?.menuItems || []
   const restaurant = menuData?.data?.restaurant
   
-  // Get unique categories from menu items
-  const categories = ['all', ...new Set(allMenuItems.map(item => item.category).filter(Boolean))]
+  // Fixed categories for filtering
+  const categories = ['all', 'Món Chính', 'Đồ Ăn Nhanh', 'Đồ Uống']
   
   // Function to normalize Vietnamese text (remove diacritics)
   const normalizeText = (text) => {
@@ -429,8 +429,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
   }
 
   const categories = [
-    'Khai Vị', 'Món Chính', 'Tráng Miệng', 'Đồ Uống', 
-    'Đồ Ăn Nhanh', 'Món Ý'
+    'Món Chính', 'Đồ Ăn Nhanh', 'Đồ Uống'
   ]
 
   return (
