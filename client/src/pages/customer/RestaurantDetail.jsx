@@ -18,6 +18,11 @@ function RestaurantDetail() {
   const [viewMode, setViewMode] = useState('grid')
   const [isFavorite, setIsFavorite] = useState(false)
 
+  // Reset selected category when restaurant changes
+  useEffect(() => {
+    setSelectedCategory('all')
+  }, [id])
+
   // Fetch restaurant details
   const { data: restaurantData, isLoading: restaurantLoading } = useQuery(
     ['restaurant', id],
@@ -28,12 +33,10 @@ function RestaurantDetail() {
     }
   )
 
-  // Fetch restaurant menu
+  // Fetch restaurant menu (all items, no category filter)
   const { data: menuData, isLoading: menuLoading } = useQuery(
-    ['restaurant-menu', id, selectedCategory],
-    () => restaurantService.getRestaurantMenu(id, {
-      category: selectedCategory !== 'all' ? selectedCategory : undefined
-    }),
+    ['restaurant-menu', id],
+    () => restaurantService.getRestaurantMenu(id),
     {
       enabled: !!id,
       staleTime: 5 * 60 * 1000,
@@ -42,7 +45,19 @@ function RestaurantDetail() {
 
   const currentRestaurant = restaurantData?.data?.restaurant
   const menuItems = menuData?.data?.menuItems || []
-  const categories = menuData?.data?.categories || ['all']
+  
+  // Extract unique categories from menu items
+  const categories = ['all', ...new Set(menuItems.map(item => item.category).filter(Boolean))]
+  
+  // Filter menu items by selected category
+  const filteredMenuItems = selectedCategory === 'all' 
+    ? menuItems 
+    : menuItems.filter(item => item.category === selectedCategory)
+  
+  // Debug: Log categories and filtered items
+  console.log('Categories:', categories)
+  console.log('Selected category:', selectedCategory)
+  console.log('Filtered items count:', filteredMenuItems.length)
 
   // Safe access for restaurant properties
   const restaurantName = currentRestaurant?.name || 'Nhà hàng'
@@ -168,24 +183,7 @@ function RestaurantDetail() {
           </div>
 
           {/* Delivery Info */}
-          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-primary-900">Có Giao Hàng Bằng Drone</h3>
-                <p className="text-sm text-primary-700">
-                  Phí giao hàng: {formatCurrency(deliveryFee)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-primary-700">
-                  Thời gian dự kiến: {estimatedTime} phút
-                </p>
-                <p className="text-xs text-primary-600">
-                  Giao không tiếp xúc
-                </p>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
 
@@ -243,12 +241,12 @@ function RestaurantDetail() {
         <div className="p-6">
           {menuLoading ? (
             <MenuSkeleton viewMode={viewMode} />
-          ) : menuItems.length > 0 ? (
+          ) : filteredMenuItems.length > 0 ? (
             <div className={viewMode === 'grid' 
               ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
               : 'space-y-4'
             }>
-              {menuItems.map(item => (
+              {filteredMenuItems.map(item => (
                 viewMode === 'grid' ? (
                   <MenuItemGridCard 
                     key={item._id} 
@@ -288,11 +286,14 @@ function MenuItemGridCard({ item, onAddToCart }) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+      <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
         <img
           src={item.imageUrl || '/api/placeholder/400/225'}
           alt={item.name}
-          className="w-full h-48 object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/api/placeholder/400/225'
+          }}
         />
       </div>
 
@@ -314,13 +315,21 @@ function MenuItemGridCard({ item, onAddToCart }) {
           </p>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-end justify-between -mt-2">
+          <div className="flex flex-col space-y-1">
+            {item.category && (
+              <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full w-fit">
+                {item.category}
+              </span>
+            )}
+          </div>
+          
           <button
             onClick={() => onAddToCart(item)}
-            className="btn btn-primary btn-sm flex items-center space-x-1"
+            className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+            title="Thêm vào giỏ hàng"
           >
-            <Plus className="h-4 w-4" />
-            <span>Thêm</span>
+            <ShoppingCart className="h-6 w-6" />
           </button>
         </div>
       </div>
@@ -333,11 +342,14 @@ function MenuItemListCard({ item, onAddToCart }) {
 
   return (
     <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-      <div className="w-24 h-24 bg-gray-200 flex-shrink-0">
+      <div className="w-36 h-36 bg-gray-200 flex-shrink-0 relative overflow-hidden">
         <img
           src={item.imageUrl || '/api/placeholder/400/225'}
           alt={item.name}
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/api/placeholder/400/225'
+          }}
         />
       </div>
 
@@ -353,18 +365,25 @@ function MenuItemListCard({ item, onAddToCart }) {
           {item.description}
         </p>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 text-xs text-gray-500">
-            {item.weightGrams && <span>Khối lượng: {item.weightGrams}g</span>}
-            {item.prepTime && <span>Chuẩn bị: {item.prepTime}p</span>}
+        <div className="flex items-end justify-between -mt-1">
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center space-x-4 text-xs text-gray-500">
+              {item.weightGrams && <span>Khối lượng: {item.weightGrams}g</span>}
+              {item.prepTime && <span>Chuẩn bị: {item.prepTime}p</span>}
+            </div>
+            {item.category && (
+              <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full w-fit">
+                {item.category}
+              </span>
+            )}
           </div>
 
           <button
             onClick={() => onAddToCart(item)}
-            className="btn btn-primary btn-sm flex items-center space-x-1"
+            className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+            title="Thêm vào giỏ hàng"
           >
-            <Plus className="h-4 w-4" />
-            <span>Thêm</span>
+            <ShoppingCart className="h-6 w-6" />
           </button>
         </div>
       </div>

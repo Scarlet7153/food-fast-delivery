@@ -289,6 +289,224 @@ function Profile() {
     })
   }
 
+  // Function để lấy địa chỉ từ tọa độ
+  const getAddressFromCoordinates = async (latitude, longitude, accuracy) => {
+    // Thử nhiều API để lấy địa chỉ chính xác
+    let addressData = null
+    
+    try {
+      // Thử API Nominatim (OpenStreetMap) trước
+      const nominatimResponse = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=vi&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'FoodDeliveryApp/1.0'
+          }
+        }
+      )
+      
+      if (nominatimResponse.ok) {
+        addressData = await nominatimResponse.json()
+        console.log('Nominatim Response:', addressData)
+      }
+    } catch (error) {
+      console.log('Nominatim failed, trying BigDataCloud...')
+    }
+    
+    // Nếu Nominatim không thành công, thử BigDataCloud
+    if (!addressData) {
+      try {
+        const bigDataResponse = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=vi`
+        )
+        
+        if (bigDataResponse.ok) {
+          addressData = await bigDataResponse.json()
+          console.log('BigDataCloud Response:', addressData)
+        }
+      } catch (error) {
+        console.log('BigDataCloud failed, trying alternative...')
+      }
+    }
+    
+    // Nếu vẫn không có dữ liệu, thử API khác
+    if (!addressData) {
+      try {
+        const response = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY&language=vi&pretty=1`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.results && data.results.length > 0) {
+            addressData = data.results[0]
+            console.log('OpenCage Response:', addressData)
+          }
+        }
+      } catch (error) {
+        console.log('All APIs failed')
+      }
+    }
+    
+    // Xử lý dữ liệu địa chỉ
+    let street = '', city = '', district = '', ward = ''
+    
+    console.log('Raw address data:', addressData)
+    
+    if (addressData.address) {
+      // Nominatim format
+      console.log('Using Nominatim format')
+      street = addressData.address.road || addressData.address.house_number || addressData.address.pedestrian || ''
+      city = addressData.address.city || addressData.address.town || addressData.address.village || addressData.address.municipality || ''
+      district = addressData.address.county || addressData.address.state_district || addressData.address.district || ''
+      ward = addressData.address.suburb || addressData.address.neighbourhood || addressData.address.quarter || ''
+    } else if (addressData.localityInfo) {
+      // BigDataCloud format
+      console.log('Using BigDataCloud format')
+      const addressComponents = addressData.localityInfo?.administrative || []
+      street = addressData.locality || addressComponents[0]?.name || ''
+      city = addressData.city || addressData.principalSubdivision || ''
+      district = addressData.principalSubdivision || ''
+      ward = addressData.locality || (addressComponents.length > 1 ? addressComponents[1].name : '')
+    } else if (addressData.components) {
+      // OpenCage format
+      console.log('Using OpenCage format')
+      street = addressData.components.road || addressData.components.house_number || ''
+      city = addressData.components.city || addressData.components.town || addressData.components.village || ''
+      district = addressData.components.county || addressData.components.state_district || ''
+      ward = addressData.components.suburb || addressData.components.neighbourhood || ''
+    } else {
+      // Fallback - thử lấy từ display_name
+      console.log('Using fallback format')
+      const displayName = addressData.display_name || ''
+      if (displayName) {
+        // Tách địa chỉ từ display_name
+        const parts = displayName.split(', ')
+        if (parts.length >= 3) {
+          street = parts[0] || ''
+          ward = parts[1] || ''
+          district = parts[2] || ''
+          city = parts[parts.length - 1] || ''
+        }
+      }
+    }
+    
+    // Nếu vẫn không có dữ liệu, tạo địa chỉ từ tọa độ
+    if (!street && !city && !district && !ward) {
+      console.log('Creating fallback address from coordinates')
+      street = `Vị trí GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+      city = 'Thành phố Hồ Chí Minh'
+      district = 'Quận 1'
+      ward = 'Phường Bến Nghé'
+    }
+    
+    console.log('Processed address:', { street, city, district, ward })
+    
+    setPaymentForm(prev => ({
+      ...prev,
+      deliveryAddress: {
+        ...prev.deliveryAddress,
+        street: street,
+        city: city,
+        district: district,
+        ward: ward
+      }
+    }))
+    
+    console.log('Form updated with address')
+  }
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Trình duyệt không hỗ trợ định vị')
+      return
+    }
+
+    toast.loading('Đang lấy vị trí chính xác...', { id: 'location' })
+
+    // Sử dụng watchPosition để chờ hội tụ GPS/Wi-Fi
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords
+        
+        // Chỉ xử lý khi độ chính xác đạt yêu cầu (dưới 200m cho điện thoại)
+        if (accuracy > 200) {
+          console.log(`Độ chính xác: ${Math.round(accuracy)}m - Chờ hội tụ...`)
+          return
+        }
+        
+        // Dừng watchPosition khi đã có độ chính xác tốt
+        navigator.geolocation.clearWatch(watchId)
+        
+        console.log(`Tọa độ chính xác: ${latitude}, ${longitude} (Độ chính xác: ${Math.round(accuracy)}m)`)
+        
+        try {
+          // Lấy địa chỉ từ tọa độ
+          await getAddressFromCoordinates(latitude, longitude, accuracy)
+          toast.success(`Đã lấy vị trí thành công! (Độ chính xác: ${Math.round(accuracy)}m)`, { id: 'location' })
+        } catch (error) {
+          console.error('Error getting address:', error)
+          toast.error('Không thể lấy địa chỉ từ vị trí', { id: 'location' })
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error)
+        navigator.geolocation.clearWatch(watchId)
+        
+        let errorMessage = 'Không thể lấy vị trí'
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Bạn đã từ chối quyền truy cập vị trí'
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Vị trí không khả dụng'
+            break
+          case error.TIMEOUT:
+            errorMessage = 'Hết thời gian chờ lấy vị trí'
+            break
+        }
+        
+        toast.error(errorMessage, { id: 'location' })
+      },
+      {
+        enableHighAccuracy: true,    // Bật độ chính xác cao (GPS)
+        timeout: 60000,              // Tăng timeout lên 60s để chờ GPS
+        maximumAge: 0                // Không sử dụng cache, luôn lấy vị trí mới
+      }
+    )
+    
+    // Timeout fallback - nếu sau 60s vẫn không có độ chính xác tốt, thử lấy vị trí với độ chính xác thấp hơn
+    setTimeout(() => {
+      navigator.geolocation.clearWatch(watchId)
+      
+      // Thử lấy vị trí với độ chính xác thấp hơn (Wi-Fi/Network)
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude, accuracy } = position.coords
+          console.log(`Fallback vị trí: ${latitude}, ${longitude} (Độ chính xác: ${Math.round(accuracy)}m)`)
+          
+          try {
+            // Lấy địa chỉ từ vị trí fallback
+            await getAddressFromCoordinates(latitude, longitude, accuracy)
+            toast.success(`Đã lấy vị trí (Wi-Fi/Network)! (Độ chính xác: ${Math.round(accuracy)}m)`, { id: 'location' })
+          } catch (error) {
+            console.error('Error getting address from fallback location:', error)
+            toast.error('Không thể lấy địa chỉ từ vị trí', { id: 'location' })
+          }
+        },
+        (error) => {
+          console.error('Fallback geolocation error:', error)
+          toast.error('Không thể lấy vị trí, vui lòng thử lại', { id: 'location' })
+        },
+        {
+          enableHighAccuracy: false,   // Chấp nhận Wi-Fi/Network
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      )
+    }, 60000)
+  }
+
   const handleDeletePayment = (paymentId) => {
     setPaymentToDelete(paymentId)
     setShowDeleteConfirm(true)
@@ -449,6 +667,7 @@ function Profile() {
               onCancel={handleCancelPayment}
               onDelete={handleDeletePayment}
               onSetDefault={handleSetDefaultPayment}
+              onGetCurrentLocation={handleGetCurrentLocation}
             />
           )}
         </div>
@@ -759,7 +978,8 @@ function BillingTab({
   onSave, 
   onCancel, 
   onDelete, 
-  onSetDefault 
+  onSetDefault,
+  onGetCurrentLocation
 }) {
   return (
     <div className="space-y-6">
@@ -783,6 +1003,7 @@ function BillingTab({
           onFormChange={onFormChange}
           onSave={onSave}
           onCancel={onCancel}
+          onGetCurrentLocation={onGetCurrentLocation}
         />
       ) : (
         <div className="space-y-4">
@@ -823,7 +1044,7 @@ function BillingTab({
 }
 
 // Payment Form Component
-function PaymentForm({ form, editingPayment, onFormChange, onSave, onCancel }) {
+function PaymentForm({ form, editingPayment, onFormChange, onSave, onCancel, onGetCurrentLocation }) {
   const paymentMethods = [
     {
       id: 'cod',
@@ -898,14 +1119,25 @@ function PaymentForm({ form, editingPayment, onFormChange, onSave, onCancel }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Địa Chỉ Đường *
               </label>
-              <input
-                type="text"
-                value={form.deliveryAddress.street}
-                onChange={(e) => onFormChange('deliveryAddress.street', e.target.value)}
-                className="input w-full"
-                placeholder="Nhập địa chỉ đường của bạn"
-                required
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={form.deliveryAddress.street}
+                  onChange={(e) => onFormChange('deliveryAddress.street', e.target.value)}
+                  className="input flex-1"
+                  placeholder="Nhập địa chỉ đường của bạn"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={onGetCurrentLocation}
+                  className="btn btn-outline flex items-center space-x-2 whitespace-nowrap"
+                  title="Lấy vị trí hiện tại"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Vị trí của bạn</span>
+                </button>
+              </div>
             </div>
             
             <div>

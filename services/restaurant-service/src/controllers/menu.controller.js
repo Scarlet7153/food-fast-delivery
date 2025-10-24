@@ -381,13 +381,13 @@ const searchMenuItems = async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, featured, page = 1, limit = 20 } = req.query;
     
-    // Allow search without search term if category is provided
-    if (!search && !category) {
-      return res.status(400).json({
-        success: false,
-        error: 'Search term or category is required'
-      });
-    }
+    // Allow search without any filters to get all items
+    // if (!search && !category && !featured) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Search term, category, or featured filter is required'
+    //   });
+    // }
     
     const options = {
       category,
@@ -404,7 +404,7 @@ const searchMenuItems = async (req, res) => {
       // Use text search when search term is provided
       menuItems = await MenuItem.search(search, options);
     } else {
-      // When no search term, find by category and other filters across all restaurants
+      // When no search term, find by category, featured, and other filters across all restaurants
       const query = { available: true };
       
       if (options.category) {

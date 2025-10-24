@@ -41,7 +41,7 @@ const useCartStore = create(
               : cartItem
           )
           set({ items: updatedItems })
-          toast.success(`Đã cập nhật số lượng ${item.name}`)
+          toast.success(`Đã thêm ${item.name} vào giỏ hàng`)
         } else {
           // Add new item
           const newItem = {
@@ -54,7 +54,7 @@ const useCartStore = create(
             specialInstructions: ''
           }
           set({ items: [...state.items, newItem] })
-          toast.success(`Đã thêm ${item.name} vào giỏ`)
+          toast.success(`Đã thêm ${item.name} vào giỏ hàng`)
         }
       },
 
