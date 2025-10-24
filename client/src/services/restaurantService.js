@@ -73,6 +73,12 @@ export const restaurantService = {
     return response.data
   },
 
+  // For restaurant owner to get their own menu
+  async getMyMenuItems(params = {}) {
+    const response = await api.get('/restaurants/me/menu', { params })
+    return response.data
+  },
+
   // Menu item operations
   async createMenuItem(restaurantId, itemData) {
     const response = await api.post(`/restaurants/${restaurantId}/menu`, itemData)

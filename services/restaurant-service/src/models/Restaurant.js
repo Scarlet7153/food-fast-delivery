@@ -7,6 +7,11 @@ const restaurantSchema = new mongoose.Schema({
     required: [true, 'Owner user is required'],
     unique: true
   },
+  ownerEmail: {
+    type: String,
+    trim: true,
+    lowercase: true
+  },
   name: {
     type: String,
     required: [true, 'Restaurant name is required'],
@@ -73,6 +78,13 @@ const restaurantSchema = new mongoose.Schema({
     ref: 'User'
   },
   approvedAt: {
+    type: Date
+  },
+  rejectionReason: {
+    type: String,
+    trim: true
+  },
+  rejectedAt: {
     type: Date
   },
   // MoMo payment configuration
@@ -187,11 +199,11 @@ restaurantSchema.methods.isOpen = function() {
   if (!this.active || !this.approved) return false;
   
   const now = new Date();
-  const dayName = now.toLocaleLowerCase().slice(0, 3); // 'mon', 'tue', etc.
-  const dayKey = dayName + 'day'; // 'monday', 'tuesday', etc.
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayKey = dayNames[now.getDay()]; // Get day of week
   const todayHours = this.operatingHours[dayKey];
   
-  if (todayHours.closed) return false;
+  if (!todayHours || todayHours.closed) return false;
   
   const currentTime = now.toTimeString().slice(0, 5); // 'HH:MM'
   return currentTime >= todayHours.open && currentTime <= todayHours.close;

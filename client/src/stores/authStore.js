@@ -36,7 +36,7 @@ const useAuthStore = create(
             isLoading: false 
           })
 
-          toast.success(`Welcome back, ${user.name}!`)
+          toast.success(`Chào mừng trở lại, ${user.name}!`)
           return { success: true, user }
         } catch (error) {
           set({ isLoading: false })
@@ -72,7 +72,7 @@ const useAuthStore = create(
             isLoading: false 
           })
 
-          toast.success(`Welcome to FFDD, ${user.name}!`)
+          toast.success(`Chào mừng đến với FFDD, ${user.name}!`)
           return { success: true, user }
         } catch (error) {
           set({ isLoading: false })
@@ -93,7 +93,7 @@ const useAuthStore = create(
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
           
-          toast.success('Logged out successfully')
+          toast.success('Đăng xuất thành công')
         }
       },
 
@@ -109,7 +109,7 @@ const useAuthStore = create(
           localStorage.setItem('user', JSON.stringify(user))
           set({ user, isLoading: false })
 
-          toast.success('Profile updated successfully')
+          toast.success('Cập nhật thông tin thành công')
           return { success: true, user }
         } catch (error) {
           set({ isLoading: false })
@@ -125,7 +125,7 @@ const useAuthStore = create(
           await authService.changePassword(passwordData)
           set({ isLoading: false })
 
-          toast.success('Password changed successfully')
+          toast.success('Đổi mật khẩu thành công')
           return { success: true }
         } catch (error) {
           set({ isLoading: false })
@@ -141,7 +141,7 @@ const useAuthStore = create(
           await authService.forgotPassword(email)
           set({ isLoading: false })
 
-          toast.success('Password reset link sent to your email')
+          toast.success('Link đặt lại mật khẩu đã được gửi đến email của bạn')
           return { success: true }
         } catch (error) {
           set({ isLoading: false })
@@ -157,7 +157,7 @@ const useAuthStore = create(
           await authService.resetPassword(token, newPassword)
           set({ isLoading: false })
 
-          toast.success('Password reset successfully')
+          toast.success('Đặt lại mật khẩu thành công')
           return { success: true }
         } catch (error) {
           set({ isLoading: false })

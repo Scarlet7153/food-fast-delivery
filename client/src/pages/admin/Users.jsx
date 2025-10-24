@@ -59,7 +59,6 @@ function AdminUsers() {
     { value: 'all', label: 'Tất Cả Trạng Thái' },
     { value: 'active', label: 'Hoạt Động' },
     { value: 'suspended', label: 'Bị Khóa' },
-    { value: 'pending', label: 'Chờ Xử Lý' },
   ]
 
   const handleViewUser = (user) => {
@@ -103,8 +102,6 @@ function AdminUsers() {
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'suspended':
         return <XCircle className="h-4 w-4 text-red-500" />
-      case 'pending':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       default:
         return <AlertTriangle className="h-4 w-4 text-gray-500" />
     }
@@ -116,10 +113,32 @@ function AdminUsers() {
         return 'bg-green-100 text-green-800'
       case 'suspended':
         return 'bg-red-100 text-red-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Hoạt Động'
+      case 'suspended':
+        return 'Bị Khóa'
+      default:
+        return status
+    }
+  }
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'Quản Trị Viên'
+      case 'restaurant':
+        return 'Nhà Hàng'
+      case 'customer':
+        return 'Khách Hàng'
+      default:
+        return role
     }
   }
 
@@ -259,7 +278,7 @@ function AdminUsers() {
                       <div className="flex items-center space-x-2">
                         {getRoleIcon(user.role)}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                          {user.role}
+                          {getRoleLabel(user.role)}
                         </span>
                       </div>
                     </td>
@@ -267,7 +286,7 @@ function AdminUsers() {
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(user.status)}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-                          {user.status}
+                          {getStatusLabel(user.status)}
                         </span>
                       </div>
                     </td>
@@ -314,6 +333,11 @@ function AdminUsers() {
           user={selectedUser}
           onClose={() => setShowUserModal(false)}
           onUpdateStatus={handleUpdateUserStatus}
+          getStatusIcon={getStatusIcon}
+          getStatusColor={getStatusColor}
+          getStatusLabel={getStatusLabel}
+          getRoleColor={getRoleColor}
+          getRoleLabel={getRoleLabel}
         />
       )}
     </div>
@@ -321,7 +345,7 @@ function AdminUsers() {
 }
 
 // User Detail Modal Component
-function UserDetailModal({ user, onClose, onUpdateStatus }) {
+function UserDetailModal({ user, onClose, onUpdateStatus, getStatusIcon, getStatusColor, getStatusLabel, getRoleColor, getRoleLabel }) {
   const [action, setAction] = useState('')
   const [reason, setReason] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
@@ -335,45 +359,6 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
       await onUpdateStatus(user._id, action, reason)
     } finally {
       setIsUpdating(false)
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'suspended':
-        return <XCircle className="h-5 w-5 text-red-500" />
-      case 'pending':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />
-      default:
-        return <AlertTriangle className="h-5 w-5 text-gray-500" />
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'suspended':
-        return 'bg-red-100 text-red-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800'
-      case 'restaurant':
-        return 'bg-blue-100 text-blue-800'
-      case 'customer':
-        return 'bg-green-100 text-green-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -420,7 +405,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
                   Vai Trò
                 </label>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                  {user.role}
+                  {getRoleLabel(user.role)}
                 </span>
               </div>
               <div>
@@ -430,7 +415,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus }) {
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(user.status)}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-                    {user.status}
+                    {getStatusLabel(user.status)}
                   </span>
                 </div>
               </div>

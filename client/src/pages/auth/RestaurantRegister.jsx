@@ -55,11 +55,9 @@ function RestaurantRegister() {
       const response = await authService.register(registerData)
       
       if (response.success) {
-        // For restaurant registration, always show approval message
-        toast.success('Đăng ký thành công! Vui lòng chờ admin xét duyệt.')
-        // Redirect to login page instead of dashboard
+        // Redirect to login page with approval message
         navigate('/login', { 
-          state: { message: 'Hồ sơ nhà hàng của bạn đang chờ xét duyệt. Bạn sẽ nhận email khi được duyệt.' }
+          state: { message: 'Đăng ký thành công! Hồ sơ nhà hàng của bạn đang chờ xét duyệt. Bạn sẽ nhận email khi được duyệt.' }
         })
       }
     } catch (error) {

@@ -10,11 +10,21 @@ const getMenuItems = async (req, res) => {
     
     // Check if restaurant exists and is active
     const restaurant = await Restaurant.findById(restaurantId);
-    if (!restaurant || !restaurant.active || !restaurant.approved) {
+    if (!restaurant) {
       return res.status(404).json({
         success: false,
-        error: 'Restaurant not found or not active'
+        error: 'Restaurant not found'
       });
+    }
+    
+    // If not admin/owner, only show if active and approved
+    if (req.user?.role !== 'admin' && req.user?.role !== 'restaurant') {
+      if (!restaurant.active || !restaurant.approved) {
+        return res.status(404).json({
+          success: false,
+          error: 'Restaurant not found or not active'
+        });
+      }
     }
     
     const options = {
@@ -45,6 +55,57 @@ const getMenuItems = async (req, res) => {
     
   } catch (error) {
     logger.error('Get menu items error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get menu items'
+    });
+  }
+};
+
+// Get my menu items (Restaurant owner)
+const getMyMenuItems = async (req, res) => {
+  try {
+    const { category, featured, minPrice, maxPrice, search } = req.query;
+    const userId = req.user._id || req.user.userId;
+    
+    // Find restaurant by owner
+    const restaurant = await Restaurant.findOne({ ownerUserId: userId });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found for this user'
+      });
+    }
+    
+    const options = {
+      category,
+      featured: featured === 'true',
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined
+    };
+    
+    let menuItems;
+    
+    if (search) {
+      menuItems = await MenuItem.search(search, { restaurantId: restaurant._id, ...options });
+    } else {
+      menuItems = await MenuItem.findByRestaurant(restaurant._id, options);
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        menuItems,
+        restaurant: {
+          _id: restaurant._id,
+          name: restaurant.name,
+          isOpen: restaurant.isOpen()
+        }
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Get my menu items error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to get menu items'
@@ -394,6 +455,7 @@ const searchMenuItems = async (req, res) => {
 
 module.exports = {
   getMenuItems,
+  getMyMenuItems,
   getMenuItemById,
   createMenuItem,
   updateMenuItem,

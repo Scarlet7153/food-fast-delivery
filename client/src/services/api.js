@@ -55,6 +55,11 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't try to refresh token if we're on login page (login failed)
+      if (window.location.pathname.includes('/login')) {
+        return Promise.reject(error)
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -89,27 +94,33 @@ api.interceptors.response.use(
         } else {
           // No refresh token available, logout immediately
           processQueue(error, null)
-          const { logout } = useAuthStore.getState()
-          await logout()
           
-          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-          window.location.href = '/login'
+          // Only logout and redirect if not already on login page
+          if (!window.location.pathname.includes('/login')) {
+            const { logout } = useAuthStore.getState()
+            await logout()
+            toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+            window.location.href = '/login'
+          }
           return Promise.reject(error)
         }
       } catch (refreshError) {
         // Refresh failed, logout user
         processQueue(refreshError, null)
-        const { logout } = useAuthStore.getState()
         
-        // Clear potentially corrupted tokens
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-        
-        await logout()
-        
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-        window.location.href = '/login'
+        // Only logout and redirect if not already on login page
+        if (!window.location.pathname.includes('/login')) {
+          const { logout } = useAuthStore.getState()
+          
+          // Clear potentially corrupted tokens
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
+          
+          await logout()
+          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          window.location.href = '/login'
+        }
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

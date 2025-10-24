@@ -85,10 +85,21 @@ const updateProfile = async (req, res) => {
 // Get all users (Admin only)
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, role, search } = req.query;
+    const { page = 1, limit = 100, role, search, status } = req.query;
     
     const query = {};
     if (role) query.role = role;
+    
+    // Handle status filter
+    if (status) {
+      if (status === 'active') {
+        query.active = true;
+      } else if (status === 'suspended') {
+        query.active = false;
+      }
+      // 'pending' status would need additional logic if implemented
+    }
+    
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -102,12 +113,20 @@ const getAllUsers = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Add computed status field to each user
+    const usersWithStatus = users.map(user => {
+      const userObj = user.toObject();
+      userObj.status = userObj.active ? 'active' : 'suspended';
+      userObj.lastActiveAt = userObj.lastLogin || userObj.updatedAt;
+      return userObj;
+    });
+
     const total = await User.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        users,
+        users: usersWithStatus,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -130,11 +149,28 @@ const getAllUsers = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { active } = req.body;
+    const { action, reason } = req.body;
+
+    let updateData = {};
+    
+    // Handle different actions
+    switch (action) {
+      case 'activate':
+        updateData.active = true;
+        break;
+      case 'suspend':
+        updateData.active = false;
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid action'
+        });
+    }
 
     const user = await User.findByIdAndUpdate(
       id,
-      { active },
+      updateData,
       { new: true, runValidators: true }
     ).select('-refreshTokens');
 
@@ -146,18 +182,22 @@ const updateUserStatus = async (req, res) => {
     }
 
     // If deactivating user, remove all refresh tokens
-    if (!active) {
+    if (!user.active) {
       user.refreshTokens = [];
       await user.save();
     }
 
-    logger.info(`User status updated: ${user.email} - ${active ? 'activated' : 'deactivated'}`);
+    logger.info(`User status updated: ${user.email} - ${action} - Reason: ${reason || 'N/A'}`);
+
+    // Add status field to response
+    const userObj = user.toObject();
+    userObj.status = userObj.active ? 'active' : 'suspended';
 
     res.json({
       success: true,
-      message: `User ${active ? 'activated' : 'deactivated'} successfully`,
+      message: `User ${action === 'activate' ? 'activated' : 'suspended'} successfully`,
       data: {
-        user
+        user: userObj
       }
     });
 
@@ -350,7 +390,7 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        error: 'User already exists with this email'
+        error: 'Email này đã được sử dụng'
       });
     }
 
@@ -467,7 +507,7 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials'
+        error: 'Sai tài khoản hoặc mật khẩu'
       });
     }
 
@@ -476,7 +516,7 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials'
+        error: 'Sai tài khoản hoặc mật khẩu'
       });
     }
 
@@ -484,7 +524,7 @@ const login = async (req, res) => {
     if (!user.active) {
       return res.status(401).json({
         success: false,
-        error: 'Account is deactivated'
+        error: 'Tài khoản đã bị khóa'
       });
     }
 
@@ -501,7 +541,7 @@ const login = async (req, res) => {
           logger.info(`Restaurant ${restaurant.name} is pending approval for user ${user._id}`);
           return res.status(401).json({
             success: false,
-            error: 'Your restaurant is pending approval. Please wait for admin approval.',
+            error: 'Nhà hàng của bạn đang chờ xét duyệt. Vui lòng chờ admin phê duyệt.',
             data: { pendingApproval: true }
           });
         }
@@ -553,7 +593,7 @@ const login = async (req, res) => {
     logger.error('Login error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to login'
+      error: 'Đăng nhập thất bại'
     });
   }
 };

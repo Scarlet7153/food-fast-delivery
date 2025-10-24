@@ -92,6 +92,21 @@ function AdminRestaurants() {
     }
   }
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'approved':
+        return 'Đã Duyệt'
+      case 'rejected':
+        return 'Từ Chối'
+      case 'suspended':
+        return 'Bị Khóa'
+      case 'pending':
+        return 'Chờ Duyệt'
+      default:
+        return status
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -153,6 +168,7 @@ function AdminRestaurants() {
               onView={handleViewRestaurant}
               getStatusIcon={getStatusIcon}
               getStatusColor={getStatusColor}
+              getStatusLabel={getStatusLabel}
             />
           ))
         ) : (
@@ -179,6 +195,9 @@ function AdminRestaurants() {
           restaurant={selectedRestaurant}
           onClose={() => setShowRestaurantModal(false)}
           onUpdateStatus={handleUpdateRestaurantStatus}
+          getStatusIcon={getStatusIcon}
+          getStatusColor={getStatusColor}
+          getStatusLabel={getStatusLabel}
         />
       )}
     </div>
@@ -186,7 +205,7 @@ function AdminRestaurants() {
 }
 
 // Restaurant Card Component
-function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
+function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor, getStatusLabel }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
       {/* Header */}
@@ -198,7 +217,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
         <div className="flex items-center space-x-2 ml-4">
           {getStatusIcon(restaurant.status)}
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(restaurant.status)}`}>
-            {restaurant.status}
+            {getStatusLabel(restaurant.status)}
           </span>
         </div>
       </div>
@@ -207,7 +226,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
       <div className="space-y-2 mb-4">
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <MapPin className="h-4 w-4" />
-          <span className="truncate">{restaurant.address?.street}</span>
+          <span className="truncate">{restaurant.address}</span>
         </div>
         
         {restaurant.phone && (
@@ -217,10 +236,10 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
           </div>
         )}
 
-        {restaurant.owner && (
+        {restaurant.ownerEmail && (
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Mail className="h-4 w-4" />
-            <span>{restaurant.owner.email}</span>
+            <span>{restaurant.ownerEmail}</span>
           </div>
         )}
       </div>
@@ -236,7 +255,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
           <p className="text-xs text-gray-500">Drone</p>
         </div>
         <div>
-          <p className="text-lg font-semibold text-gray-900">{restaurant.totalOrders || 0}</p>
+          <p className="text-lg font-semibold text-gray-900">{restaurant.stats?.totalOrders || 0}</p>
           <p className="text-xs text-gray-500">Đơn Hàng</p>
         </div>
       </div>
@@ -259,7 +278,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor }) {
 }
 
 // Restaurant Detail Modal Component
-function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
+function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus, getStatusIcon, getStatusColor, getStatusLabel }) {
   const [action, setAction] = useState('')
   const [reason, setReason] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
@@ -273,34 +292,6 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
       await onUpdateStatus(restaurant._id, action, reason)
     } finally {
       setIsUpdating(false)
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'rejected':
-      case 'suspended':
-        return <XCircle className="h-5 w-5 text-red-500" />
-      case 'pending':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />
-      default:
-        return <AlertTriangle className="h-5 w-5 text-gray-500" />
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800'
-      case 'rejected':
-      case 'suspended':
-        return 'bg-red-100 text-red-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -335,7 +326,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(restaurant.status)}
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(restaurant.status)}`}>
-                    {restaurant.status}
+                    {getStatusLabel(restaurant.status)}
                   </span>
                 </div>
               </div>
@@ -344,8 +335,8 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
               {/* Rating */}
               <div className="flex items-center space-x-2">
                 <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                <span className="font-medium">{restaurant.rating?.toFixed(1) || 'N/A'}</span>
-                <span className="text-gray-500">({restaurant.reviewCount || 0} đánh giá)</span>
+                <span className="font-medium">{restaurant.rating?.average?.toFixed(1) || 'N/A'}</span>
+                <span className="text-gray-500">({restaurant.rating?.count || 0} đánh giá)</span>
               </div>
             </div>
           </div>
@@ -366,10 +357,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-gray-900">{restaurant.address?.street}</p>
-                    <p className="text-sm text-gray-600">
-                      {restaurant.address?.city}, {restaurant.address?.district}, {restaurant.address?.ward}
-                    </p>
+                    <p className="text-gray-900">{restaurant.address}</p>
                   </div>
                 </div>
               </div>
@@ -423,11 +411,9 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                       Trạng Thái Tài Khoản
                     </label>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      restaurant.owner.status === 'active' ? 'bg-green-100 text-green-800' :
-                      restaurant.owner.status === 'suspended' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
+                      restaurant.owner.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {restaurant.owner.status}
+                      {restaurant.owner.active ? 'Hoạt Động' : 'Bị Khóa'}
                     </span>
                   </div>
                 </div>
@@ -448,12 +434,12 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                 <p className="text-sm text-gray-600">Drone</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{restaurant.totalOrders || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{restaurant.stats?.totalOrders || 0}</p>
                 <p className="text-sm text-gray-600">Tổng Đơn Hàng</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(restaurant.totalRevenue || 0)}
+                  {formatCurrency(restaurant.stats?.totalRevenue || 0)}
                 </p>
                 <p className="text-sm text-gray-600">Tổng Doanh Thu</p>
               </div>
@@ -506,7 +492,6 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus }) {
                     <option value="">Chọn hành động</option>
                     <option value="approve">Duyệt Nhà Hàng</option>
                     <option value="reject">Từ Chối Đơn Đăng Ký</option>
-                    <option value="request_info">Yêu Cầu Thêm Thông Tin</option>
                   </select>
                 </div>
 

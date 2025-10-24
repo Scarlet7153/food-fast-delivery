@@ -5,6 +5,11 @@ const { validate, schemas } = require('../middlewares/validation');
 const restaurantController = require('../controllers/restaurant.controller');
 const menuController = require('../controllers/menu.controller');
 
+// Protected routes (Restaurant owners) - MUST BE FIRST to avoid conflicts with /:id
+router.get('/me', auth, requireRole('restaurant'), restaurantController.getMyRestaurant);
+router.put('/me', auth, requireRole('restaurant'), validate(schemas.updateRestaurant), restaurantController.updateMyRestaurant);
+router.get('/me/menu', auth, requireRole('restaurant'), menuController.getMyMenuItems);
+
 // Public routes
 router.get('/', restaurantController.getAllRestaurants);
 router.get('/:id', restaurantController.getRestaurantById);
@@ -15,8 +20,7 @@ router.get('/menu/item/:id', menuController.getMenuItemById);
 router.get('/:restaurantId/menu/popular', menuController.getPopularMenuItems);
 router.get('/menu/search', menuController.searchMenuItems);
 
-// Protected routes (Restaurant owners)
-// Note: POST / allows both authenticated users and internal service calls
+// Protected routes (Restaurant owners) - continued
 router.post('/', validate(schemas.createRestaurant), restaurantController.createRestaurant);
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateRestaurant), restaurantController.updateRestaurant);
 router.post('/:restaurantId/menu', auth, requireRole('restaurant'), validate(schemas.createMenuItem), menuController.createMenuItem);

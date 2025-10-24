@@ -84,7 +84,7 @@ function AdminDrones() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đội Drone</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Drone</h1>
         <p className="text-gray-600 mt-1">
           Theo dõi và quản lý tất cả drone trên nền tảng
         </p>

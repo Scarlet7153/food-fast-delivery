@@ -3,9 +3,9 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { 
   Plus, Edit, Trash2, Eye, EyeOff, Search, Filter,
-  Image, DollarSign, Package, Clock, Save, X
+  Image, DollarSign, Package, Save, X
 } from 'lucide-react'
-import { formatCurrency, formatWeight } from '../../utils/formatters'
+import { formatCurrency } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
 import ImageUpload from '../../components/ImageUpload'
@@ -20,16 +20,10 @@ function RestaurantMenu() {
   // Fetch menu items
   const { data: menuData, isLoading } = useQuery(
     ['restaurant-menu', { search: searchQuery, category: categoryFilter }],
-    async () => {
-      const res = await restaurantService.getMyRestaurant()
-      if (!res?.data?.restaurant?._id) {
-        throw new Error('Restaurant not found')
-      }
-      return restaurantService.getRestaurantMenu(res.data.restaurant._id, {
-        search: searchQuery,
-        category: categoryFilter !== 'all' ? categoryFilter : undefined
-      })
-    },
+    () => restaurantService.getMyMenuItems({
+      search: searchQuery,
+      category: categoryFilter !== 'all' ? categoryFilter : undefined
+    }),
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
@@ -38,11 +32,10 @@ function RestaurantMenu() {
   // Create menu item mutation
   const createItemMutation = useMutation(
     async (itemData) => {
-      const restaurant = await restaurantService.getMyRestaurant()
-      if (!restaurant?.data?.restaurant?._id) {
+      if (!restaurant?._id) {
         throw new Error('Restaurant not found')
       }
-      return restaurantService.createMenuItem(restaurant.data.restaurant._id, itemData)
+      return restaurantService.createMenuItem(restaurant._id, itemData)
     },
     {
       onSuccess: () => {
@@ -59,11 +52,10 @@ function RestaurantMenu() {
   // Update menu item mutation
   const updateItemMutation = useMutation(
     async ({ itemId, itemData }) => {
-      const restaurant = await restaurantService.getMyRestaurant()
-      if (!restaurant?.data?.restaurant?._id) {
+      if (!restaurant?._id) {
         throw new Error('Restaurant not found')
       }
-      return restaurantService.updateMenuItem(restaurant.data.restaurant._id, itemId, itemData)
+      return restaurantService.updateMenuItem(restaurant._id, itemId, itemData)
     },
     {
       onSuccess: () => {
@@ -80,11 +72,10 @@ function RestaurantMenu() {
   // Delete menu item mutation
   const deleteItemMutation = useMutation(
     async (itemId) => {
-      const restaurant = await restaurantService.getMyRestaurant()
-      if (!restaurant?.data?.restaurant?._id) {
+      if (!restaurant?._id) {
         throw new Error('Restaurant not found')
       }
-      return restaurantService.deleteMenuItem(restaurant.data.restaurant._id, itemId)
+      return restaurantService.deleteMenuItem(restaurant._id, itemId)
     },
     {
       onSuccess: () => {
@@ -98,6 +89,7 @@ function RestaurantMenu() {
   )
 
   const menuItems = menuData?.data?.menuItems || []
+  const restaurant = menuData?.data?.restaurant
   const categories = menuData?.data?.categories || ['all']
 
   const handleDeleteItem = (itemId, itemName) => {
@@ -106,12 +98,6 @@ function RestaurantMenu() {
     }
   }
 
-  const handleToggleAvailability = (item) => {
-    updateItemMutation.mutate({
-      itemId: item._id,
-      itemData: { available: !item.available }
-    })
-  }
 
   return (
     <div className="space-y-6">
@@ -161,12 +147,6 @@ function RestaurantMenu() {
             ))}
           </select>
 
-          {/* Status Filter */}
-          <select className="input lg:w-48">
-            <option value="all">Tất Cả Món</option>
-            <option value="available">Còn Hàng</option>
-            <option value="unavailable">Hết Hàng</option>
-          </select>
         </div>
       </div>
 
@@ -196,7 +176,6 @@ function RestaurantMenu() {
                   item={item}
                   onEdit={() => setEditingItem(item)}
                   onDelete={() => handleDeleteItem(item._id, item.name)}
-                  onToggleAvailability={() => handleToggleAvailability(item)}
                   isDeleting={deleteItemMutation.isLoading}
                   isUpdating={updateItemMutation.isLoading}
                 />
@@ -265,7 +244,7 @@ function RestaurantMenu() {
 }
 
 // Menu Item Card Component
-function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting, isUpdating }) {
+function MenuItemCard({ item, onEdit, onDelete, isDeleting, isUpdating }) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       {/* Item Image */}
@@ -290,27 +269,9 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
             <span className="text-sm text-gray-500">Chưa có ảnh</span>
           </div>
         </div>
-        {!item.available && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-              Hết Hàng
-            </span>
-          </div>
-        )}
         
         {/* Actions */}
         <div className="absolute top-2 right-2 flex space-x-1">
-          <button
-            onClick={() => onToggleAvailability()}
-            disabled={isUpdating}
-            className={`p-1 rounded-full ${
-              item.available 
-                ? 'bg-green-500 text-white hover:bg-green-600' 
-                : 'bg-red-500 text-white hover:bg-red-600'
-            } transition-colors`}
-          >
-            {item.available ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          </button>
         </div>
       </div>
 
@@ -329,16 +290,6 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
 
         {/* Item Details */}
         <div className="space-y-2 text-xs text-gray-500 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Package className="h-3 w-3" />
-              <span>Khối lượng: {formatWeight(item.weightGrams || 0)}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="h-3 w-3" />
-              <span>Chuẩn bị: {item.prepTime || 0}p</span>
-            </div>
-          </div>
           
           <div className="flex items-center space-x-1">
             <span>Danh mục: {item.category || 'Chưa phân loại'}</span>
@@ -363,13 +314,6 @@ function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability, isDeleting
             </button>
           </div>
           
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            item.available 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-red-100 text-red-700'
-          }`}>
-            {item.available ? 'Còn Hàng' : 'Hết Hàng'}
-          </span>
         </div>
       </div>
     </div>
@@ -383,12 +327,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
     description: item?.description || '',
     price: item?.price || 0,
     category: item?.category || '',
-    weightGrams: item?.weightGrams || 0,
-    prepTime: item?.prepTime || 0,
-    available: item?.available !== false,
-    imageUrl: item?.imageUrl || '',
-    allergens: item?.allergens || [],
-    nutritionalInfo: item?.nutritionalInfo || {}
+    imageUrl: item?.imageUrl || ''
   })
 
   const handleChange = (field, value) => {
@@ -482,31 +421,7 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Khối Lượng (gram)
-              </label>
-              <input
-                type="number"
-                value={formData.weightGrams}
-                onChange={(e) => handleChange('weightGrams', parseInt(e.target.value))}
-                className="input w-full"
-                min="0"
-              />
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Thời Gian Chuẩn Bị (phút)
-              </label>
-              <input
-                type="number"
-                value={formData.prepTime}
-                onChange={(e) => handleChange('prepTime', parseInt(e.target.value))}
-                className="input w-full"
-                min="0"
-              />
-            </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -519,20 +434,6 @@ function MenuItemModal({ item, onClose, onSubmit, isLoading }) {
               />
             </div>
 
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="available"
-                  checked={formData.available}
-                  onChange={(e) => handleChange('available', e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="available" className="text-sm font-medium text-gray-700">
-                  Còn hàng để đặt
-                </label>
-              </div>
-            </div>
           </div>
 
           {/* Actions */}

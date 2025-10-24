@@ -70,7 +70,7 @@ function RestaurantSettings() {
         description: restaurant.description || '',
         address: restaurant.address || '',
         phone: restaurant.phone || '',
-        email: restaurant.email || '',
+        email: restaurant.email || restaurant.ownerEmail || '',
         imageUrl: restaurant.imageUrl || '',
         deliverySettings: {
           baseRate: restaurant.deliverySettings?.baseRate || 10000,
@@ -127,7 +127,7 @@ function RestaurantSettings() {
         description: restaurant.description || '',
         address: restaurant.address || '',
         phone: restaurant.phone || '',
-        email: restaurant.email || '',
+        email: restaurant.email || restaurant.ownerEmail || '',
         imageUrl: restaurant.imageUrl || '',
         deliverySettings: {
           baseRate: restaurant.deliverySettings?.baseRate || 10000,
@@ -278,18 +278,10 @@ function RestaurantSettings() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Địa Chỉ Email
               </label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  className="input w-full"
-                />
-              ) : (
-                <div className="p-3 bg-gray-50 rounded-lg flex items-center space-x-2">
-                  <span className="text-gray-900">{formData.email || 'Chưa có email'}</span>
-                </div>
-              )}
+              <div className="p-3 bg-gray-100 rounded-lg flex items-center space-x-2">
+                <span className="text-gray-600 text-sm">{formData.email || 'Chưa có email'}</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Email đăng ký tài khoản (không thể thay đổi)</p>
             </div>
 
             <div className="md:col-span-2">

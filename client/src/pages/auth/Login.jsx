@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
-import { Eye, EyeOff, Loader2, AlertCircle, X } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
 
@@ -216,23 +216,18 @@ function Login() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-yellow-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Tài khoản chờ xét duyệt
-                </h3>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Tài khoản chờ xét duyệt
+              </h3>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowPendingModal(false)
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 text-xl"
               >
-                <X className="h-5 w-5" />
+                ×
               </button>
             </div>
             

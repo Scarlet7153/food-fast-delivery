@@ -302,7 +302,7 @@ class APIGateway {
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
-        '^/api/restaurant/drones': '/api/restaurant/drones'
+        '^/api/restaurant/drones': '/api/drones'
       }
     }));
 
@@ -312,7 +312,7 @@ class APIGateway {
       changeOrigin: true,
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
-        '^/api/restaurant/missions': '/api/restaurant/missions'
+        '^/api/restaurant/missions': '/api/drones/missions'
       }
     }));
 
@@ -324,8 +324,12 @@ class APIGateway {
       pathRewrite: {
         '^/api/restaurants': '/api/restaurants'
       },
-      // Only handle POST/PUT/DELETE requests (restaurant owner operations)
+      // Handle POST/PUT/DELETE requests and GET /me (restaurant owner operations)
       pathFilter: (pathname, req) => {
+        // Allow GET /me for restaurant owners to get their restaurant
+        if (req.method === 'GET' && pathname.includes('/me')) {
+          return true;
+        }
         return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
       }
     }));
