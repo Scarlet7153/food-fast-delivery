@@ -247,7 +247,7 @@ function RestaurantDashboard() {
                         Đơn #{order.orderNumber}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {order.items.length} món • {formatCurrency(order.totalAmount)}
+                        {order.items.length} món • {formatCurrency(order.amount?.total || 0)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDateTime(order.createdAt)}

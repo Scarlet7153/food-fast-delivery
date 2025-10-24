@@ -63,8 +63,13 @@ const schemas = {
   }),
 
   changePassword: Joi.object({
-    currentPassword: Joi.string().required(),
-    newPassword: Joi.string().min(6).required()
+    currentPassword: Joi.string().required().messages({
+      'any.required': 'Mật khẩu hiện tại là bắt buộc'
+    }),
+    newPassword: Joi.string().min(6).required().messages({
+      'string.min': 'Mật khẩu mới phải có ít nhất 6 ký tự',
+      'any.required': 'Mật khẩu mới là bắt buộc'
+    })
   }),
 
   forgotPassword: Joi.object({
@@ -80,13 +85,16 @@ const schemas = {
   updateProfile: Joi.object({
     name: Joi.string().min(2).max(50).optional(),
     phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).optional(),
-    address: Joi.object({
-      text: Joi.string().optional(),
-      location: Joi.object({
-        type: Joi.string().valid('Point').default('Point'),
-        coordinates: Joi.array().items(Joi.number()).length(2).optional()
+    address: Joi.alternatives().try(
+      Joi.string().allow('').optional(),
+      Joi.object({
+        text: Joi.string().optional(),
+        location: Joi.object({
+          type: Joi.string().valid('Point').default('Point'),
+          coordinates: Joi.array().items(Joi.number()).length(2).optional()
+        }).optional()
       }).optional()
-    }).optional()
+    )
   }),
 
   // Admin schemas
@@ -96,13 +104,16 @@ const schemas = {
     phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).optional(),
     role: Joi.string().valid('customer', 'restaurant', 'admin').optional(),
     active: Joi.boolean().optional(),
-    address: Joi.object({
-      text: Joi.string().optional(),
-      location: Joi.object({
-        type: Joi.string().valid('Point').default('Point'),
-        coordinates: Joi.array().items(Joi.number()).length(2).optional()
+    address: Joi.alternatives().try(
+      Joi.string().allow('').optional(),
+      Joi.object({
+        text: Joi.string().optional(),
+        location: Joi.object({
+          type: Joi.string().valid('Point').default('Point'),
+          coordinates: Joi.array().items(Joi.number()).length(2).optional()
+        }).optional()
       }).optional()
-    }).optional()
+    )
   }),
 
   updateUserStatus: Joi.object({
@@ -120,6 +131,44 @@ const schemas = {
 
   validateRefreshToken: Joi.object({
     token: Joi.string().required()
+  }),
+
+  // Payment info schema
+  paymentInfo: Joi.object({
+    contactInfo: Joi.object({
+      name: Joi.string().min(2).max(50).required().messages({
+        'string.min': 'Họ tên phải có ít nhất 2 ký tự',
+        'string.max': 'Họ tên không được quá 50 ký tự',
+        'any.required': 'Họ tên là bắt buộc'
+      }),
+      phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).required().messages({
+        'string.pattern.base': 'Số điện thoại không hợp lệ',
+        'any.required': 'Số điện thoại là bắt buộc'
+      })
+    }).required(),
+    deliveryAddress: Joi.object({
+      street: Joi.string().min(5).max(200).required().messages({
+        'string.min': 'Địa chỉ đường phải có ít nhất 5 ký tự',
+        'string.max': 'Địa chỉ đường không được quá 200 ký tự',
+        'any.required': 'Địa chỉ đường là bắt buộc'
+      }),
+      city: Joi.string().min(2).max(50).required().messages({
+        'string.min': 'Thành phố phải có ít nhất 2 ký tự',
+        'string.max': 'Thành phố không được quá 50 ký tự',
+        'any.required': 'Thành phố là bắt buộc'
+      }),
+      district: Joi.string().min(2).max(50).required().messages({
+        'string.min': 'Quận/Huyện phải có ít nhất 2 ký tự',
+        'string.max': 'Quận/Huyện không được quá 50 ký tự',
+        'any.required': 'Quận/Huyện là bắt buộc'
+      }),
+      ward: Joi.string().min(2).max(50).required().messages({
+        'string.min': 'Phường/Xã phải có ít nhất 2 ký tự',
+        'string.max': 'Phường/Xã không được quá 50 ký tự',
+        'any.required': 'Phường/Xã là bắt buộc'
+      })
+    }).required(),
+    isDefault: Joi.boolean().optional()
   })
 };
 

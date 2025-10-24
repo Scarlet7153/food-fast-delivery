@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye, CheckCircle,
@@ -292,7 +293,7 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
               <div className="flex items-center space-x-4">
                 <span>{order.items.length} món</span>
                 <span>•</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
+                <span>{formatCurrency(order.amount?.total || 0)}</span>
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Clock className="h-3 w-3" />
@@ -343,10 +344,13 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
 
         {/* Actions */}
         <div className="flex items-center space-x-2 ml-4">
-          <button className="btn btn-outline btn-sm flex items-center space-x-1">
+          <Link 
+            to={`/restaurant/orders/${order._id}`}
+            className="btn btn-outline btn-sm flex items-center space-x-1"
+          >
             <Eye className="h-4 w-4" />
             <span>Xem</span>
-          </button>
+          </Link>
 
           {canUpdate && nextStatus && (
             <button

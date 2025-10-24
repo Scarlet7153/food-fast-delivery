@@ -66,6 +66,48 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  paymentInfo: [{
+    contactInfo: {
+      name: {
+        type: String,
+        required: true
+      },
+      phone: {
+        type: String,
+        required: true
+      }
+    },
+    deliveryAddress: {
+      street: {
+        type: String,
+        required: true
+      },
+      city: {
+        type: String,
+        required: true
+      },
+      district: {
+        type: String,
+        required: true
+      },
+      ward: {
+        type: String,
+        required: true
+      }
+    },
+    isDefault: {
+      type: Boolean,
+      default: false
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

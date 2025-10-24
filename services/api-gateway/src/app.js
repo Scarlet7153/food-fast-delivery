@@ -97,33 +97,6 @@ class APIGateway {
       }
     }));
 
-    // User profile routes (protected)
-    this.app.use('/api/user/me', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/user/me': '/api/user/me'
-      }
-    }));
-
-    this.app.use('/api/user/profile', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/user/profile': '/api/user/profile'
-      }
-    }));
-
-    this.app.use('/api/user/change-password', this.authenticateToken.bind(this), createProxyMiddleware({
-      target: config.USER_SERVICE_URL,
-      changeOrigin: true,
-      timeout: 30000, // 30 seconds timeout
-      pathRewrite: {
-        '^/api/user/change-password': '/api/user/change-password'
-      }
-    }));
 
     // ===== ADMIN ROUTES (MUST BE FIRST TO AVOID CONFLICTS) =====
     

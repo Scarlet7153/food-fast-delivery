@@ -11,10 +11,24 @@ const orderSchema = new mongoose.Schema({
     ref: 'Restaurant',
     required: [true, 'Restaurant ID is required']
   },
+  restaurant: {
+    name: {
+      type: String
+    },
+    description: {
+      type: String
+    },
+    imageUrl: {
+      type: String
+    },
+    phone: {
+      type: String
+    },
+  },
   orderNumber: {
     type: String,
     unique: true,
-    required: true
+    required: false
   },
   items: [{
     menuItemId: {
@@ -25,6 +39,9 @@ const orderSchema = new mongoose.Schema({
     name: {
       type: String,
       required: true
+    },
+    imageUrl: {
+      type: String
     },
     price: {
       type: Number,
@@ -228,7 +245,9 @@ orderSchema.virtual('estimatedDuration').get(function() {
 
 // Pre-save middleware to generate order number
 orderSchema.pre('save', async function(next) {
+  console.log('Pre-save middleware running, isNew:', this.isNew, 'orderNumber:', this.orderNumber);
   if (this.isNew && !this.orderNumber) {
+    console.log('Generating order number...');
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -246,6 +265,7 @@ orderSchema.pre('save', async function(next) {
     }
     
     this.orderNumber = `ORD${year}${month}${day}${sequence.toString().padStart(4, '0')}`;
+    console.log('Generated order number:', this.orderNumber);
   }
   next();
 });

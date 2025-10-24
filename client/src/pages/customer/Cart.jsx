@@ -253,9 +253,7 @@ function Cart() {
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-600 mb-2">{t('Phương thức thanh toán')}:</p>
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>💳 Thẻ tín dụng</span>
                 <span>📱 Ví MoMo</span>
-                <span>🏦 Chuyển khoản</span>
               </div>
             </div>
 

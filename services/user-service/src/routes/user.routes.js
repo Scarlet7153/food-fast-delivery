@@ -25,12 +25,14 @@ router.get('/me', auth, userController.getProfile);
 router.put('/profile', auth, validate(schemas.updateProfile), userController.updateProfile);
 router.put('/change-password', auth, validate(schemas.changePassword), userController.changePassword);
 
-// ===== USER MANAGEMENT ROUTES (Protected) =====
+// Payment info routes
+router.get('/payment-info', auth, userController.getPaymentInfo);
+router.post('/payment-info', auth, validate(schemas.paymentInfo), userController.createPaymentInfo);
+router.put('/payment-info/:id', auth, validate(schemas.paymentInfo), userController.updatePaymentInfo);
+router.delete('/payment-info/:id', auth, userController.deletePaymentInfo);
+router.put('/payment-info/:id/default', auth, userController.setDefaultPaymentInfo);
 
-// User profile routes
-router.get('/me', auth, userController.getProfile);
-router.put('/me', auth, validate(schemas.updateProfile), userController.updateProfile);
-router.put('/change-password', auth, validate(schemas.changePassword), userController.changePassword);
+// ===== USER MANAGEMENT ROUTES (Protected) =====
 
 // ===== ADMIN ROUTES (Admin Only) =====
 

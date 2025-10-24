@@ -11,7 +11,7 @@ const schemas = {
         price: Joi.number().min(0).required(),
         quantity: Joi.number().min(1).required(),
         totalPrice: Joi.number().min(0).required(),
-        specialInstructions: Joi.string().max(200).optional()
+        specialInstructions: Joi.string().max(200).allow('').optional()
       })
     ).min(1).required(),
     amount: Joi.object({
@@ -33,7 +33,7 @@ const schemas = {
       }).required(),
       contactPhone: Joi.string().pattern(/^[0-9+\-\s()]+$/).optional(),
       contactName: Joi.string().optional(),
-      notes: Joi.string().max(200).optional()
+      notes: Joi.string().max(200).allow('').optional()
     }).required()
   }),
 
@@ -48,7 +48,7 @@ const schemas = {
       'CANCELLED',
       'FAILED'
     ).required(),
-    note: Joi.string().max(200).optional()
+    note: Joi.string().max(200).allow('').optional()
   }),
 
   cancelOrder: Joi.object({
@@ -66,6 +66,7 @@ const schemas = {
 // Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
+    console.log('Validation input:', JSON.stringify(req.body, null, 2));
     const { error } = schema.validate(req.body, { abortEarly: false });
     
     if (error) {
@@ -74,6 +75,7 @@ const validate = (schema) => {
         message: detail.message
       }));
       
+      console.log('Validation errors:', errors);
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -81,6 +83,7 @@ const validate = (schema) => {
       });
     }
     
+    console.log('Validation passed');
     next();
   };
 };

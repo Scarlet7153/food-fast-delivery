@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
+import ConfirmationModal from '../../components/ConfirmationModal'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye,
   Truck, CheckCircle, XCircle, AlertCircle
@@ -14,6 +15,8 @@ function Orders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelOrderId, setCancelOrderId] = useState(null)
 
   // Fetch orders
   const { data: ordersData, isLoading, refetch } = useQuery(
@@ -30,6 +33,20 @@ function Orders() {
   )
 
   const orders = ordersData?.data?.orders || []
+
+  const handleCancel = async () => {
+    if (cancelOrderId) {
+      try {
+        await orderService.cancelOrder(cancelOrderId, 'Cancelled by customer')
+        toast.success('Hủy đơn hàng thành công')
+        setShowCancelModal(false)
+        setCancelOrderId(null)
+        refetch()
+      } catch (error) {
+        toast.error('Không thể hủy đơn hàng')
+      }
+    }
+  }
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
@@ -134,7 +151,14 @@ function Orders() {
         ) : orders.length > 0 ? (
           <div className="divide-y divide-gray-200">
             {orders.map((order) => (
-              <OrderCard key={order._id} order={order} />
+              <OrderCard 
+                key={order._id} 
+                order={order} 
+                onCancelOrder={(orderId) => {
+                  setCancelOrderId(orderId)
+                  setShowCancelModal(true)
+                }}
+              />
             ))}
           </div>
         ) : (
@@ -169,12 +193,29 @@ function Orders() {
           </div>
         )}
       </div>
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <ConfirmationModal
+          isOpen={showCancelModal}
+          onClose={() => {
+            setShowCancelModal(false)
+            setCancelOrderId(null)
+          }}
+          onConfirm={handleCancel}
+          title="Xác nhận hủy đơn hàng"
+          message="Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác."
+          confirmText="Hủy đơn hàng"
+          cancelText="Không"
+          type="danger"
+        />
+      )}
     </div>
   )
 }
 
 // Order Card Component
-function OrderCard({ order }) {
+function OrderCard({ order, onCancelOrder }) {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'DELIVERED':
@@ -247,7 +288,7 @@ function OrderCard({ order }) {
               <div className="flex items-center space-x-4">
                 <span>{order.items.length} món</span>
                 <span>•</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
+                <span>{formatCurrency(order.amount?.total || 0)}</span>
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Clock className="h-3 w-3" />
@@ -308,7 +349,7 @@ function OrderCard({ order }) {
 
           {canCancel && (
             <button
-              onClick={() => handleCancelOrder(order._id)}
+              onClick={() => onCancelOrder(order._id)}
               className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
             >
               Hủy
@@ -332,15 +373,13 @@ function OrderCard({ order }) {
 
 // Helper functions
 async function handleCancelOrder(orderId) {
-  if (window.confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
-    try {
-      await orderService.cancelOrder(orderId, 'Cancelled by customer')
-      toast.success('Hủy đơn hàng thành công')
-      // Refresh orders list
-      window.location.reload()
-    } catch (error) {
-      toast.error('Không thể hủy đơn hàng')
-    }
+  try {
+    await orderService.cancelOrder(orderId, 'Cancelled by customer')
+    toast.success('Hủy đơn hàng thành công')
+    // Refresh orders list
+    window.location.reload()
+  } catch (error) {
+    toast.error('Không thể hủy đơn hàng')
   }
 }
 

@@ -12,22 +12,46 @@ const createOrder = async (req, res) => {
     };
 
     // Validate restaurant exists and is active
+    let restaurant;
+    let menuItems;
     try {
+      console.log('Checking restaurant:', orderData.restaurantId);
       const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/${orderData.restaurantId}`);
-      const restaurant = restaurantResponse.data.data.restaurant;
+      console.log('Restaurant response:', restaurantResponse.data);
+      restaurant = restaurantResponse.data.data.restaurant;
+      menuItems = restaurantResponse.data.data.menuItems;
       
       if (!restaurant.active || !restaurant.approved) {
+        console.log('Restaurant not available:', { active: restaurant.active, approved: restaurant.approved });
         return res.status(400).json({
           success: false,
           error: 'Restaurant is not available for orders'
         });
       }
     } catch (error) {
+      console.log('Restaurant validation error:', error.message);
       return res.status(404).json({
         success: false,
         error: 'Restaurant not found'
       });
     }
+
+      // Add restaurant info to order data
+      orderData.restaurant = {
+        name: restaurant.name,
+        description: restaurant.description,
+        imageUrl: restaurant.imageUrl,
+        phone: restaurant.phone
+      };
+
+      // Add imageUrl to items
+      orderData.items = orderData.items.map(item => {
+        const menuItem = menuItems.find(mi => mi._id === item.menuItemId);
+        return {
+          ...item,
+          imageUrl: menuItem?.imageUrl || ''
+        };
+      });
 
     // Calculate estimated delivery time
     const order = new Order(orderData);
@@ -45,6 +69,8 @@ const createOrder = async (req, res) => {
             orderNumber: order.orderNumber,
             restaurantId: order.restaurantId
           })
+        }, {
+          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
         });
 
         if (paymentResponse.data.success) {
@@ -56,6 +82,11 @@ const createOrder = async (req, res) => {
         logger.error('Payment creation failed:', error);
         // Continue with order creation even if payment fails
       }
+    } else if (order.payment.method === 'COD') {
+      // For COD, mark payment as paid immediately
+      order.payment.status = 'PAID';
+      order.status = 'PLACED';
+      await order.save();
     }
 
     logger.info(`New order created: ${order.orderNumber} by user ${req.user._id}`);
@@ -156,6 +187,8 @@ const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, note } = req.body;
     
+    console.log('Update order status request:', { id, status, note, user: req.user });
+    
     const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({
@@ -192,7 +225,15 @@ const updateOrderStatus = async (req, res) => {
       }
     }
     
-    await order.updateStatus(status, req.user._id, note);
+    try {
+      await order.updateStatus(status, req.user._id, note);
+    } catch (error) {
+      console.log('Status update error:', error.message);
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
     
     // Notify relevant services
     try {

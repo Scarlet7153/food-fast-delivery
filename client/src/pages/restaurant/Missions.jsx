@@ -308,7 +308,7 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
               <div className="flex items-center space-x-4">
                 <span>{mission.order?.items?.length || 0} món</span>
                 <span>•</span>
-                <span>{formatCurrency(mission.order?.totalAmount || 0)}</span>
+                <span>{formatCurrency(mission.order?.amount?.total || 0)}</span>
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Clock className="h-3 w-3" />

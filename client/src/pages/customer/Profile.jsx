@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../../stores/authStore'
+import { paymentInfoService } from '../../services/paymentInfoService'
 import { 
   User, Mail, Phone, MapPin, Calendar, Edit3, 
-  Save, X, Key, Shield, Bell, CreditCard 
+  Save, X, Key, Shield, CreditCard 
 } from 'lucide-react'
 import { formatDateTime, formatPhoneNumber } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -16,7 +17,6 @@ function Profile() {
 
   const [profileForm, setProfileForm] = useState({
     name: '',
-    email: '',
     phone: '',
     address: ''
   })
@@ -27,15 +27,63 @@ function Profile() {
     confirmPassword: ''
   })
 
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [isAddingPayment, setIsAddingPayment] = useState(false)
+  const [editingPayment, setEditingPayment] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [paymentToDelete, setPaymentToDelete] = useState(null)
+  const [paymentForm, setPaymentForm] = useState({
+    method: 'cod', // 'cod' or 'momo'
+    deliveryAddress: {
+      street: '',
+      city: '',
+      district: '',
+      ward: ''
+    },
+    contactInfo: {
+      name: '',
+      phone: ''
+    },
+    momoPhone: '',
+    isDefault: false
+  })
+
   // Initialize form with user data
   useEffect(() => {
     if (user) {
       setProfileForm({
         name: user.name || '',
-        email: user.email || '',
         phone: user.phone || '',
         address: typeof user.address === 'object' ? user.address?.text || '' : user.address || ''
       })
+    }
+  }, [user])
+
+  // Update profile address when default payment info changes
+  useEffect(() => {
+    const defaultPaymentInfo = paymentMethods.find(payment => payment.isDefault)
+    if (defaultPaymentInfo) {
+      const addressText = `${defaultPaymentInfo.deliveryAddress.street}, ${defaultPaymentInfo.deliveryAddress.ward}, ${defaultPaymentInfo.deliveryAddress.district}, ${defaultPaymentInfo.deliveryAddress.city}`
+      setProfileForm(prev => ({
+        ...prev,
+        address: addressText
+      }))
+    }
+  }, [paymentMethods])
+
+  // Load payment info from API
+  useEffect(() => {
+    const loadPaymentInfo = async () => {
+      try {
+        const response = await paymentInfoService.getPaymentInfo()
+        setPaymentMethods(response.data.paymentInfo || [])
+      } catch (error) {
+        console.error('Error loading payment info:', error)
+      }
+    }
+
+    if (user) {
+      loadPaymentInfo()
     }
   }, [user])
 
@@ -77,6 +125,11 @@ function Profile() {
       return
     }
 
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      toast.error('Mật khẩu mới không được giống mật khẩu hiện tại')
+      return
+    }
+
     try {
       await changePassword({
         currentPassword: passwordForm.currentPassword,
@@ -97,7 +150,6 @@ function Profile() {
     if (user) {
       setProfileForm({
         name: user.name || '',
-        email: user.email || '',
         phone: user.phone || '',
         address: typeof user.address === 'object' ? user.address?.text || '' : user.address || ''
       })
@@ -114,11 +166,188 @@ function Profile() {
     setIsChangingPassword(false)
   }
 
+  const handlePaymentFormChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.')
+      setPaymentForm(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }))
+    } else {
+      setPaymentForm(prev => ({
+        ...prev,
+        [field]: value
+      }))
+    }
+  }
+
+  const handleAddPayment = () => {
+    setIsAddingPayment(true)
+    setEditingPayment(null)
+    setPaymentForm({
+      method: 'cod',
+      deliveryAddress: {
+        street: '',
+        city: '',
+        district: '',
+        ward: ''
+      },
+      contactInfo: {
+        name: user?.name || '',
+        phone: user?.phone || ''
+      },
+      momoPhone: '',
+      isDefault: false
+    })
+  }
+
+  const handleEditPayment = (payment) => {
+    setEditingPayment(payment)
+    setIsAddingPayment(true)
+    setPaymentForm({
+      method: payment.method || 'cod',
+      deliveryAddress: payment.deliveryAddress || {
+        street: '',
+        city: '',
+        district: '',
+        ward: ''
+      },
+      contactInfo: payment.contactInfo || {
+        name: user?.name || '',
+        phone: user?.phone || ''
+      },
+      momoPhone: payment.momoPhone || '',
+      isDefault: payment.isDefault || false
+    })
+  }
+
+  const handleSavePayment = async (e) => {
+    e.preventDefault()
+    
+    try {
+      const paymentData = {
+        contactInfo: paymentForm.contactInfo,
+        deliveryAddress: paymentForm.deliveryAddress,
+        isDefault: paymentForm.isDefault
+      }
+
+      if (editingPayment) {
+        await paymentInfoService.updatePaymentInfo(editingPayment._id, paymentData)
+        toast.success('Cập nhật thông tin giao hàng thành công')
+      } else {
+        await paymentInfoService.createPaymentInfo(paymentData)
+        toast.success('Thêm thông tin giao hàng thành công')
+      }
+
+      // Reload payment info from API
+      const response = await paymentInfoService.getPaymentInfo()
+      setPaymentMethods(response.data.paymentInfo || [])
+
+      setIsAddingPayment(false)
+      setEditingPayment(null)
+      setPaymentForm({
+        method: 'cod',
+        deliveryAddress: {
+          street: '',
+          city: '',
+          district: '',
+          ward: ''
+        },
+        contactInfo: {
+          name: user?.name || '',
+          phone: user?.phone || ''
+        },
+        momoPhone: '',
+        isDefault: false
+      })
+    } catch (error) {
+      console.error('Error saving payment info:', error)
+      toast.error('Có lỗi xảy ra khi lưu thông tin giao hàng')
+    }
+  }
+
+  const handleCancelPayment = () => {
+    setIsAddingPayment(false)
+    setEditingPayment(null)
+    setPaymentForm({
+      method: 'cod',
+      deliveryAddress: {
+        street: '',
+        city: '',
+        district: '',
+        ward: ''
+      },
+      contactInfo: {
+        name: user?.name || '',
+        phone: user?.phone || ''
+      },
+      momoPhone: '',
+      isDefault: false
+    })
+  }
+
+  const handleDeletePayment = (paymentId) => {
+    setPaymentToDelete(paymentId)
+    setShowDeleteConfirm(true)
+  }
+
+  const confirmDeletePayment = async () => {
+    if (!paymentToDelete) return
+
+    try {
+      await paymentInfoService.deletePaymentInfo(paymentToDelete)
+      
+      // Reload payment info from API
+      const response = await paymentInfoService.getPaymentInfo()
+      setPaymentMethods(response.data.paymentInfo || [])
+      
+      toast.success('Xóa thông tin giao hàng thành công')
+    } catch (error) {
+      console.error('Error deleting payment info:', error)
+      toast.error('Có lỗi xảy ra khi xóa thông tin giao hàng')
+    } finally {
+      setShowDeleteConfirm(false)
+      setPaymentToDelete(null)
+    }
+  }
+
+  const cancelDeletePayment = () => {
+    setShowDeleteConfirm(false)
+    setPaymentToDelete(null)
+  }
+
+  const handleSetDefaultPayment = async (paymentId) => {
+    try {
+      await paymentInfoService.setDefaultPaymentInfo(paymentId)
+      
+      // Reload payment info from API
+      const response = await paymentInfoService.getPaymentInfo()
+      setPaymentMethods(response.data.paymentInfo || [])
+      
+      // Update profile address with new default address
+      const newDefaultInfo = response.data.paymentInfo?.find(info => info.isDefault)
+      if (newDefaultInfo) {
+        const addressText = `${newDefaultInfo.deliveryAddress.street}, ${newDefaultInfo.deliveryAddress.ward}, ${newDefaultInfo.deliveryAddress.district}, ${newDefaultInfo.deliveryAddress.city}`
+        setProfileForm(prev => ({
+          ...prev,
+          address: addressText
+        }))
+      }
+      
+      toast.success('Đặt làm thông tin giao hàng mặc định')
+    } catch (error) {
+      console.error('Error setting default payment info:', error)
+      toast.error('Có lỗi xảy ra khi đặt mặc định')
+    }
+  }
+
   const tabs = [
     { id: 'profile', label: 'Hồ Sơ', icon: User },
     { id: 'security', label: 'Bảo Mật', icon: Shield },
-    { id: 'preferences', label: 'Tùy Chọn', icon: Bell },
-    { id: 'billing', label: 'Thanh Toán', icon: CreditCard }
+    { id: 'billing', label: 'Thông tin giao hàng', icon: MapPin }
   ]
 
   if (!user) {
@@ -204,17 +433,62 @@ function Profile() {
             />
           )}
 
-          {/* Preferences Tab */}
-          {activeTab === 'preferences' && (
-            <PreferencesTab user={user} />
-          )}
 
           {/* Billing Tab */}
           {activeTab === 'billing' && (
-            <BillingTab user={user} />
+            <BillingTab 
+              user={user}
+              paymentMethods={paymentMethods}
+              isAddingPayment={isAddingPayment}
+              editingPayment={editingPayment}
+              paymentForm={paymentForm}
+              onFormChange={handlePaymentFormChange}
+              onAdd={handleAddPayment}
+              onEdit={handleEditPayment}
+              onSave={handleSavePayment}
+              onCancel={handleCancelPayment}
+              onDelete={handleDeletePayment}
+              onSetDefault={handleSetDefaultPayment}
+            />
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <X className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Xác nhận xóa</h3>
+                <p className="text-sm text-gray-500">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Bạn có chắc chắn muốn xóa thông tin giao hàng này?
+            </p>
+            
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={cancelDeletePayment}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDeletePayment}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -380,15 +654,6 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
 
       {!isChangingPassword ? (
         <div className="space-y-4">
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-900">Bảo Mật Tài Khoản</span>
-            </div>
-            <p className="text-sm text-blue-700 mt-1">
-              Tài khoản của bạn được bảo mật bằng mã hóa tiêu chuẩn ngành.
-            </p>
-          </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -399,13 +664,6 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
               <span className="text-sm text-gray-500">••••••••</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-900">Xác Thực Hai Yếu Tố</span>
-              </div>
-              <span className="text-sm text-gray-500">Chưa bật</span>
-            </div>
           </div>
         </div>
       ) : (
@@ -487,94 +745,294 @@ function SecurityTab({ passwordForm, isChangingPassword, isLoading, onFormChange
   )
 }
 
-// Preferences Tab Component
-function PreferencesTab({ user }) {
+
+// Billing Tab Component
+function BillingTab({ 
+  user, 
+  paymentMethods, 
+  isAddingPayment, 
+  editingPayment, 
+  paymentForm, 
+  onFormChange, 
+  onAdd, 
+  onEdit, 
+  onSave, 
+  onCancel, 
+  onDelete, 
+  onSetDefault 
+}) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Tùy Chọn Thông Báo</h2>
-      
-      <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <Bell className="h-5 w-5 text-gray-400" />
-            <div>
-              <p className="font-medium text-gray-900">Cập Nhật Đơn Hàng</p>
-              <p className="text-sm text-gray-600">Nhận thông báo về thay đổi trạng thái đơn hàng</p>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" defaultChecked className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <Bell className="h-5 w-5 text-gray-400" />
-            <div>
-              <p className="font-medium text-gray-900">Thông Báo Giao Hàng</p>
-              <p className="text-sm text-gray-600">Nhận thông báo khi drone đang đến gần</p>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" defaultChecked className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <Bell className="h-5 w-5 text-gray-400" />
-            <div>
-              <p className="font-medium text-gray-900">Ưu Đãi Khuyến Mãi</p>
-              <p className="text-sm text-gray-600">Nhận ưu đãi đặc biệt và giảm giá</p>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-          </label>
-        </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Thông Tin Giao Hàng</h2>
+        {!isAddingPayment && (
+            <button
+              onClick={onAdd}
+              className="btn btn-primary btn-sm flex items-center space-x-2"
+            >
+              <MapPin className="h-4 w-4" />
+              <span>Thêm thông tin giao hàng</span>
+            </button>
+        )}
       </div>
+
+      {isAddingPayment ? (
+        <PaymentForm
+          form={paymentForm}
+          editingPayment={editingPayment}
+          onFormChange={onFormChange}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      ) : (
+        <div className="space-y-4">
+          {paymentMethods.length === 0 ? (
+            <div className="p-6 bg-gray-50 rounded-lg text-center">
+              <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Chưa có thông tin giao hàng
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Thêm thông tin giao hàng để có thể chọn nhanh khi đặt hàng
+              </p>
+              <button
+                onClick={onAdd}
+                className="btn btn-primary"
+              >
+                Thêm thông tin giao hàng
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {paymentMethods.map((payment) => (
+                <PaymentMethodCard
+                  key={payment._id}
+                  payment={payment}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onSetDefault={onSetDefault}
+                />
+              ))}
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
   )
 }
 
-// Billing Tab Component
-function BillingTab({ user }) {
+// Payment Form Component
+function PaymentForm({ form, editingPayment, onFormChange, onSave, onCancel }) {
+  const paymentMethods = [
+    {
+      id: 'cod',
+      name: 'Thanh toán khi nhận hàng (COD)',
+      description: 'Thanh toán bằng tiền mặt khi nhận hàng',
+      icon: '💰',
+      recommended: true
+    },
+    {
+      id: 'momo',
+      name: 'Ví MoMo',
+      description: 'Thanh toán qua ví điện tử MoMo',
+      icon: '💳',
+      recommended: false
+    }
+  ]
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Thông Tin Thanh Toán</h2>
-      
-      <div className="space-y-4">
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-3 mb-3">
-            <CreditCard className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Phương Thức Thanh Toán</span>
+    <form onSubmit={onSave} className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          {editingPayment ? 'Chỉnh sửa thông tin giao hàng' : 'Thêm thông tin giao hàng'}
+        </h3>
+        
+        {/* Contact Information */}
+        <div className="mb-6">
+          <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center space-x-2">
+            <User className="h-4 w-4" />
+            <span>Thông Tin Liên Hệ</span>
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Họ Tên *
+              </label>
+              <input
+                type="text"
+                value={form.contactInfo.name}
+                onChange={(e) => onFormChange('contactInfo.name', e.target.value)}
+                className="input w-full"
+                placeholder="Nhập họ tên của bạn"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Số điện thoại *
+              </label>
+              <input
+                type="tel"
+                value={form.contactInfo.phone}
+                onChange={(e) => onFormChange('contactInfo.phone', e.target.value)}
+                className="input w-full"
+                placeholder="Nhập số điện thoại"
+                required
+              />
+            </div>
           </div>
-          <p className="text-sm text-gray-600">
-            Chưa lưu phương thức thanh toán. Thanh toán được xử lý an toàn qua tích hợp ví MoMo.
-          </p>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-3 mb-3">
-            <Calendar className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Lịch Sử Đơn Hàng</span>
+        {/* Delivery Address */}
+        <div className="mb-6">
+          <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center space-x-2">
+            <MapPin className="h-4 w-4" />
+            <span>Địa chỉ Giao Hàng</span>
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Địa Chỉ Đường *
+              </label>
+              <input
+                type="text"
+                value={form.deliveryAddress.street}
+                onChange={(e) => onFormChange('deliveryAddress.street', e.target.value)}
+                className="input w-full"
+                placeholder="Nhập địa chỉ đường của bạn"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phường/Xã *
+              </label>
+              <input
+                type="text"
+                value={form.deliveryAddress.ward}
+                onChange={(e) => onFormChange('deliveryAddress.ward', e.target.value)}
+                className="input w-full"
+                placeholder="Tên phường"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quận/Huyện *
+              </label>
+              <input
+                type="text"
+                value={form.deliveryAddress.district}
+                onChange={(e) => onFormChange('deliveryAddress.district', e.target.value)}
+                className="input w-full"
+                placeholder="Quận 1"
+                required
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Thành Phố *
+              </label>
+              <input
+                type="text"
+                value={form.deliveryAddress.city}
+                onChange={(e) => onFormChange('deliveryAddress.city', e.target.value)}
+                className="input w-full"
+                placeholder="Thành phố Hồ Chí Minh"
+                required
+              />
+            </div>
           </div>
-          <p className="text-sm text-gray-600">
-            Xem lịch sử đơn hàng đầy đủ và hóa đơn trong phần Đơn Hàng.
-          </p>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-3 mb-3">
-            <Shield className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-gray-900">Bảo Mật</span>
+
+        <div className="mt-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={form.isDefault}
+              onChange={(e) => onFormChange('isDefault', e.target.checked)}
+              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700">Đặt làm phương thức thanh toán mặc định</span>
+          </label>
+        </div>
+
+        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn btn-outline"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Hủy
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {editingPayment ? 'Cập nhật' : 'Thêm'}
+          </button>
+        </div>
+      </div>
+    </form>
+  )
+}
+
+// Payment Method Card Component
+function PaymentMethodCard({ payment, onEdit, onDelete, onSetDefault }) {
+  return (
+    <div className={`p-4 border rounded-lg ${payment.isDefault ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-white'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-2 mb-2">
+            <CreditCard className="h-4 w-4 text-gray-400" />
+            <span className="font-medium text-gray-900">Thông tin giao hàng</span>
+            {payment.isDefault && (
+              <span className="px-2 py-1 text-xs bg-primary-100 text-primary-800 rounded-full">
+                Mặc định
+              </span>
+            )}
           </div>
-          <p className="text-sm text-gray-600">
-            Tất cả thanh toán được xử lý an toàn qua kênh mã hóa. Chúng tôi không bao giờ lưu trữ thông tin thanh toán của bạn.
-          </p>
+          <div className="text-sm text-gray-600 space-y-1">
+            <p><span className="font-medium">Họ tên:</span> {payment.contactInfo?.name}</p>
+            <p><span className="font-medium">SĐT:</span> {payment.contactInfo?.phone}</p>
+            <p><span className="font-medium">Địa chỉ:</span> {payment.deliveryAddress?.street}, {payment.deliveryAddress?.ward}, {payment.deliveryAddress?.district}, {payment.deliveryAddress?.city}</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {!payment.isDefault && (
+            <button
+              onClick={() => onSetDefault(payment._id)}
+              className="btn btn-outline btn-sm"
+              title="Đặt làm mặc định"
+            >
+              Mặc định
+            </button>
+          )}
+          <button
+            onClick={() => onEdit(payment)}
+            className="btn btn-outline btn-sm"
+            title="Chỉnh sửa"
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onDelete(payment._id)}
+            className="btn btn-outline btn-sm text-red-600 hover:bg-red-50"
+            title="Xóa"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

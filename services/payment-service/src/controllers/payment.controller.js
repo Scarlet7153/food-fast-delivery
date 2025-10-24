@@ -510,8 +510,92 @@ const checkPaymentStatus = async (req, res) => {
   }
 };
 
+// Create MoMo payment request (simplified version)
+const createMoMoPayment = async (req, res) => {
+  try {
+    const { orderId, amount, orderInfo, extraData } = req.body;
+    
+    // Get order details to extract restaurantId and amount breakdown
+    let order;
+    try {
+      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/orders/${orderId}`);
+      order = orderResponse.data.data.order;
+    } catch (error) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Generate payment number
+    const paymentNumber = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    
+    // Create payment record
+    const payment = new Payment({
+      orderId,
+      userId: req.user._id,
+      restaurantId: order.restaurantId,
+      paymentNumber,
+      method: 'MOMO',
+      status: 'PENDING',
+      amount: {
+        total: amount,
+        currency: 'VND',
+        breakdown: {
+          subtotal: order.amount.subtotal,
+          deliveryFee: order.amount.deliveryFee,
+          tax: order.amount.tax || 0,
+          discount: order.amount.discount || 0
+        }
+      },
+      orderInfo,
+      extraData
+    });
+    
+    await payment.save();
+    
+    // Create MoMo payment request
+    const paymentResult = await momoService.createPaymentRequest({
+      orderId: payment._id,
+      amount,
+      orderInfo,
+      extraData
+    });
+    
+    if (paymentResult.success) {
+      // Update payment with MoMo data
+      payment.momoData = {
+        requestId: paymentResult.data.requestId,
+        payUrl: paymentResult.data.payUrl
+      };
+      await payment.save();
+      
+      res.json({
+        success: true,
+        data: {
+          paymentId: payment._id,
+          payUrl: paymentResult.data.payUrl,
+          requestId: paymentResult.data.requestId
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: paymentResult.error || 'Failed to create MoMo payment'
+      });
+    }
+  } catch (error) {
+    logger.error('Create MoMo payment error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
 module.exports = {
   createPayment,
+  createMoMoPayment,
   getPaymentById,
   getUserPayments,
   getRestaurantPayments,

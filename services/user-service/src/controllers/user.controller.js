@@ -5,6 +5,7 @@ const config = require('../config/env');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 // Get user profile
 const getProfile = async (req, res) => {
@@ -53,8 +54,15 @@ const updateProfile = async (req, res) => {
 
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
-    if (address) {
-      updateData.address = address;
+    if (address !== undefined) {
+      // Handle both string and object formats for address
+      if (typeof address === 'string') {
+        updateData.address = { text: address };
+      } else if (typeof address === 'object' && address !== null) {
+        updateData.address = address;
+      } else {
+        updateData.address = null;
+      }
     }
 
     const user = await User.findByIdAndUpdate(
@@ -853,7 +861,16 @@ const changePassword = async (req, res) => {
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
         success: false,
-        error: 'Current password is incorrect'
+        error: 'Mật khẩu hiện tại không đúng'
+      });
+    }
+
+    // Check if new password is same as current password
+    const isSamePassword = await user.comparePassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mật khẩu mới không được giống mật khẩu hiện tại'
       });
     }
 
@@ -866,14 +883,14 @@ const changePassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Password changed successfully'
+      message: 'Đổi mật khẩu thành công'
     });
 
   } catch (error) {
     logger.error('Change password error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to change password'
+      error: 'Không thể đổi mật khẩu'
     });
   }
 };
@@ -888,7 +905,16 @@ const updateUser = async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
-    if (address) updateData.address = address;
+    if (address !== undefined) {
+      // Handle both string and object formats for address
+      if (typeof address === 'string') {
+        updateData.address = { text: address };
+      } else if (typeof address === 'object' && address !== null) {
+        updateData.address = address;
+      } else {
+        updateData.address = null;
+      }
+    }
     if (role) updateData.role = role;
     if (active !== undefined) updateData.active = active;
 
@@ -1131,6 +1157,235 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// Payment Info Controllers
+const getPaymentInfo = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('paymentInfo');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        paymentInfo: user.paymentInfo || []
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get payment info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get payment info'
+    });
+  }
+};
+
+const createPaymentInfo = async (req, res) => {
+  try {
+    const { contactInfo, deliveryAddress, isDefault } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // If setting as default, unset all other defaults
+    if (isDefault) {
+      user.paymentInfo.forEach(info => {
+        info.isDefault = false;
+      });
+    }
+
+    const newPaymentInfo = {
+      _id: new mongoose.Types.ObjectId(),
+      contactInfo,
+      deliveryAddress,
+      isDefault: isDefault || false,
+      createdAt: new Date()
+    };
+
+    user.paymentInfo.push(newPaymentInfo);
+    await user.save();
+
+    logger.info(`Payment info created for user: ${user.email}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Thông tin giao hàng đã được thêm thành công',
+      data: {
+        paymentInfo: newPaymentInfo
+      }
+    });
+
+  } catch (error) {
+    logger.error('Create payment info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Không thể thêm thông tin giao hàng'
+    });
+  }
+};
+
+const updatePaymentInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { contactInfo, deliveryAddress, isDefault } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Find the payment info to update
+    const paymentInfoIndex = user.paymentInfo.findIndex(info => info._id.toString() === id);
+    
+    if (paymentInfoIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment info not found'
+      });
+    }
+
+    // If setting as default, unset all other defaults
+    if (isDefault) {
+      user.paymentInfo.forEach(info => {
+        info.isDefault = false;
+      });
+    }
+
+    // Update the payment info
+    user.paymentInfo[paymentInfoIndex].contactInfo = contactInfo;
+    user.paymentInfo[paymentInfoIndex].deliveryAddress = deliveryAddress;
+    user.paymentInfo[paymentInfoIndex].isDefault = isDefault || false;
+    user.paymentInfo[paymentInfoIndex].updatedAt = new Date();
+
+    await user.save();
+
+    logger.info(`Payment info updated for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Thông tin giao hàng đã được cập nhật thành công',
+      data: {
+        paymentInfo: user.paymentInfo[paymentInfoIndex]
+      }
+    });
+
+  } catch (error) {
+    logger.error('Update payment info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Không thể cập nhật thông tin giao hàng'
+    });
+  }
+};
+
+const deletePaymentInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Find the index of the payment info to delete
+    const paymentInfoIndex = user.paymentInfo.findIndex(info => info._id.toString() === id);
+    
+    if (paymentInfoIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment info not found'
+      });
+    }
+
+    // Remove the payment info from the array
+    user.paymentInfo.splice(paymentInfoIndex, 1);
+    await user.save();
+
+    logger.info(`Payment info deleted for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Thông tin giao hàng đã được xóa thành công'
+    });
+
+  } catch (error) {
+    logger.error('Delete payment info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Không thể xóa thông tin giao hàng'
+    });
+  }
+};
+
+const setDefaultPaymentInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Find the payment info to set as default
+    const paymentInfoIndex = user.paymentInfo.findIndex(info => info._id.toString() === id);
+    
+    if (paymentInfoIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment info not found'
+      });
+    }
+
+    // Unset all other defaults
+    user.paymentInfo.forEach(info => {
+      info.isDefault = false;
+    });
+
+    // Set this one as default
+    user.paymentInfo[paymentInfoIndex].isDefault = true;
+    user.paymentInfo[paymentInfoIndex].updatedAt = new Date();
+
+    await user.save();
+
+    logger.info(`Default payment info set for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Đã đặt làm thông tin giao hàng mặc định'
+    });
+
+  } catch (error) {
+    logger.error('Set default payment info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Không thể đặt làm mặc định'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -1153,5 +1408,10 @@ module.exports = {
   removeRefreshToken,
   removeAllRefreshTokens,
   validateRefreshToken,
-  getUserById
+  getUserById,
+  getPaymentInfo,
+  createPaymentInfo,
+  updatePaymentInfo,
+  deletePaymentInfo,
+  setDefaultPaymentInfo
 };

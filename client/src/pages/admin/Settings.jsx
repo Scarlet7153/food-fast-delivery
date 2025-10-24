@@ -804,9 +804,6 @@ function PaymentSettings({ settings, onSave, isLoading }) {
               className="input w-full"
             >
               <option value="momo">MoMo</option>
-              <option value="vnpay">VNPay</option>
-              <option value="stripe">Stripe</option>
-              <option value="paypal">PayPal</option>
             </select>
           </div>
 
