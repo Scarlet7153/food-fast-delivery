@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
+    "jest": "^30.2.0"
   },
   "keywords": ["api-gateway", "microservices", "nodejs", "express"],
   "author": "Fast Food Delivery Team",
