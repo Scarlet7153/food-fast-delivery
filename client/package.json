@@ -13,7 +13,7 @@
     "axios": "^1.6.2",
     "cloudinary-react": "^1.8.1",
     "clsx": "^2.0.0",
-    "lucide-react": "^0.294.0",
+    "lucide-react": "^0.548.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
