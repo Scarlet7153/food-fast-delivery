@@ -9,7 +9,11 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "test": "echo 'No tests specified for learning project' && exit 0"
+=======
+    "test": "echo 'No tests specified' && exit 0"
+>>>>>>> Stashed changes
 =======
     "test": "echo 'No tests specified' && exit 0"
 >>>>>>> Stashed changes
