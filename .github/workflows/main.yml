@@ -235,7 +235,7 @@ jobs:
             type=sha,prefix={{branch}}-
 
       - name: Build and push Client image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./client
           push: true
@@ -244,7 +244,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push API Gateway image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/api-gateway
           push: true
@@ -253,7 +253,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push User Service image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/user-service
           push: true
@@ -262,7 +262,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Restaurant Service image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/restaurant-service
           push: true
@@ -271,7 +271,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Order Service image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/order-service
           push: true
@@ -280,7 +280,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Drone Service image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/drone-service
           push: true
@@ -289,7 +289,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Payment Service image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./services/payment-service
           push: true
