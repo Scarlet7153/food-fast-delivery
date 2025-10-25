@@ -1,3 +1,7 @@
+<<<<<<< Updated upstream
+=======
+# User Service Dockerfile
+>>>>>>> Stashed changes
 FROM node:18-alpine
 
 WORKDIR /app
@@ -12,7 +16,11 @@ RUN npm ci --only=production
 COPY . .
 
 # Expose port
+<<<<<<< Updated upstream
 EXPOSE 3001
+=======
+EXPOSE 3000
+>>>>>>> Stashed changes
 
 # Start application
 CMD ["npm", "start"]

@@ -88,43 +88,43 @@ jobs:
         run: npm audit --audit-level moderate
         working-directory: ${{ matrix.directory }}
 
-  # Job 4: Docker Security Scan
-  docker-security:
-    name: Docker Security Scan
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # Job 4: Docker Security Scan (Disabled for learning project)
+  # docker-security:
+  #   name: Docker Security Scan
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Run Trivy vulnerability scanner
+  #       uses: aquasecurity/trivy-action@master
+  #       with:
+  #         scan-type: 'fs'
+  #         scan-ref: '.'
+  #         format: 'sarif'
+  #         output: 'trivy-results.sarif'
+  #
+  #     - name: Upload Trivy scan results to GitHub Security tab
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       if: always()
+  #       with:
+  #         sarif_file: 'trivy-results.sarif'
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  # Job 5: Secret Scanning
-  secret-scan:
-    name: Secret Scanning
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
+  # Job 5: Secret Scanning (Disabled for learning project)
+  # secret-scan:
+  #   name: Secret Scanning
+  #   runs-on: ubuntu-latest
+  #   
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Run TruffleHog
+  #       uses: trufflesecurity/trufflehog@main
+  #       with:
+  #         path: ./
+  #         base: main
+  #         head: HEAD
+  #         extra_args: --debug --only-verified

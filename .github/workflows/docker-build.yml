@@ -121,18 +121,18 @@ jobs:
           docker-compose logs --tail=50
           docker-compose down
 
-  # Job 4: Cleanup old images
-  cleanup:
-    name: Cleanup Old Images
-    runs-on: ubuntu-latest
-    needs: [build-and-push, security-scan, test-docker-compose]
-    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-      - name: Delete old images
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: ${{ env.IMAGE_NAME }}
-          package-type: 'container'
-          min-versions-to-keep: 10
-          delete-only-untagged-versions: 'true'
+  # Job 4: Cleanup old images (Disabled for learning project)
+  # cleanup:
+  #   name: Cleanup Old Images
+  #   runs-on: ubuntu-latest
+  #   needs: [build-and-push, security-scan, test-docker-compose]
+  #   if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   
+  #   steps:
+  #     - name: Delete old images
+  #       uses: actions/delete-package-versions@v4
+  #       with:
+  #         package-name: ${{ env.IMAGE_NAME }}
+  #         package-type: 'container'
+  #         min-versions-to-keep: 10
+  #         delete-only-untagged-versions: 'true'
