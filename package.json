@@ -38,6 +38,6 @@
   "devDependencies": {
     "axios": "^1.12.2",
     "colors": "^1.4.0",
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.1"
   }
 }
