@@ -50,7 +50,7 @@ function Cart() {
       message: `Bạn có chắc muốn xóa "${itemName}" khỏi giỏ hàng?`,
       onConfirm: () => {
         removeItem(menuItemId)
-        toast.success('Đã xóa khỏi giỏ hàng')
+        // Cart store will show toast notification
         setConfirmModal({ ...confirmModal, isOpen: false })
       },
       type: 'danger'
@@ -64,7 +64,7 @@ function Cart() {
       message: 'Bạn có chắc muốn xóa toàn bộ giỏ hàng? Hành động này không thể hoàn tác.',
       onConfirm: () => {
         clearCart()
-        toast.success('Đã xóa giỏ hàng')
+        // Cart store will show toast notification
         setConfirmModal({ ...confirmModal, isOpen: false })
       },
       type: 'danger'

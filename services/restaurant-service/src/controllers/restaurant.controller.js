@@ -3,6 +3,7 @@ const MenuItem = require('../models/MenuItem');
 const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../config/env');
+const { removeVietnameseAccents } = require('../utils/helpers');
 
 // Get all restaurants
 const getAllRestaurants = async (req, res) => {
@@ -30,12 +31,27 @@ const getAllRestaurants = async (req, res) => {
       }
     }
     
-    // Text search
+    // Text search - flexible Vietnamese search
     if (search) {
+      // Create a flexible search that matches both accented and non-accented text
+      const chars = search.split('');
+      const flexiblePattern = chars.map(char => {
+        // Create pattern that matches the character with or without accents
+        if ('aàáạảãâầấậẩẫăằắặẳẵ'.includes(char.toLowerCase())) return '[aàáạảãâầấậẩẫăằắặẳẵ]';
+        if ('eèéẹẻẽêềếệểễ'.includes(char.toLowerCase())) return '[eèéẹẻẽêềếệểễ]';
+        if ('iìíịỉĩ'.includes(char.toLowerCase())) return '[iìíịỉĩ]';
+        if ('oòóọỏõôồốộổỗơờớợởỡ'.includes(char.toLowerCase())) return '[oòóọỏõôồốộổỗơờớợởỡ]';
+        if ('uùúụủũưừứựửữ'.includes(char.toLowerCase())) return '[uùúụủũưừứựửữ]';
+        if ('yỳýỵỷỹ'.includes(char.toLowerCase())) return '[yỳýỵỷỹ]';
+        if ('dđ'.includes(char.toLowerCase())) return '[dđ]';
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('');
+      
+      const searchRegex = new RegExp(flexiblePattern, 'i');
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { 'address.street': { $regex: search, $options: 'i' } }
+        { name: searchRegex },
+        { description: searchRegex },
+        { address: searchRegex }
       ];
     }
     

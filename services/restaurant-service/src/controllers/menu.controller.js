@@ -1,6 +1,7 @@
 const MenuItem = require('../models/MenuItem');
 const Restaurant = require('../models/Restaurant');
 const logger = require('../utils/logger');
+const { removeVietnameseAccents } = require('../utils/helpers');
 
 // Get menu items by restaurant
 const getMenuItems = async (req, res) => {
@@ -401,8 +402,57 @@ const searchMenuItems = async (req, res) => {
     let menuItems;
     
     if (search) {
-      // Use text search when search term is provided
-      menuItems = await MenuItem.search(search, options);
+      // Create a flexible search that matches both accented and non-accented text
+      // Split search into individual characters and create a flexible regex pattern
+      const chars = search.split('');
+      const flexiblePattern = chars.map(char => {
+        // Create pattern that matches the character with or without accents
+        if ('aàáạảãâầấậẩẫăằắặẳẵ'.includes(char.toLowerCase())) return '[aàáạảãâầấậẩẫăằắặẳẵ]';
+        if ('eèéẹẻẽêềếệểễ'.includes(char.toLowerCase())) return '[eèéẹẻẽêềếệểễ]';
+        if ('iìíịỉĩ'.includes(char.toLowerCase())) return '[iìíịỉĩ]';
+        if ('oòóọỏõôồốộổỗơờớợởỡ'.includes(char.toLowerCase())) return '[oòóọỏõôồốộổỗơờớợởỡ]';
+        if ('uùúụủũưừứựửữ'.includes(char.toLowerCase())) return '[uùúụủũưừứựửữ]';
+        if ('yỳýỵỷỹ'.includes(char.toLowerCase())) return '[yỳýỵỷỹ]';
+        if ('dđ'.includes(char.toLowerCase())) return '[dđ]';
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('');
+      
+      const searchRegex = new RegExp(flexiblePattern, 'i');
+      const query = {
+        $or: [
+          { name: searchRegex },
+          { description: searchRegex },
+          { category: searchRegex },
+          { tags: { $in: [new RegExp(flexiblePattern, 'i')] } },
+          { searchKeywords: { $in: [new RegExp(flexiblePattern, 'i')] } }
+        ],
+        available: true
+      };
+      
+      // Only get items from active and approved restaurants
+      const activeRestaurants = await Restaurant.find({ active: true, approved: true }).select('_id');
+      const restaurantIds = activeRestaurants.map(r => r._id);
+      query.restaurantId = { $in: restaurantIds };
+      
+      // Apply additional filters
+      if (options.category) {
+        query.category = options.category;
+      }
+      
+      if (options.featured) {
+        query.featured = options.featured;
+      }
+      
+      if (options.minPrice || options.maxPrice) {
+        query.price = {};
+        if (options.minPrice) query.price.$gte = options.minPrice;
+        if (options.maxPrice) query.price.$lte = options.maxPrice;
+      }
+      
+      menuItems = await MenuItem.find(query)
+        .populate('restaurantId', 'name active approved')
+        .sort({ featured: -1, 'popularity.rating.average': -1, name: 1 })
+        .limit(options.limit);
     } else {
       // When no search term, find by category, featured, and other filters across all restaurants
       const query = { available: true };

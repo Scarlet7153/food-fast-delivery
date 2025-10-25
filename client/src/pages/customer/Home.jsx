@@ -1,30 +1,25 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
-import { Search, Clock, MapPin } from 'lucide-react'
-import { formatCurrency, formatDistance } from '../../utils/formatters'
+import { useCartStore } from '../../stores/cartStore'
+import { Search, Clock, MapPin, ShoppingCart } from 'lucide-react'
+import { formatCurrency, formatDistance, removeVietnameseAccents } from '../../utils/formatters'
+import toast from 'react-hot-toast'
 
 function CustomerHome() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const navigate = useNavigate()
+  const { addItem, cartRestaurant, restaurantId } = useCartStore()
+  
+  // Normalize search query (remove Vietnamese accents)
+  const normalizedSearch = removeVietnameseAccents(searchQuery)
 
-  // Debounce search query - minimal delay for smooth UX
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 100) // 100ms - just enough to prevent too many requests
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Fetch restaurants
+  // Fetch restaurants - realtime search without debounce
   const { data: restaurantsData, isLoading, isFetching } = useQuery(
-    ['restaurants', { search: debouncedSearch, category: selectedCategory }],
+    ['restaurants', { search: normalizedSearch }],
     () => restaurantService.getRestaurants({
-      search: debouncedSearch,
-      category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      search: normalizedSearch || undefined,
       limit: 12
     }),
     {
@@ -34,45 +29,42 @@ function CustomerHome() {
     }
   )
 
-  // Fetch all menu items (always show on homepage)
-  const { data: featuredItemsData, isLoading: isLoadingFeatured } = useQuery(
-    ['allMenuItems'],
+  // Fetch all menu items - realtime search without debounce
+  const { data: menuItemsData, isLoading: isLoadingMenuItems, isFetching: isFetchingMenuItems } = useQuery(
+    ['menuItems', { search: normalizedSearch }],
     () => restaurantService.searchMenuItems({
-      search: 'featured', // Use a default search term
+      search: normalizedSearch || undefined,
       limit: 12
     }),
     {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  )
-
-  // Fetch menu items when searching
-  const { data: menuItemsData, isLoading: isLoadingMenuItems, isFetching: isFetchingMenuItems } = useQuery(
-    ['menuItems', { search: debouncedSearch, category: selectedCategory }],
-    () => restaurantService.searchMenuItems({
-      search: debouncedSearch,
-      category: selectedCategory !== 'all' ? selectedCategory : undefined,
-      limit: 8
-    }),
-    {
-      staleTime: 30 * 1000,
-      enabled: !!debouncedSearch || selectedCategory !== 'all', // Only fetch when searching or filtering
-      keepPreviousData: true,
+      staleTime: 30 * 1000, // 30 seconds
+      enabled: true,
+      keepPreviousData: true, // Keep old data while fetching new data to prevent flickering
     }
   )
 
   const restaurants = restaurantsData?.data?.restaurants || []
-  const featuredItems = featuredItemsData?.data?.menuItems || []
   const menuItems = menuItemsData?.data?.menuItems || []
 
-  // Categories for filtering
-  const categories = [
-    { id: 'all', name: 'Tất Cả', icon: '🍽️' },
-    { id: 'fastfood', name: 'Đồ Ăn Nhanh', icon: '🍔' },
-    { id: 'pizza', name: 'Pizza', icon: '🍕' },
-    { id: 'dessert', name: 'Tráng Miệng', icon: '🍰' },
-    { id: 'beverages', name: 'Đồ Uống', icon: '☕' },
-  ]
+  // Handle add to cart
+  const handleAddToCart = (item) => {
+    const restaurant = item.restaurantId
+    if (!restaurant) {
+      toast.error('Không tìm thấy thông tin nhà hàng')
+      return
+    }
+
+    // Check if cart has items from different restaurant
+    if (restaurantId && restaurantId !== restaurant._id) {
+      if (window.confirm('Bạn có món từ nhà hàng khác trong giỏ. Bạn có muốn xóa và thêm món từ nhà hàng này?')) {
+        addItem(item, restaurant)
+        // Cart store will show toast notification
+      }
+    } else {
+      addItem(item, restaurant)
+      // Cart store will show toast notification
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -95,94 +87,66 @@ function CustomerHome() {
         </div>
       </div>
 
-      {/* Category Filter */}
+      {/* Menu Items Grid */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Danh Mục</h3>
-        <div className="flex flex-wrap gap-2">
-          {categories.map(category => (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedCategory === category.id
-                  ? 'bg-primary-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span className="mr-1">{category.icon}</span>
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Menu Items - Always show */}
-      {!searchQuery && selectedCategory === 'all' && featuredItems.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">🍽️ Món Ăn Hôm Nay</h2>
-            <span className="text-sm text-primary-600 font-medium">
-              {featuredItems.length} món
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">
+            {searchQuery ? '🍽️ Món Ăn Tìm Thấy' : '🍽️ Món Ăn Nổi Bật'}
+          </h2>
+          {menuItems.length > 0 && (
+            <span className="text-sm text-gray-500">
+              {menuItems.length} món
             </span>
-          </div>
-
-          {isLoadingFeatured ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 rounded-lg h-40 mb-3"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {featuredItems.map(item => (
-                <MenuItemCard key={item._id} item={item} />
-              ))}
-            </div>
           )}
         </div>
-      )}
 
-      {/* Search Results - Menu Items */}
-      {menuItems.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">
-              {searchQuery ? 'Món Ăn Tìm Thấy' : 'Món Ăn Nổi Bật'}
-            </h2>
-            {menuItems.length > 0 && (
-              <span className="text-sm text-gray-500">
-                {menuItems.length} món ăn
-              </span>
+        {isLoadingMenuItems ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-40 mb-3"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : menuItems.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {menuItems.map(item => (
+              <MenuItemCard 
+                key={item._id} 
+                item={item}
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Search className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Không tìm thấy món ăn
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {searchQuery 
+                ? `Không có món ăn nào phù hợp với từ khóa "${searchQuery}"`
+                : 'Chưa có món ăn nào khả dụng'
+              }
+            </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="btn btn-primary"
+              >
+                Xóa tìm kiếm
+              </button>
             )}
           </div>
-
-          {isLoadingMenuItems ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 rounded-lg h-40 mb-3"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {menuItems.map(item => (
-                <MenuItemCard key={item._id} item={item} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Restaurants Grid */}
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -247,7 +211,7 @@ function CustomerHome() {
 }
 
 // Menu Item Card Component
-function MenuItemCard({ item }) {
+function MenuItemCard({ item, onAddToCart }) {
   const restaurant = item?.restaurantId || {}
   const itemName = item?.name || 'Món ăn'
   const itemDescription = item?.description || 'Chưa có mô tả'
@@ -256,44 +220,51 @@ function MenuItemCard({ item }) {
   const originalPrice = item?.originalPrice
   const restaurantName = restaurant?.name || 'Nhà hàng'
 
+  const handleAddToCartClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onAddToCart(item)
+  }
+
   return (
-    <Link
-      to={`/customer/restaurants/${restaurant._id}`}
-      className="group block"
-    >
+    <div className="group">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         {/* Menu Item Image */}
-        <div className="aspect-w-1 aspect-h-1 bg-gray-200 relative">
-          <img
-            src={itemImage}
-            alt={itemName}
-            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
-            onError={(e) => {
-              e.target.src = '/placeholder-food.jpg'
-            }}
-          />
-          {item?.featured && (
-            <span className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
-              Nổi bật
-            </span>
-          )}
-        </div>
+        <Link to={`/customer/restaurants/${restaurant._id}`} className="block">
+          <div className="aspect-w-1 aspect-h-1 bg-gray-200 relative">
+            <img
+              src={itemImage}
+              alt={itemName}
+              className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
+              onError={(e) => {
+                e.target.src = '/placeholder-food.jpg'
+              }}
+            />
+            {item?.featured && (
+              <span className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
+                Nổi bật
+              </span>
+            )}
+          </div>
+        </Link>
 
         {/* Menu Item Info */}
         <div className="p-3">
-          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-1">
-            {itemName}
-          </h3>
-          
-          <p className="text-xs text-gray-500 mb-2 line-clamp-1">
-            {restaurantName}
-          </p>
+          <Link to={`/customer/restaurants/${restaurant._id}`} className="block">
+            <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-1">
+              {itemName}
+            </h3>
+            
+            <p className="text-xs text-gray-500 mb-2 line-clamp-1">
+              {restaurantName}
+            </p>
 
-          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-            {itemDescription}
-          </p>
+            <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+              {itemDescription}
+            </p>
+          </Link>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex flex-col">
               <span className="font-semibold text-primary-600">
                 {formatCurrency(itemPrice)}
@@ -304,10 +275,19 @@ function MenuItemCard({ item }) {
                 </span>
               )}
             </div>
+            
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCartClick}
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              title="Thêm vào giỏ hàng"
+            >
+              <ShoppingCart className="h-5 w-5" />
+            </button>
           </div>
 
           {item?.category && (
-            <div className="mt-2">
+            <div>
               <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
                 {item.category}
               </span>
@@ -315,7 +295,7 @@ function MenuItemCard({ item }) {
           )}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
 
