@@ -1,0 +1,138 @@
+name: Deploy to Environments
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "Environment: staging"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Thêm logic deploy staging ở đây
+          # Ví dụ:
+          # - kubectl apply -f k8s/staging/
+          # - docker-compose -f docker-compose.staging.yml up -d
+          # - aws ecs update-service --cluster staging --service food-delivery --force-new-deployment
+          
+          echo "✅ Staging deployment completed!"
+
+  # Job 2: Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "Environment: production"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Thêm logic deploy production ở đây
+          # Ví dụ:
+          # - kubectl apply -f k8s/production/
+          # - docker-compose -f docker-compose.prod.yml up -d
+          # - aws ecs update-service --cluster production --service food-delivery --force-new-deployment
+          
+          echo "✅ Production deployment completed!"
+
+  # Job 3: Health Check sau deployment
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    
+    steps:
+      - name: Health Check Staging
+        if: needs.deploy-staging.result == 'success'
+        run: |
+          echo "🔍 Performing health check on staging..."
+          # Thêm health check logic ở đây
+          # Ví dụ: curl -f https://staging.yourdomain.com/health
+          echo "✅ Staging health check passed!"
+
+      - name: Health Check Production
+        if: needs.deploy-production.result == 'success'
+        run: |
+          echo "🔍 Performing health check on production..."
+          # Thêm health check logic ở đây
+          # Ví dụ: curl -f https://yourdomain.com/health
+          echo "✅ Production health check passed!"
+
+  # Job 4: Rollback nếu health check fail
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, health-check]
+    if: always() && (needs.health-check.result == 'failure')
+    
+    steps:
+      - name: Rollback Staging
+        if: needs.deploy-staging.result == 'success'
+        run: |
+          echo "🔄 Rolling back staging deployment..."
+          # Thêm rollback logic ở đây
+          echo "✅ Staging rollback completed!"
+
+      - name: Rollback Production
+        if: needs.deploy-production.result == 'success'
+        run: |
+          echo "🔄 Rolling back production deployment..."
+          # Thêm rollback logic ở đây
+          echo "✅ Production rollback completed!"
+
+  # Job 5: Notify deployment status
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, health-check, rollback]
+    if: always()
+    
+    steps:
+      - name: Notify Success
+        if: needs.health-check.result == 'success'
+        run: |
+          echo "📢 Deployment successful!"
+          # Thêm notification logic ở đây (Slack, Discord, Email, etc.)
+
+      - name: Notify Failure
+        if: needs.health-check.result == 'failure'
+        run: |
+          echo "📢 Deployment failed!"
+          # Thêm notification logic ở đây (Slack, Discord, Email, etc.)

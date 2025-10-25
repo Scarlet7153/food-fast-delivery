@@ -1,0 +1,118 @@
+version: 2
+updates:
+  # Client dependencies
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # API Gateway dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/api-gateway"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # User Service dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/user-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # Restaurant Service dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/restaurant-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # Order Service dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/order-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # Drone Service dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/drone-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # Payment Service dependencies
+  - package-ecosystem: "npm"
+    directory: "/services/payment-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # Root dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Scarlet"
+    assignees:
+      - "Scarlet"
