@@ -1,10 +1,11 @@
-name: Docker Build and Push
+# Disabled for learning project
+# name: Docker Build and Push
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main, develop ]
 
 env:
   REGISTRY: ghcr.io

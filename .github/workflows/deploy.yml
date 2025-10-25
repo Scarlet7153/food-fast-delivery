@@ -1,18 +1,19 @@
-name: Deploy to Environments
+# Disabled for learning project
+# name: Deploy to Environments
 
-on:
-  push:
-    branches: [ main, develop ]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   workflow_dispatch:
+#     inputs:
+#       environment:
+#         description: 'Environment to deploy to'
+#         required: true
+#         default: 'staging'
+#         type: choice
+#         options:
+#           - staging
+#           - production
 
 env:
   REGISTRY: ghcr.io

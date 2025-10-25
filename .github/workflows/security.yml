@@ -1,12 +1,13 @@
-name: Security Scan
+# Disabled for learning project
+# name: Security Scan
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 2 * * 1'  # Every Monday at 2 AM
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main, develop ]
+#   schedule:
+#     - cron: '0 2 * * 1'  # Every Monday at 2 AM
 
 jobs:
   # Job 1: CodeQL Analysis
