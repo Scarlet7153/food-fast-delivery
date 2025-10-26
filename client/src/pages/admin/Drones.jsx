@@ -34,11 +34,8 @@ function AdminDrones() {
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
-    { value: 'IDLE', label: 'Rảnh Rỗi' },
-    { value: 'CHARGING', label: 'Đang Sạc' },
-    { value: 'MAINTENANCE', label: 'Bảo Trì' },
-    { value: 'IN_FLIGHT', label: 'Đang giao' },
-    { value: 'ERROR', label: 'Lỗi' },
+    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'BUSY', label: 'Bận' },
   ]
 
   const handleViewDrone = (drone) => {
@@ -50,14 +47,8 @@ function AdminDrones() {
     switch (status) {
       case 'IDLE':
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'CHARGING':
-        return <Battery className="h-4 w-4 text-blue-500" />
-      case 'MAINTENANCE':
-        return <Settings className="h-4 w-4 text-yellow-500" />
-      case 'IN_FLIGHT':
-        return <Activity className="h-4 w-4 text-purple-500" />
-      case 'ERROR':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
+      case 'BUSY':
+        return <Activity className="h-4 w-4 text-orange-500" />
       default:
         return <XCircle className="h-4 w-4 text-gray-500" />
     }
@@ -67,14 +58,8 @@ function AdminDrones() {
     switch (status) {
       case 'IDLE':
         return 'bg-green-100 text-green-800'
-      case 'CHARGING':
-        return 'bg-blue-100 text-blue-800'
-      case 'MAINTENANCE':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'IN_FLIGHT':
-        return 'bg-purple-100 text-purple-800'
-      case 'ERROR':
-        return 'bg-red-100 text-red-800'
+      case 'BUSY':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }

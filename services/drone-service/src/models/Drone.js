@@ -28,7 +28,7 @@ const droneSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['IDLE', 'CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR'],
+    enum: ['IDLE', 'BUSY'],
     default: 'IDLE',
     required: true,
   },
@@ -227,23 +227,18 @@ droneSchema.methods.updateLocation = function(lat, lng) {
 
 // Instance method to update status
 droneSchema.methods.updateStatus = function(newStatus) {
-  const validTransitions = {
-    IDLE: ['CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR'],
-    CHARGING: ['IDLE', 'ERROR'],
-    MAINTENANCE: ['IDLE', 'ERROR'],
-    IN_FLIGHT: ['IDLE', 'ERROR'],
-    ERROR: ['MAINTENANCE', 'IDLE']
-  };
+  // Validate that newStatus is one of the allowed values
+  const validStatuses = ['IDLE', 'BUSY'];
   
-  if (!validTransitions[this.status]?.includes(newStatus)) {
-    throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
+  if (!validStatuses.includes(newStatus)) {
+    throw new Error(`Invalid status: ${newStatus}. Must be IDLE or BUSY`);
   }
   
   this.status = newStatus;
   
+  // Clear mission when returning to IDLE
   if (newStatus === 'IDLE') {
     this.currentMission = undefined;
-    this.settings.emergencyLanding = false;
   }
   
   return this.save();

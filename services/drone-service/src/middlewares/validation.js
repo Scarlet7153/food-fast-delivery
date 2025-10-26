@@ -33,7 +33,7 @@ const schemas = {
   }),
 
   updateDroneStatus: Joi.object({
-    status: Joi.string().valid('IDLE', 'CHARGING', 'MAINTENANCE', 'IN_FLIGHT', 'ERROR').required()
+    status: Joi.string().valid('IDLE', 'BUSY').required()
   }),
 
   updateDroneLocation: Joi.object({

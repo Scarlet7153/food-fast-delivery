@@ -16,6 +16,7 @@ router.patch('/drones/:id/status', adminController.updateDroneStatus);
 // Mission management
 router.get('/missions', missionController.getAllMissions);
 router.get('/missions/:id', missionController.getMissionById);
+router.post('/missions', adminController.createMission);
 router.patch('/missions/:id/status', missionController.updateMissionStatus);
 
 // Statistics endpoints

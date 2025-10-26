@@ -215,11 +215,8 @@ export const formatFileSize = (bytes) => {
 // Format drone status
 export const formatDroneStatus = (status) => {
   const statusMap = {
-    'IDLE': 'Đang Rảnh',
-    'CHARGING': 'Đang Sạc',
-    'MAINTENANCE': 'Đang Bảo Trì',
-    'IN_FLIGHT': 'Đang Bay',
-    'ERROR': 'Đang Lỗi'
+    'IDLE': 'Rảnh',
+    'BUSY': 'Bận'
   }
   
   return statusMap[status] || status

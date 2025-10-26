@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { adminService } from '../../services/adminService'
 import { 
   Search, Filter, ShoppingBag, Clock, MapPin, User, 
-  CheckCircle, XCircle, AlertTriangle, Eye
+  CheckCircle, XCircle, AlertTriangle, Eye, Plane
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import { t } from '../../utils/translations'
@@ -281,6 +281,36 @@ function AdminOrders() {
 
 // Order Detail Modal Component
 function OrderDetailModal({ order, onClose }) {
+  const queryClient = useQueryClient()
+  const [isAssigning, setIsAssigning] = useState(false)
+
+  const assignDroneMutation = useMutation(
+    (orderId) => adminService.assignDroneToOrder(orderId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-orders'])
+        alert('Drone đã được giao thành công!')
+        onClose()
+      },
+      onError: (error) => {
+        alert(error.response?.data?.error || 'Không thể giao drone. Vui lòng thử lại.')
+      }
+    }
+  )
+
+  const handleAssignDrone = async () => {
+    if (!confirm('Bạn có chắc muốn giao đơn hàng này cho drone không?')) {
+      return
+    }
+    
+    setIsAssigning(true)
+    try {
+      await assignDroneMutation.mutateAsync(order._id)
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
   return (
     <div 
       className="bg-black bg-opacity-50 flex items-center justify-center" 
@@ -388,11 +418,28 @@ function OrderDetailModal({ order, onClose }) {
             </div>
           )}
 
-          {/* Mission Information */}
-          {order.missionId && (
-            <div>
-              <h3 className="text-lg font-medium mb-4">Đơn Giao Hàng</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
+          {/* Drone Assignment Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium">Thông Tin Giao Hàng</h3>
+              {order.status === 'READY_FOR_PICKUP' && !order.missionId && (
+                <button
+                  onClick={handleAssignDrone}
+                  disabled={isAssigning}
+                  className="btn btn-primary flex items-center space-x-2"
+                >
+                  <Plane className="h-4 w-4" />
+                  <span>{isAssigning ? 'Đang giao...' : 'Giao Cho Drone'}</span>
+                </button>
+              )}
+            </div>
+
+            {order.missionId ? (
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Plane className="h-5 w-5 text-blue-600" />
+                  <h4 className="font-medium text-blue-900">Đã giao cho Drone</h4>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -418,7 +465,7 @@ function OrderDetailModal({ order, onClose }) {
                     <p className="text-gray-900">
                       {order.actualDeliveryTime ? 
                         formatDateTime(order.actualDeliveryTime) : 
-                        'Chưa giao hàng'
+                        'Đang giao hàng...'
                       }
                     </p>
                   </div>
@@ -427,13 +474,33 @@ function OrderDetailModal({ order, onClose }) {
                       Thời Gian Giao Hàng
                     </label>
                     <p className="text-gray-900">
-                      {order.duration ? `${order.duration} phút` : 'Chưa có thông tin'}
+                      {order.duration ? `${order.duration} phút` : 'Đang tính toán...'}
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ) : order.status === 'READY_FOR_PICKUP' ? (
+              <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  <h4 className="font-medium text-yellow-900">Đơn hàng sẵn sàng giao</h4>
+                </div>
+                <p className="text-sm text-yellow-800">
+                  Đơn hàng đã được chuẩn bị xong và sẵn sàng để giao cho drone. Nhấn nút "Giao Cho Drone" để tự động chọn drone phù hợp.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                  <h4 className="font-medium text-gray-700">Chưa sẵn sàng giao</h4>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Đơn hàng cần ở trạng thái "Sẵn sàng giao" để có thể giao cho drone.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Timeline */}
           <div>

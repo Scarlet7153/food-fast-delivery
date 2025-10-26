@@ -4,6 +4,138 @@ const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../config/env');
 
+// Create delivery mission (Admin)
+const createMission = async (req, res) => {
+  try {
+    const { orderId, droneId, restaurantId } = req.body;
+    
+    // Validate inputs
+    if (!orderId || !droneId || !restaurantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'orderId, droneId, and restaurantId are required'
+      });
+    }
+    
+    // Get order details
+    let order;
+    try {
+      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/orders/${orderId}`);
+      order = orderResponse.data.data.order;
+    } catch (error) {
+      logger.error('Failed to fetch order:', error);
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Verify drone exists and belongs to restaurant
+    const drone = await Drone.findOne({ _id: droneId, restaurantId });
+    if (!drone) {
+      return res.status(404).json({
+        success: false,
+        error: 'Drone not found or does not belong to the restaurant'
+      });
+    }
+    
+    // Check if drone is available
+    if (drone.status !== 'IDLE') {
+      return res.status(400).json({
+        success: false,
+        error: `Drone is not available (current status: ${drone.status})`
+      });
+    }
+    
+    // Calculate route and estimates
+    const pickupLocation = [106.6297, 10.8231]; // Restaurant location (default)
+    const deliveryLocation = order.deliveryAddress.location.coordinates;
+    
+    const distance = calculateDistance(
+      pickupLocation[1], pickupLocation[0], // lat, lng
+      deliveryLocation[1], deliveryLocation[0]
+    );
+    
+    const etaMinutes = Math.ceil(distance * 2); // Rough estimate: 2 minutes per km
+    const batteryConsumption = Math.ceil(distance * 5); // Rough estimate: 5% per km
+    
+    const missionData = {
+      orderId,
+      restaurantId,
+      droneId,
+      route: {
+        pickup: {
+          location: {
+            type: 'Point',
+            coordinates: pickupLocation
+          },
+          address: 'Restaurant Location',
+          instructions: 'Pick up order from restaurant'
+        },
+        delivery: {
+          location: {
+            type: 'Point',
+            coordinates: deliveryLocation
+          },
+          address: order.deliveryAddress.text,
+          instructions: order.deliveryAddress.notes || 'Deliver to customer',
+          contactPhone: order.deliveryAddress.contactPhone,
+          contactName: order.deliveryAddress.contactName
+        }
+      },
+      estimates: {
+        distanceKm: Math.round(distance * 100) / 100,
+        etaMinutes,
+        batteryConsumption: Math.min(batteryConsumption, 80) // Max 80% consumption
+      },
+      parameters: {
+        payloadWeight: order.items.reduce((total, item) => total + (item.weightGrams || 200) * item.quantity, 0)
+      }
+    };
+    
+    const mission = new DeliveryMission(missionData);
+    await mission.save();
+    
+    // Update drone status and assign mission
+    drone.status = 'BUSY';
+    drone.currentMission = mission._id;
+    await drone.save();
+    
+    logger.info(`Admin created delivery mission: ${mission.missionNumber} for order ${orderId}`);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Delivery mission created successfully',
+      data: {
+        mission
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Create mission error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create delivery mission'
+    });
+  }
+};
+
+// Helper function to calculate distance between two points
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRadians(degrees) {
+  return degrees * (Math.PI / 180);
+}
+
 // Get all drones for admin
 const getAllDrones = async (req, res) => {
   try {
@@ -422,5 +554,6 @@ module.exports = {
   getDroneById,
   updateDroneStatus,
   getStatistics,
-  getOverview
+  getOverview,
+  createMission
 };

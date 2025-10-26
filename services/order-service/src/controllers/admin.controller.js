@@ -1,5 +1,125 @@
 const Order = require('../models/Order');
 const logger = require('../utils/logger');
+const axios = require('axios');
+const config = require('../config/env');
+
+// Assign drone to order
+const assignDroneToOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    // Get order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Check if order is in correct status
+    if (order.status !== 'READY_FOR_PICKUP') {
+      return res.status(400).json({
+        success: false,
+        error: 'Order must be in READY_FOR_PICKUP status to assign drone'
+      });
+    }
+    
+    // Check if order already has a mission
+    if (order.missionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order already has a delivery mission assigned'
+      });
+    }
+    
+    // Get available drones from drone service
+    let availableDrones;
+    try {
+      // Get restaurant owner info to get available drones
+      const dronesResponse = await axios.get(`${config.DRONE_SERVICE_URL}/api/admin/drones`, {
+        params: {
+          status: 'IDLE',
+          restaurantId: order.restaurantId
+        },
+        headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+      });
+      
+      availableDrones = dronesResponse.data.data.drones || [];
+    } catch (error) {
+      logger.error('Failed to get available drones:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to get available drones'
+      });
+    }
+    
+    if (availableDrones.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No available drones found. All drones are busy.'
+      });
+    }
+    
+    // Select the first available drone
+    const selectedDrone = availableDrones[0];
+    
+    // Create delivery mission via drone service
+    let mission;
+    try {
+      const missionResponse = await axios.post(
+        `${config.DRONE_SERVICE_URL}/api/admin/missions`,
+        {
+          orderId: order._id,
+          droneId: selectedDrone._id,
+          restaurantId: order.restaurantId
+        },
+        {
+          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+        }
+      );
+      
+      mission = missionResponse.data.data.mission;
+    } catch (error) {
+      logger.error('Failed to create mission:', error.response?.data || error);
+      return res.status(500).json({
+        success: false,
+        error: error.response?.data?.error || 'Failed to create delivery mission'
+      });
+    }
+    
+    // Update order with mission info
+    order.missionId = mission._id;
+    order.status = 'IN_FLIGHT';
+    order.timeline.push({
+      status: 'IN_FLIGHT',
+      timestamp: new Date(),
+      note: `Được giao cho drone ${selectedDrone.name} (${selectedDrone.serialNumber || 'N/A'}) - Mission ${mission.missionNumber}`,
+      updatedBy: req.user._id
+    });
+    
+    await order.save();
+    
+    logger.info(`Drone ${selectedDrone.name} assigned to order ${order.orderNumber}`);
+    
+    res.json({
+      success: true,
+      message: 'Drone assigned successfully',
+      data: {
+        order,
+        drone: selectedDrone,
+        mission
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Assign drone to order error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to assign drone to order'
+    });
+  }
+};
 
 // Get order statistics
 const getStatistics = async (req, res) => {
@@ -199,5 +319,6 @@ const getOverview = async (req, res) => {
 
 module.exports = {
   getStatistics,
-  getOverview
+  getOverview,
+  assignDroneToOrder
 };

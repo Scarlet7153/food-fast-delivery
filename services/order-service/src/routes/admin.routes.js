@@ -11,6 +11,7 @@ router.use(auth, requireRole('admin'));
 router.get('/orders', orderController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);
 router.patch('/orders/:id/status', orderController.updateOrderStatus);
+router.post('/orders/:orderId/assign-drone', adminController.assignDroneToOrder);
 
 // Statistics endpoints
 router.get('/statistics', adminController.getStatistics);

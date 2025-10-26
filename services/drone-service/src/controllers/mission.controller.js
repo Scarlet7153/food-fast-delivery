@@ -100,7 +100,7 @@ const createMission = async (req, res) => {
     await mission.save();
     
     // Update drone status and assign mission
-    drone.status = 'IN_FLIGHT';
+    drone.status = 'BUSY';
     drone.currentMission = mission._id;
     await drone.save();
     

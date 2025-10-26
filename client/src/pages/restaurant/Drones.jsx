@@ -61,6 +61,21 @@ function RestaurantDrones() {
     }
   )
 
+  // Update drone status mutation
+  const updateStatusMutation = useMutation(
+    ({ droneId, status }) => droneService.updateDroneStatus(droneId, status),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['restaurant-drones'])
+        toast.success('Cập nhật trạng thái thành công')
+      },
+      onError: (error) => {
+        console.error('Update status error:', error)
+        toast.error(error.response?.data?.error || 'Không thể cập nhật trạng thái')
+      }
+    }
+  )
+
   // Delete drone mutation
   const deleteDroneMutation = useMutation(
     (droneId) => droneService.deleteDrone(droneId),
@@ -79,25 +94,16 @@ function RestaurantDrones() {
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Drone' },
-    { value: 'IDLE', label: 'Đang Rảnh' },
-    { value: 'CHARGING', label: 'Đang Sạc' },
-    { value: 'MAINTENANCE', label: 'Đang Bảo Trì' },
-    { value: 'IN_FLIGHT', label: 'Đang Bay' },
-    { value: 'ERROR', label: 'Đang Lỗi' },
+    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'BUSY', label: 'Bận' },
   ]
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'IDLE':
         return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'CHARGING':
-        return <Battery className="h-5 w-5 text-yellow-500" />
-      case 'MAINTENANCE':
-        return <Settings className="h-5 w-5 text-blue-500" />
-      case 'IN_FLIGHT':
-        return <Power className="h-5 w-5 text-purple-500" />
-      case 'ERROR':
-        return <XCircle className="h-5 w-5 text-red-500" />
+      case 'BUSY':
+        return <Power className="h-5 w-5 text-orange-500" />
       default:
         return <AlertTriangle className="h-5 w-5 text-gray-500" />
     }
@@ -107,14 +113,8 @@ function RestaurantDrones() {
     switch (status) {
       case 'IDLE':
         return 'bg-green-100 text-green-800'
-      case 'CHARGING':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'MAINTENANCE':
-        return 'bg-blue-100 text-blue-800'
-      case 'IN_FLIGHT':
-        return 'bg-purple-100 text-purple-800'
-      case 'ERROR':
-        return 'bg-red-100 text-red-800'
+      case 'BUSY':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -128,9 +128,9 @@ function RestaurantDrones() {
   }
 
   const handleStatusChange = (droneId, newStatus) => {
-    updateDroneMutation.mutate({
+    updateStatusMutation.mutate({
       droneId,
-      droneData: { status: newStatus }
+      status: newStatus
     })
   }
 
@@ -224,7 +224,7 @@ function RestaurantDrones() {
                   getStatusIcon={getStatusIcon}
                   getStatusColor={getStatusColor}
                   isDeleting={deleteDroneMutation.isLoading}
-                  isUpdating={updateDroneMutation.isLoading}
+                  isUpdating={updateStatusMutation.isLoading}
                 />
               ))}
             </div>
@@ -292,7 +292,7 @@ function RestaurantDrones() {
 
 // Drone Card Component
 function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, getStatusColor, isDeleting, isUpdating }) {
-  const canChangeStatus = drone.status !== 'IN_FLIGHT'
+  const canChangeStatus = true
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
@@ -396,10 +396,8 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
               disabled={isUpdating}
               className="text-xs border border-gray-300 rounded px-2 py-1"
             >
-              <option value="IDLE">Đang Rảnh</option>
-              <option value="CHARGING">Đang Sạc</option>
-              <option value="MAINTENANCE">Đang Bảo Trì</option>
-              <option value="ERROR">Đang Lỗi</option>
+              <option value="IDLE">Rảnh</option>
+              <option value="BUSY">Bận</option>
             </select>
           )}
         </div>
@@ -449,10 +447,8 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
   }
 
   const statusOptions = [
-    { value: 'IDLE', label: 'Đang Rảnh' },
-    { value: 'CHARGING', label: 'Đang Sạc' },
-    { value: 'MAINTENANCE', label: 'Đang Bảo Trì' },
-    { value: 'ERROR', label: 'Đang Lỗi' },
+    { value: 'IDLE', label: 'Rảnh' },
+    { value: 'BUSY', label: 'Bận' },
   ]
 
   return (
