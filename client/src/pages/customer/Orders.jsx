@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye,
-  Truck, CheckCircle, XCircle, AlertCircle
+  Truck, CheckCircle, XCircle, AlertCircle, Package
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -33,6 +33,21 @@ function Orders() {
   )
 
   const orders = ordersData?.data?.orders || []
+  const queryClient = useQueryClient()
+
+  // Confirm delivery mutation
+  const confirmDeliveryMutation = useMutation(
+    (orderId) => orderService.confirmDelivery(orderId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['orders'])
+        toast.success('Xác nhận nhận hàng thành công!')
+      },
+      onError: (error) => {
+        toast.error('Không thể xác nhận nhận hàng')
+      }
+    }
+  )
 
   const handleCancel = async () => {
     if (cancelOrderId) {
@@ -46,6 +61,10 @@ function Orders() {
         toast.error('Không thể hủy đơn hàng')
       }
     }
+  }
+
+  const handleConfirmDelivery = (orderId) => {
+    confirmDeliveryMutation.mutate(orderId)
   }
 
   const statusOptions = [
@@ -158,6 +177,8 @@ function Orders() {
                   setCancelOrderId(orderId)
                   setShowCancelModal(true)
                 }}
+                onConfirmDelivery={handleConfirmDelivery}
+                isConfirming={confirmDeliveryMutation.isLoading}
               />
             ))}
           </div>
@@ -215,7 +236,7 @@ function Orders() {
 }
 
 // Order Card Component
-function OrderCard({ order, onCancelOrder }) {
+function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'DELIVERED':
@@ -250,6 +271,7 @@ function OrderCard({ order, onCancelOrder }) {
 
   const canCancel = ['PLACED', 'CONFIRMED'].includes(order.status)
   const canRate = order.status === 'DELIVERED' && !order.rating
+  const canConfirmDelivery = order.status === 'IN_FLIGHT'
 
   return (
     <div className="p-6 hover:bg-gray-50 transition-colors">
@@ -353,6 +375,17 @@ function OrderCard({ order, onCancelOrder }) {
               className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
             >
               Hủy
+            </button>
+          )}
+
+          {canConfirmDelivery && (
+            <button
+              onClick={() => onConfirmDelivery(order._id)}
+              disabled={isConfirming}
+              className="btn btn-primary btn-sm flex items-center space-x-1 bg-green-600 hover:bg-green-700"
+            >
+              <Package className="h-4 w-4" />
+              <span>{isConfirming ? 'Đang xác nhận...' : 'Xác nhận nhận hàng'}</span>
             </button>
           )}
 

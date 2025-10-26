@@ -3,7 +3,8 @@ import api from './api'
 const droneService = {
   // Get all drones for a restaurant
   async getRestaurantDrones(params = {}) {
-    const response = await api.get('/restaurant/drones', { params })
+    // Temporary fix: call drone service directly
+    const response = await api.get('/drones', { params })
     return response.data
   },
   

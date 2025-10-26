@@ -24,6 +24,9 @@ router.get('/verify', userController.verifyToken);
 router.get('/check-phone', userController.checkPhoneAvailability);
 router.get('/check-email', userController.checkEmailAvailability);
 
+// Public user info route (for order service)
+router.get('/public/:id', userController.getPublicUserInfo);
+
 // User profile routes (for auth endpoints)
 router.get('/me', auth, userController.getProfile);
 router.put('/profile', auth, validate(schemas.updateProfile), userController.updateProfile);

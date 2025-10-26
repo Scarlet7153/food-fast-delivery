@@ -256,6 +256,20 @@ class APIGateway {
       timeout: 30000, // 30 seconds timeout
       pathRewrite: {
         '^/api/orders': '/api/orders'
+      },
+      onProxyReq: (proxyReq, req, res) => {
+        logger.info(`[API Gateway] Proxying ${req.method} ${req.path} to ${config.ORDER_SERVICE_URL}`);
+      },
+      onProxyRes: (proxyRes, req, res) => {
+        logger.info(`[API Gateway] Received response from Order Service: ${proxyRes.statusCode}`);
+      },
+      onError: (err, req, res) => {
+        logger.error('[API Gateway] Order Service proxy error:', err);
+        res.status(504).json({ 
+          success: false, 
+          error: 'Gateway timeout',
+          message: 'The order service did not respond in time'
+        });
       }
     }));
 

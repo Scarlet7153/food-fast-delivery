@@ -5,7 +5,8 @@ import { orderService } from '../../services/orderService'
 import socketService from '../../services/socketService'
 import { 
   ArrowLeft, MapPin, Clock, Phone, Star, Truck,
-  CheckCircle, XCircle, AlertCircle, Loader2, Package, Utensils
+  CheckCircle, XCircle, AlertCircle, Loader2, Package, Utensils,
+  Plane, Battery, Zap
 } from 'lucide-react'
 import { 
   formatCurrency, formatDateTime, formatOrderStatus, 
@@ -220,6 +221,53 @@ function RestaurantOrderDetail() {
           </div>
         </div>
       </div>
+
+      {/* Drone Info */}
+      {order.missionId && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+            <Plane className="h-5 w-5 text-blue-600" />
+            <span>Thông Tin Drone Giao Hàng</span>
+          </h2>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Tên drone:</span>
+                <span className="text-sm font-medium text-blue-800">
+                  {order.droneInfo?.name || 'Drone Backup 1'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Model:</span>
+                <span className="text-sm font-medium text-blue-800">
+                  {order.droneInfo?.model || 'DJI Mini 3'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Mission ID:</span>
+                <span className="text-sm font-medium text-blue-800 font-mono">
+                  #{order.missionId?.slice(-8)}
+                </span>
+              </div>
+            </div>
+            
+            {/* Mission Status */}
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <div className="flex items-center space-x-2">
+                <Truck className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  Trạng thái giao hàng: 
+                </span>
+                <span className="text-sm text-blue-600">
+                  {order.status === 'IN_FLIGHT' ? 'Đang giao hàng' : 
+                   order.status === 'DELIVERED' ? 'Đã giao thành công' : 
+                   'Chuẩn bị giao hàng'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Items */}
       <div className="bg-white rounded-lg shadow-sm border">

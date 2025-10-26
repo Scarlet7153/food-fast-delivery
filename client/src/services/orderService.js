@@ -31,6 +31,12 @@ export const orderService = {
     return response.data
   },
 
+  // Confirm delivery (customer)
+  async confirmDelivery(id) {
+    const response = await api.patch(`/orders/${id}/confirm-delivery`)
+    return response.data
+  },
+
   // Get restaurant orders (restaurant owner)
   async getRestaurantOrders(params = {}) {
     const response = await api.get('/orders/restaurant/orders', { params })

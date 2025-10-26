@@ -310,9 +310,15 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
           </div>
           
           <div className="flex items-center space-x-2">
+            {getStatusIcon(drone.status)}
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(drone.status)}`}>
-              {formatDroneStatus(drone.status)}
+              {drone.status === 'IDLE' ? 'Rảnh' : 'Bận'}
             </span>
+            {drone.status === 'BUSY' && drone.currentMission && (
+              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                Đang giao hàng
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
+import { droneService } from '../../services/droneService'
+import api from '../../services/api'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye, CheckCircle,
-  Truck, XCircle, AlertCircle, Package, Utensils, Loader2, Plane
+  Truck, XCircle, AlertCircle, Package, Utensils, Loader2, Plane,
+  MapPin as LocationIcon, Zap
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -14,6 +17,8 @@ function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
+  const [showDroneConfirmModal, setShowDroneConfirmModal] = useState(false)
+  const [selectedOrderForDrone, setSelectedOrderForDrone] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch orders
@@ -48,9 +53,10 @@ function RestaurantOrders() {
   const assignDroneMutation = useMutation(
     (orderId) => orderService.assignDroneToOrder(orderId),
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries(['restaurant-orders'])
-        toast.success('Drone đã được giao thành công!')
+        const droneName = data?.data?.drone?.name || 'Drone'
+        toast.success(`${droneName} đã được giao thành công!`)
       },
       onError: (error) => {
         console.error('Assign drone error:', error)
@@ -115,11 +121,17 @@ function RestaurantOrders() {
     updateStatusMutation.mutate({ orderId, status: newStatus, note })
   }
 
-  const handleAssignDrone = (orderId) => {
-    if (!confirm('Bạn có chắc muốn giao đơn hàng này cho drone không?')) {
-      return
+  const handleAssignDrone = (order) => {
+    setSelectedOrderForDrone(order)
+    setShowDroneConfirmModal(true)
+  }
+
+  const confirmAssignDrone = () => {
+    if (selectedOrderForDrone) {
+      assignDroneMutation.mutate(selectedOrderForDrone._id)
+      setShowDroneConfirmModal(false)
+      setSelectedOrderForDrone(null)
     }
-    assignDroneMutation.mutate(orderId)
   }
 
   const getNextStatus = (currentStatus) => {
@@ -222,11 +234,11 @@ function RestaurantOrders() {
         ) : orders.length > 0 ? (
           <div className="divide-y divide-gray-200">
             {orders.map((order) => (
-              <OrderCard 
+                <OrderCard 
                 key={order._id} 
                 order={order} 
                 onStatusUpdate={handleStatusUpdate}
-                onAssignDrone={handleAssignDrone}
+                onAssignDrone={() => handleAssignDrone(order)}
                 getNextStatus={getNextStatus}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
@@ -262,6 +274,19 @@ function RestaurantOrders() {
           </div>
         )}
       </div>
+
+      {/* Drone Assignment Confirmation Modal */}
+      {showDroneConfirmModal && selectedOrderForDrone && (
+        <DroneAssignmentModal
+          order={selectedOrderForDrone}
+          onConfirm={confirmAssignDrone}
+          onCancel={() => {
+            setShowDroneConfirmModal(false)
+            setSelectedOrderForDrone(null)
+          }}
+          isLoading={assignDroneMutation.isLoading}
+        />
+      )}
     </div>
   )
 }
@@ -327,7 +352,7 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
               {order.deliveryAddress && (
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-3 w-3" />
-                  <span>{order.deliveryAddress.street}</span>
+                  <span>{order.deliveryAddress.text}</span>
                 </div>
               )}
             </div>
@@ -362,6 +387,14 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
                 )}
               </div>
             )}
+            
+            {/* Drone Assignment Info */}
+            {order.status === 'IN_FLIGHT' && order.missionId && (
+              <div className="flex items-center space-x-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                <Plane className="h-3 w-3" />
+                <span>Đã giao cho drone - Mission #{order.missionId}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -379,9 +412,10 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
             <>
               {nextStatus.status === 'ASSIGN_DRONE' ? (
                 <button
-                  onClick={() => onAssignDrone(order._id)}
+                  onClick={() => onAssignDrone()}
                   disabled={isUpdating}
                   className="btn btn-primary btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
+                  title="Hệ thống sẽ tự động chọn drone rảnh phù hợp nhất"
                 >
                   {isUpdating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -452,6 +486,178 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
           />
         </div>
       )}
+    </div>
+  )
+}
+
+// Drone Assignment Confirmation Modal
+function DroneAssignmentModal({ order, onConfirm, onCancel, isLoading }) {
+  const [selectedDrone, setSelectedDrone] = useState(null)
+  const [loadingDrone, setLoadingDrone] = useState(false)
+
+  // Fetch available drones when modal opens
+  useEffect(() => {
+    const fetchAvailableDrones = async () => {
+      setLoadingDrone(true)
+      try {
+        // Fetch all drones first - temporary fix
+        const response = await api.get('/drones')
+        const allDrones = response.data.data.drones || []
+        
+        // Filter only IDLE drones
+        const idleDrones = allDrones.filter(drone => drone.status === 'IDLE')
+        
+        if (idleDrones.length > 0) {
+          // Select the first IDLE drone
+          setSelectedDrone(idleDrones[0])
+        } else {
+          setSelectedDrone(null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch available drones:', error)
+        setSelectedDrone(null)
+      } finally {
+        setLoadingDrone(false)
+      }
+    }
+
+    fetchAvailableDrones()
+  }, [])
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <Plane className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">Giao Cho Drone</h3>
+              <p className="text-blue-100 text-sm">Xác nhận giao đơn hàng cho drone</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Order Info */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+              <Package className="h-4 w-4" />
+              <span>Thông tin đơn hàng</span>
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Mã đơn:</span>
+                <span className="font-medium">#{order.orderNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Khách hàng:</span>
+                <span className="font-medium">{order.customer?.name || 'Không rõ'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Tổng tiền:</span>
+                <span className="font-medium text-green-600">{formatCurrency(order.amount?.total || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Số món:</span>
+                <span className="font-medium">{order.items.length} món</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address */}
+          {order.deliveryAddress && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                <LocationIcon className="h-4 w-4" />
+                <span>Địa chỉ giao hàng</span>
+              </h4>
+              <div className="text-sm text-gray-600">
+                <p className="font-medium">{order.deliveryAddress.text}</p>
+                {order.deliveryAddress.notes && (
+                  <p className="mt-1 text-gray-500">Ghi chú: {order.deliveryAddress.notes}</p>
+                )}
+                {order.deliveryAddress.contactPhone && (
+                  <p className="mt-1 text-gray-500">SĐT: {order.deliveryAddress.contactPhone}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Selected Drone Info */}
+          {loadingDrone ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                <span className="text-sm text-gray-600">Đang tìm drone phù hợp...</span>
+              </div>
+            </div>
+          ) : selectedDrone ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="font-semibold text-green-900 mb-3 flex items-center space-x-2">
+                <Plane className="h-4 w-4" />
+                <span>Drone được chọn</span>
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Tên drone:</span>
+                  <span className="text-sm font-medium text-green-800">{selectedDrone.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Model:</span>
+                  <span className="text-sm font-medium text-green-800">{selectedDrone.model}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Tải trọng tối đa:</span>
+                  <span className="text-sm font-medium text-green-800">{selectedDrone.maxPayloadGrams}g</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Tầm bay:</span>
+                  <span className="text-sm font-medium text-green-800">{selectedDrone.maxRangeMeters}m</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-800">Không có drone rảnh để giao hàng</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onCancel}
+            disabled={isLoading}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading || !selectedDrone}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Đang giao...</span>
+              </>
+            ) : (
+              <>
+                <Plane className="h-4 w-4" />
+                <span>Xác nhận giao drone</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

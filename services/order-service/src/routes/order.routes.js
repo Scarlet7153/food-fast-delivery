@@ -11,6 +11,7 @@ router.get('/:id', auth, orderController.getOrderById);
 router.patch('/:id/status', auth, validate(schemas.updateOrderStatus), orderController.updateOrderStatus);
 router.patch('/:id/cancel', auth, validate(schemas.cancelOrder), orderController.cancelOrder);
 router.post('/:id/rate', auth, validate(schemas.rateOrder), orderController.rateOrder);
+router.patch('/:id/confirm-delivery', auth, orderController.confirmDelivery);
 
 // Restaurant routes
 router.get('/restaurant/orders', auth, requireRole('restaurant'), orderController.getRestaurantOrders);

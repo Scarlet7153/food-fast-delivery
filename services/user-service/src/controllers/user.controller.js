@@ -1461,12 +1461,57 @@ const setDefaultPaymentInfo = async (req, res) => {
   }
 };
 
+// Get public user info (for order service)
+const getPublicUserInfo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+    
+    const user = await User.findById(id)
+      .select('name email phone role');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get public user info error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get user info'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   refreshToken,
   logout,
   logoutAll,
+  getPublicUserInfo,
   forgotPassword,
   resetPassword,
   verifyToken,
