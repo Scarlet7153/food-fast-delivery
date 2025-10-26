@@ -3,6 +3,90 @@ const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../config/env');
 
+// Get all orders (admin)
+const getAllOrders = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      search, 
+      sortBy = 'newest',
+      startDate,
+      endDate 
+    } = req.query;
+
+    // Build filter
+    const filter = {};
+    
+    if (status) {
+      filter.status = status;
+    }
+    
+    if (search) {
+      // Escape special regex characters
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$or = [
+        { orderNumber: { $regex: escapedSearch, $options: 'i' } },
+        { 'restaurant.name': { $regex: escapedSearch, $options: 'i' } },
+        { 'customer.name': { $regex: escapedSearch, $options: 'i' } }
+      ];
+    }
+    
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    // Build sort
+    let sort = { createdAt: -1 };
+    switch (sortBy) {
+      case 'oldest':
+        sort = { createdAt: 1 };
+        break;
+      case 'amount':
+        sort = { totalAmount: -1 };
+        break;
+      case 'status':
+        sort = { status: 1 };
+        break;
+      default:
+        sort = { createdAt: -1 };
+    }
+
+    // Execute query
+    const orders = await Order.find(filter)
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate('userId', 'name email phone')
+      .populate('restaurantId', 'name address phone')
+      .lean();
+
+    const total = await Order.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          current: parseInt(page),
+          pages: Math.ceil(total / limit),
+          total
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch orders'
+    });
+  }
+};
+
 // Assign drone to order
 const assignDroneToOrder = async (req, res) => {
   try {
@@ -318,6 +402,7 @@ const getOverview = async (req, res) => {
 };
 
 module.exports = {
+  getAllOrders,
   getStatistics,
   getOverview,
   assignDroneToOrder

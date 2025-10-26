@@ -49,6 +49,12 @@ export const orderService = {
     return response.data
   },
 
+  // Assign drone to order (restaurant)
+  async assignDroneToOrder(orderId) {
+    const response = await api.post(`/orders/${orderId}/assign-drone`)
+    return response.data
+  },
+
   // Admin: Get all orders
   async getAllOrders(params = {}) {
     const response = await api.get('/admin/orders/all', { params })

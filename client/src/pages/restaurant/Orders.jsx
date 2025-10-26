@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye, CheckCircle,
-  Truck, XCircle, AlertCircle, Package, Utensils, Loader2
+  Truck, XCircle, AlertCircle, Package, Utensils, Loader2, Plane
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -40,6 +40,21 @@ function RestaurantOrders() {
       },
       onError: (error) => {
         toast.error('Không thể cập nhật trạng thái đơn hàng')
+      }
+    }
+  )
+
+  // Assign drone mutation
+  const assignDroneMutation = useMutation(
+    (orderId) => orderService.assignDroneToOrder(orderId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['restaurant-orders'])
+        toast.success('Drone đã được giao thành công!')
+      },
+      onError: (error) => {
+        console.error('Assign drone error:', error)
+        toast.error(error.response?.data?.error || 'Không thể giao drone. Vui lòng thử lại.')
       }
     }
   )
@@ -100,6 +115,13 @@ function RestaurantOrders() {
     updateStatusMutation.mutate({ orderId, status: newStatus, note })
   }
 
+  const handleAssignDrone = (orderId) => {
+    if (!confirm('Bạn có chắc muốn giao đơn hàng này cho drone không?')) {
+      return
+    }
+    assignDroneMutation.mutate(orderId)
+  }
+
   const getNextStatus = (currentStatus) => {
     switch (currentStatus) {
       case 'PLACED':
@@ -109,7 +131,7 @@ function RestaurantOrders() {
       case 'COOKING':
         return { status: 'READY_FOR_PICKUP', label: 'Sẵn Sàng', icon: Package }
       case 'READY_FOR_PICKUP':
-        return { status: 'IN_FLIGHT', label: 'Giao Cho Drone', icon: Truck }
+        return { status: 'ASSIGN_DRONE', label: 'Giao Cho Drone', icon: Plane }
       default:
         return null
     }
@@ -204,10 +226,11 @@ function RestaurantOrders() {
                 key={order._id} 
                 order={order} 
                 onStatusUpdate={handleStatusUpdate}
+                onAssignDrone={handleAssignDrone}
                 getNextStatus={getNextStatus}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
-                isUpdating={updateStatusMutation.isLoading}
+                isUpdating={updateStatusMutation.isLoading || assignDroneMutation.isLoading}
               />
             ))}
           </div>
@@ -244,7 +267,7 @@ function RestaurantOrders() {
 }
 
 // Order Card Component
-function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getStatusColor, isUpdating }) {
+function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getStatusIcon, getStatusColor, isUpdating }) {
   const [showNoteInput, setShowNoteInput] = useState(false)
   const [note, setNote] = useState('')
   
@@ -353,23 +376,40 @@ function OrderCard({ order, onStatusUpdate, getNextStatus, getStatusIcon, getSta
           </Link>
 
           {canUpdate && nextStatus && (
-            <button
-              onClick={() => handleUpdateStatus(nextStatus.status)}
-              disabled={isUpdating}
-              className={`btn btn-primary btn-sm flex items-center space-x-1 ${
-                nextStatus.status === 'CONFIRMED' ? 'bg-green-600 hover:bg-green-700' :
-                nextStatus.status === 'COOKING' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                nextStatus.status === 'READY_FOR_PICKUP' ? 'bg-orange-600 hover:bg-orange-700' :
-                'bg-purple-600 hover:bg-purple-700'
-              }`}
-            >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <>
+              {nextStatus.status === 'ASSIGN_DRONE' ? (
+                <button
+                  onClick={() => onAssignDrone(order._id)}
+                  disabled={isUpdating}
+                  className="btn btn-primary btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {isUpdating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plane className="h-4 w-4" />
+                  )}
+                  <span>{nextStatus.label}</span>
+                </button>
               ) : (
-                <nextStatus.icon className="h-4 w-4" />
+                <button
+                  onClick={() => handleUpdateStatus(nextStatus.status)}
+                  disabled={isUpdating}
+                  className={`btn btn-primary btn-sm flex items-center space-x-1 ${
+                    nextStatus.status === 'CONFIRMED' ? 'bg-green-600 hover:bg-green-700' :
+                    nextStatus.status === 'COOKING' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                    nextStatus.status === 'READY_FOR_PICKUP' ? 'bg-orange-600 hover:bg-orange-700' :
+                    'bg-purple-600 hover:bg-purple-700'
+                  }`}
+                >
+                  {isUpdating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <nextStatus.icon className="h-4 w-4" />
+                  )}
+                  <span>{nextStatus.label}</span>
+                </button>
               )}
-              <span>{nextStatus.label}</span>
-            </button>
+            </>
           )}
 
           {order.status === 'PLACED' && (

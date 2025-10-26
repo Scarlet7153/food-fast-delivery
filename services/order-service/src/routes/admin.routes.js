@@ -8,7 +8,7 @@ const adminController = require('../controllers/admin.controller');
 router.use(auth, requireRole('admin'));
 
 // Order management
-router.get('/orders', orderController.getAllOrders);
+router.get('/orders', adminController.getAllOrders);
 router.get('/orders/:id', orderController.getOrderById);
 router.patch('/orders/:id/status', orderController.updateOrderStatus);
 router.post('/orders/:orderId/assign-drone', adminController.assignDroneToOrder);

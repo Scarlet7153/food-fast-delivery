@@ -655,14 +655,147 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+// Assign drone to order (restaurant)
+const assignDroneToOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    // Get order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Check if order is in correct status
+    if (order.status !== 'READY_FOR_PICKUP') {
+      return res.status(400).json({
+        success: false,
+        error: 'Order must be in READY_FOR_PICKUP status to assign drone'
+      });
+    }
+    
+    // Check if order already has a mission
+    if (order.missionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order already has a delivery mission assigned'
+      });
+    }
+    
+    // Verify restaurant ownership
+    try {
+      const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${req.user._id}`);
+      const restaurant = restaurantResponse.data.data.restaurant;
+      
+      if (order.restaurantId.toString() !== restaurant._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          error: 'You do not have permission to assign drone to this order'
+        });
+      }
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+    
+    // Get available drones from drone service
+    let availableDrones;
+    try {
+      const dronesResponse = await axios.get(`${config.DRONE_SERVICE_URL}/api/restaurant/drones`, {
+        params: {
+          status: 'IDLE'
+        },
+        headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+      });
+      
+      availableDrones = dronesResponse.data.data.drones || [];
+    } catch (error) {
+      logger.error('Failed to get available drones:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to get available drones'
+      });
+    }
+    
+    if (availableDrones.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No available drones found. All drones are busy.'
+      });
+    }
+    
+    // Select the first available drone
+    const selectedDrone = availableDrones[0];
+    
+    // Create delivery mission via drone service
+    let mission;
+    try {
+      const missionResponse = await axios.post(
+        `${config.DRONE_SERVICE_URL}/api/restaurant/missions`,
+        {
+          orderId: order._id,
+          droneId: selectedDrone._id
+        },
+        {
+          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+        }
+      );
+      
+      mission = missionResponse.data.data.mission;
+    } catch (error) {
+      logger.error('Failed to create mission:', error.response?.data || error);
+      return res.status(500).json({
+        success: false,
+        error: error.response?.data?.error || 'Failed to create delivery mission'
+      });
+    }
+    
+    // Update order with mission info
+    order.missionId = mission._id;
+    order.status = 'IN_FLIGHT';
+    order.timeline.push({
+      status: 'IN_FLIGHT',
+      timestamp: new Date(),
+      note: `Được giao cho drone ${selectedDrone.name} (${selectedDrone.serialNumber || 'N/A'}) - Mission ${mission.missionNumber}`,
+      updatedBy: req.user._id
+    });
+    
+    await order.save();
+    
+    logger.info(`Drone ${selectedDrone.name} assigned to order ${order.orderNumber} by restaurant ${req.user._id}`);
+    
+    res.json({
+      success: true,
+      message: 'Drone assigned successfully',
+      data: {
+        order,
+        drone: selectedDrone,
+        mission
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Assign drone to order error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to assign drone to order'
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
-  getAllOrders,
   updateOrderStatus,
   cancelOrder,
+  rateOrder,
   getRestaurantOrders,
   getOrderStatistics,
-  rateOrder
+  assignDroneToOrder
 };

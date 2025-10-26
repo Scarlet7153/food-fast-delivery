@@ -15,5 +15,6 @@ router.post('/:id/rate', auth, validate(schemas.rateOrder), orderController.rate
 // Restaurant routes
 router.get('/restaurant/orders', auth, requireRole('restaurant'), orderController.getRestaurantOrders);
 router.get('/restaurant/stats', auth, requireRole('restaurant'), orderController.getOrderStatistics);
+router.post('/:orderId/assign-drone', auth, requireRole('restaurant'), orderController.assignDroneToOrder);
 
 module.exports = router;
