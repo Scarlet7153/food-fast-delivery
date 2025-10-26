@@ -9,9 +9,9 @@ const adminController = require('../controllers/admin.controller');
 router.use(auth, requireRole('admin'));
 
 // Drone management
-router.get('/drones', droneController.getAllDrones);
-router.get('/drones/:id', droneController.getDroneById);
-router.patch('/drones/:id/status', droneController.updateDroneStatus);
+router.get('/drones', adminController.getAllDrones);
+router.get('/drones/:id', adminController.getDroneById);
+router.patch('/drones/:id/status', adminController.updateDroneStatus);
 
 // Mission management
 router.get('/missions', missionController.getAllMissions);

@@ -230,7 +230,7 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor }) {
             <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
           </div>
           <p className="text-sm text-blue-700">
-            Order #{drone.currentMission.orderNumber}
+            Order #{drone.currentMission.orderId?.orderNumber || 'N/A'}
           </p>
         </div>
       )}
@@ -397,7 +397,7 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Số Đơn Hàng
                     </label>
-                    <p className="text-gray-900">#{drone.currentMission.orderNumber}</p>
+                    <p className="text-gray-900">#{drone.currentMission.orderId?.orderNumber || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
