@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { Eye, EyeOff, Loader2, User, Mail, Phone, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { authService } from '../../services/authService'
 
 function CustomerRegister() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,10 @@ function CustomerRegister() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
   
   const { register } = useAuthStore()
   const navigate = useNavigate()
@@ -26,10 +31,78 @@ function CustomerRegister() {
       ...prev,
       [name]: value
     }))
+    
+    // Clear errors when user starts typing
+    if (name === 'phone') {
+      setPhoneError('')
+    }
+    if (name === 'email') {
+      setEmailError('')
+    }
   }
+
+  // Debounce phone check
+  useEffect(() => {
+    const checkPhone = async () => {
+      if (formData.phone && formData.phone.length >= 10) {
+        setIsCheckingPhone(true)
+        try {
+          const response = await authService.checkPhoneAvailability(formData.phone)
+          if (!response.data.available) {
+            setPhoneError(response.data.message)
+          } else {
+            setPhoneError('')
+          }
+        } catch (error) {
+          console.error('Error checking phone:', error)
+        } finally {
+          setIsCheckingPhone(false)
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(checkPhone, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.phone])
+
+  // Debounce email check
+  useEffect(() => {
+    const checkEmail = async () => {
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (formData.email && emailRegex.test(formData.email)) {
+        setIsCheckingEmail(true)
+        try {
+          const response = await authService.checkEmailAvailability(formData.email)
+          if (!response.data.available) {
+            setEmailError(response.data.message)
+          } else {
+            setEmailError('')
+          }
+        } catch (error) {
+          console.error('Error checking email:', error)
+        } finally {
+          setIsCheckingEmail(false)
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(checkEmail, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.email])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (emailError) {
+      toast.error('Vui lòng kiểm tra lại email')
+      return
+    }
+
+    if (phoneError) {
+      toast.error('Vui lòng kiểm tra lại số điện thoại')
+      return
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error('Mật khẩu không khớp')
@@ -104,10 +177,18 @@ function CustomerRegister() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="input w-full pl-10"
+                className={`input w-full pl-10 ${emailError ? 'pr-10 border-red-500' : ''}`}
                 placeholder="email@example.com"
               />
+              {isCheckingEmail && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              )}
             </div>
+            {emailError && (
+              <p className="mt-1 text-sm text-red-600">{emailError}</p>
+            )}
           </div>
 
           {/* Phone */}
@@ -124,10 +205,18 @@ function CustomerRegister() {
                 required
                 value={formData.phone}
                 onChange={handleChange}
-                className="input w-full pl-10"
+                className={`input w-full pl-10 ${phoneError ? 'pr-10 border-red-500' : ''}`}
                 placeholder="0901234567"
               />
+              {isCheckingPhone && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              )}
             </div>
+            {phoneError && (
+              <p className="mt-1 text-sm text-red-600">{phoneError}</p>
+            )}
           </div>
 
           {/* Password */}

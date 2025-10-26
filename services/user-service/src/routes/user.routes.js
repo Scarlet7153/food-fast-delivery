@@ -20,6 +20,10 @@ router.post('/reset-password', validate(schemas.resetPassword), userController.r
 // Token verification (for API Gateway)
 router.get('/verify', userController.verifyToken);
 
+// Check availability routes (public)
+router.get('/check-phone', userController.checkPhoneAvailability);
+router.get('/check-email', userController.checkEmailAvailability);
+
 // User profile routes (for auth endpoints)
 router.get('/me', auth, userController.getProfile);
 router.put('/profile', auth, validate(schemas.updateProfile), userController.updateProfile);

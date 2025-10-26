@@ -75,5 +75,21 @@ export const authService = {
       password 
     })
     return response.data
+  },
+
+  // Check if phone is available
+  async checkPhoneAvailability(phone) {
+    const response = await api.get('/user/check-phone', {
+      params: { phone }
+    })
+    return response.data
+  },
+
+  // Check if email is available
+  async checkEmailAvailability(email) {
+    const response = await api.get('/user/check-email', {
+      params: { email }
+    })
+    return response.data
   }
 }

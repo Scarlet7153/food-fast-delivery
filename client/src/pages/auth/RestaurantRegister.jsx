@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '../../services/authService'
 import { Eye, EyeOff, Loader2, User, Mail, Phone, Lock, Building2, MapPin, Image, FileText } from 'lucide-react'
@@ -23,6 +23,12 @@ function RestaurantRegister() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [restaurantPhoneError, setRestaurantPhoneError] = useState('')
+  const [isCheckingRestaurantPhone, setIsCheckingRestaurantPhone] = useState(false)
   
   const navigate = useNavigate()
 
@@ -32,10 +38,116 @@ function RestaurantRegister() {
       ...prev,
       [name]: value
     }))
+    
+    // Clear errors when user starts typing
+    if (name === 'phone') {
+      setPhoneError('')
+    }
+    if (name === 'email') {
+      setEmailError('')
+    }
+    if (name === 'restaurantPhone') {
+      setRestaurantPhoneError('')
+    }
   }
+
+  // Debounce phone check for owner phone
+  useEffect(() => {
+    const checkPhone = async () => {
+      if (formData.phone && formData.phone.length >= 10) {
+        setIsCheckingPhone(true)
+        try {
+          const response = await authService.checkPhoneAvailability(formData.phone)
+          if (!response.data.available) {
+            setPhoneError(response.data.message)
+          } else {
+            setPhoneError('')
+          }
+        } catch (error) {
+          console.error('Error checking phone:', error)
+        } finally {
+          setIsCheckingPhone(false)
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(checkPhone, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.phone])
+
+  // Debounce email check
+  useEffect(() => {
+    const checkEmail = async () => {
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (formData.email && emailRegex.test(formData.email)) {
+        setIsCheckingEmail(true)
+        try {
+          const response = await authService.checkEmailAvailability(formData.email)
+          if (!response.data.available) {
+            setEmailError(response.data.message)
+          } else {
+            setEmailError('')
+          }
+        } catch (error) {
+          console.error('Error checking email:', error)
+        } finally {
+          setIsCheckingEmail(false)
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(checkEmail, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.email])
+
+  // Debounce phone check for restaurant phone
+  useEffect(() => {
+    const checkPhone = async () => {
+      if (formData.restaurantPhone && formData.restaurantPhone.length >= 10) {
+        // Check if restaurant phone is different from owner phone
+        if (formData.restaurantPhone !== formData.phone) {
+          setIsCheckingRestaurantPhone(true)
+          try {
+            const response = await authService.checkPhoneAvailability(formData.restaurantPhone)
+            if (!response.data.available) {
+              setRestaurantPhoneError(response.data.message)
+            } else {
+              setRestaurantPhoneError('')
+            }
+          } catch (error) {
+            console.error('Error checking restaurant phone:', error)
+          } finally {
+            setIsCheckingRestaurantPhone(false)
+          }
+        } else {
+          // If restaurant phone is same as owner phone, clear error
+          setRestaurantPhoneError('')
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(checkPhone, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.restaurantPhone, formData.phone])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (emailError) {
+      toast.error('Vui lòng kiểm tra lại email')
+      return
+    }
+
+    if (phoneError) {
+      toast.error('Vui lòng kiểm tra lại số điện thoại chủ sở hữu')
+      return
+    }
+
+    if (restaurantPhoneError) {
+      toast.error('Vui lòng kiểm tra lại số điện thoại nhà hàng')
+      return
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error('Mật khẩu không khớp')
@@ -73,18 +185,7 @@ function RestaurantRegister() {
       <div className="max-w-2xl w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
           <h2 className="text-3xl font-bold text-gray-900">Đăng Ký Nhà Hàng</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Đăng ký để bắt đầu bán đồ ăn trên FFDD
-          </p>
-          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">
-              ⚠️ Sau khi đăng ký, hồ sơ nhà hàng của bạn sẽ được admin xét duyệt trong vòng 24-48 giờ.
-            </p>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -126,10 +227,18 @@ function RestaurantRegister() {
                     required
                     value={formData.phone}
                     onChange={handleChange}
-                    className="input w-full pl-10"
+                    className={`input w-full pl-10 ${phoneError ? 'pr-10 border-red-500' : ''}`}
                     placeholder="0901234567"
                   />
+                  {isCheckingPhone && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
                 </div>
+                {phoneError && (
+                  <p className="mt-1 text-sm text-red-600">{phoneError}</p>
+                )}
               </div>
 
               {/* Email */}
@@ -146,10 +255,18 @@ function RestaurantRegister() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="input w-full pl-10"
+                    className={`input w-full pl-10 ${emailError ? 'pr-10 border-red-500' : ''}`}
                     placeholder="restaurant@example.com"
                   />
+                  {isCheckingEmail && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
                 </div>
+                {emailError && (
+                  <p className="mt-1 text-sm text-red-600">{emailError}</p>
+                )}
               </div>
 
               {/* Password */}
@@ -266,10 +383,21 @@ function RestaurantRegister() {
                     required
                     value={formData.restaurantPhone}
                     onChange={handleChange}
-                    className="input w-full pl-10"
+                    className={`input w-full pl-10 ${restaurantPhoneError ? 'pr-10 border-red-500' : ''}`}
                     placeholder="0281234567"
                   />
+                  {isCheckingRestaurantPhone && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
                 </div>
+                {restaurantPhoneError && (
+                  <p className="mt-1 text-sm text-red-600">{restaurantPhoneError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Có thể giống số điện thoại chủ sở hữu
+                </p>
               </div>
 
               {/* Description */}

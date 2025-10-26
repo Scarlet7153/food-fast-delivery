@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
+    unique: true,
     trim: true
   },
   role: {
@@ -123,6 +124,7 @@ const userSchema = new mongoose.Schema({
 // Indexes
 userSchema.index({ role: 1 });
 userSchema.index({ restaurantId: 1 });
+userSchema.index({ phone: 1 }, { unique: true });
 userSchema.index({ 'address.location': '2dsphere' }, { sparse: true });
 
 // Virtual for restaurant info (for restaurant users)

@@ -374,6 +374,68 @@ const getUserById = async (req, res) => {
   }
 };
 
+// Check if phone is available (for registration validation)
+const checkPhoneAvailability = async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number is required'
+      });
+    }
+
+    const existingUser = await User.findOne({ phone: phone.trim() });
+    
+    res.json({
+      success: true,
+      data: {
+        available: !existingUser,
+        message: existingUser ? 'Số điện thoại này đã được đăng ký' : 'Số điện thoại khả dụng'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Check phone availability error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check phone availability'
+    });
+  }
+};
+
+// Check if email is available (for registration validation)
+const checkEmailAvailability = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    
+    res.json({
+      success: true,
+      data: {
+        available: !existingUser,
+        message: existingUser ? 'Email này đã được sử dụng' : 'Email khả dụng'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Check email availability error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check email availability'
+    });
+  }
+};
+
 // Register new user
 const register = async (req, res) => {
   try {
@@ -393,13 +455,26 @@ const register = async (req, res) => {
       restaurantDescription, imageUrl 
     } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists (by email or phone)
+    const existingUser = await User.findOne({ 
+      $or: [
+        { email },
+        { phone }
+      ]
+    });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email này đã được sử dụng'
-      });
+      if (existingUser.email === email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email này đã được sử dụng'
+        });
+      }
+      if (existingUser.phone === phone) {
+        return res.status(400).json({
+          success: false,
+          error: 'Số điện thoại này đã được đăng ký'
+        });
+      }
     }
 
     // Create user (password will be hashed by pre-save hook)
@@ -1409,6 +1484,8 @@ module.exports = {
   removeAllRefreshTokens,
   validateRefreshToken,
   getUserById,
+  checkPhoneAvailability,
+  checkEmailAvailability,
   getPaymentInfo,
   createPaymentInfo,
   updatePaymentInfo,
