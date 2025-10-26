@@ -273,11 +273,20 @@ orderSchema.pre('save', async function(next) {
 // Pre-save middleware to add timeline entry
 orderSchema.pre('save', function(next) {
   if (this.isModified('status') && !this.isNew) {
-    this.timeline.push({
-      status: this.status,
-      timestamp: new Date(),
-      note: this.getStatusNote(this.status)
-    });
+    // Check if timeline entry already exists for this status change
+    const lastEntry = this.timeline[this.timeline.length - 1];
+    const now = new Date();
+    
+    // Only add if no recent entry exists (within 1 second) or if it's a different status
+    if (!lastEntry || 
+        lastEntry.status !== this.status || 
+        (now - lastEntry.timestamp) > 1000) {
+      this.timeline.push({
+        status: this.status,
+        timestamp: now,
+        note: this.getStatusNote(this.status)
+      });
+    }
   }
   next();
 });
@@ -285,14 +294,14 @@ orderSchema.pre('save', function(next) {
 // Instance method to get status note
 orderSchema.methods.getStatusNote = function(status) {
   const statusNotes = {
-    PLACED: 'Order placed by customer',
-    CONFIRMED: 'Order confirmed by restaurant',
-    COOKING: 'Food is being prepared',
-    READY_FOR_PICKUP: 'Food is ready for drone pickup',
-    IN_FLIGHT: 'Drone is delivering your order',
-    DELIVERED: 'Order delivered successfully',
-    CANCELLED: 'Order cancelled',
-    FAILED: 'Order failed'
+    PLACED: 'Khách hàng đã đặt đơn hàng',
+    CONFIRMED: 'Đơn hàng đã được nhà hàng xác nhận',
+    COOKING: 'Món ăn đang được chuẩn bị',
+    READY_FOR_PICKUP: 'Món ăn đã sẵn sàng để drone lấy',
+    IN_FLIGHT: 'Drone đang giao đơn hàng của bạn',
+    DELIVERED: 'Đơn hàng đã được giao thành công',
+    CANCELLED: 'Đơn hàng đã bị hủy',
+    FAILED: 'Đơn hàng thất bại'
   };
   return statusNotes[status] || '';
 };
@@ -366,6 +375,23 @@ orderSchema.methods.cancelOrder = function(reason, cancelledBy, refundAmount = 0
   });
   
   return this.save();
+};
+
+// Instance method to clean up duplicate timeline entries
+orderSchema.methods.cleanupTimeline = function() {
+  const cleanedTimeline = [];
+  let lastStatus = null;
+  
+  for (const entry of this.timeline) {
+    // Only add if it's a different status or if it's the first entry
+    if (lastStatus !== entry.status) {
+      cleanedTimeline.push(entry);
+      lastStatus = entry.status;
+    }
+  }
+  
+  this.timeline = cleanedTimeline;
+  return this;
 };
 
 // Static method to find by user

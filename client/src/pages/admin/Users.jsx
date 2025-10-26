@@ -479,61 +479,59 @@ function UserDetailModal({ user, onClose, onUpdateStatus, getStatusIcon, getStat
           </div>
 
           {/* Status Management */}
-          {user.status !== 'suspended' && (
-            <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-medium mb-4">Quản Lý Trạng Thái Người Dùng</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hành Động
-                  </label>
-                  <select
-                    value={action}
-                    onChange={(e) => setAction(e.target.value)}
-                    className="input w-full"
-                  >
-                    <option value="">Chọn hành động</option>
+          <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-medium mb-4">Quản Lý Trạng Thái Người Dùng</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hành Động
+                </label>
+                <select
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  className="input w-full"
+                >
+                  <option value="">Chọn hành động</option>
+                  {user.status === 'suspended' ? (
+                    <option value="activate">Mở Khóa Người Dùng</option>
+                  ) : (
                     <option value="suspend">Khóa Người Dùng</option>
-                    <option value="activate">Kích Hoạt Người Dùng</option>
-                    {user.role === 'restaurant' && (
-                      <option value="approve_restaurant">Duyệt Nhà Hàng</option>
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lý Do (Tùy chọn)
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="input w-full"
-                    rows={3}
-                    placeholder="Nhập lý do cho hành động này..."
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="btn btn-outline"
-                    disabled={isUpdating}
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isUpdating || !action}
-                  >
-                    {isUpdating ? 'Đang cập nhật...' : 'Cập Nhật Trạng Thái'}
-                  </button>
-                </div>
+                  )}
+                </select>
               </div>
-            </form>
-          )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lý Do (Tùy chọn)
+                </label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="input w-full"
+                  rows={3}
+                  placeholder="Nhập lý do cho hành động này..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn btn-outline"
+                  disabled={isUpdating}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isUpdating || !action}
+                >
+                  {isUpdating ? 'Đang cập nhật...' : 'Cập Nhật Trạng Thái'}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>

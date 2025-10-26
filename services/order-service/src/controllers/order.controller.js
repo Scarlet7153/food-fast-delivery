@@ -510,30 +510,139 @@ const rateOrder = async (req, res) => {
 // Get all orders (admin only)
 const getAllOrders = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, restaurantId } = req.query;
+    const { page = 1, limit = 20, status, restaurantId, search } = req.query;
     
     const query = {};
     if (status) query.status = status;
     if (restaurantId) query.restaurantId = restaurantId;
     
+    // Don't filter by search in database query
+    // We'll filter after enriching with user data
+    
     const orders = await Order.find(query)
-      .populate('userId', 'name email')
-      .populate('restaurantId', 'name')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
     const total = await Order.countDocuments(query);
     
+    // Enrich orders with user information
+    const enrichedOrders = await Promise.all(orders.map(async (order) => {
+      try {
+        // Get user information from user-service
+        const userResponse = await axios.get(`${config.USER_SERVICE_URL}/api/admin/users/${order.userId}`, {
+          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+        });
+        
+        const user = userResponse.data.data?.user;
+        
+        // Clean up duplicate timeline entries
+        order.cleanupTimeline();
+        
+        return {
+          ...order.toObject(),
+          userId: {
+            _id: order.userId,
+            name: user?.name || 'Không xác định',
+            email: user?.email || 'Chưa có thông tin'
+          }
+        };
+      } catch (error) {
+        logger.warn(`Failed to fetch user info for order ${order._id}:`, error.message);
+        
+        // Clean up duplicate timeline entries
+        order.cleanupTimeline();
+        
+        return {
+          ...order.toObject(),
+          userId: {
+            _id: order.userId,
+            name: 'Không xác định',
+            email: 'Chưa có thông tin'
+          }
+        };
+      }
+    }));
+
+    // Filter by search query on frontend (only orderNumber, customer name, phone)
+    let filteredOrders = enrichedOrders;
+    if (search) {
+      console.log('=== Search Debug ===');
+      console.log('Search query:', search);
+      console.log('Total orders:', enrichedOrders.length);
+      
+      // Log first order to see structure
+      if (enrichedOrders.length > 0) {
+        console.log('Sample order data:');
+        console.log('- orderNumber:', enrichedOrders[0].orderNumber);
+        console.log('- deliveryAddress:', enrichedOrders[0].deliveryAddress);
+        console.log('- contactName:', enrichedOrders[0].deliveryAddress?.contactName);
+        console.log('- contactPhone:', enrichedOrders[0].deliveryAddress?.contactPhone);
+      }
+      
+      // Function to remove Vietnamese accents for better search
+      const removeAccents = (str) => {
+        if (!str) return '';
+        return str.normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+      };
+
+      filteredOrders = enrichedOrders.filter(order => {
+        const searchLower = search.toLowerCase();
+        const searchNoAccent = removeAccents(searchLower);
+        
+        // Search only in: orderNumber, contact name (from deliveryAddress), phone
+        const searchableFields = [
+          order.orderNumber,
+          order.deliveryAddress?.contactName,
+          order.deliveryAddress?.contactPhone
+        ];
+
+        const matches = searchableFields.some(field => {
+          if (!field) return false;
+          const fieldLower = field.toLowerCase();
+          const fieldNoAccent = removeAccents(fieldLower);
+          
+          return fieldLower.includes(searchLower) || fieldNoAccent.includes(searchNoAccent);
+        });
+        
+        if (matches) {
+          console.log('✓ Found match in order:', order.orderNumber);
+        }
+        
+        return matches;
+      });
+      
+      console.log('Filtered orders:', filteredOrders.length);
+      console.log('===================');
+    }
+    
+    // Get unique restaurants from all orders (not just current page)
+    const allOrders = await Order.find({}).select('restaurantId restaurant');
+    const restaurantsMap = new Map();
+    
+    allOrders.forEach(order => {
+      if (order.restaurantId && order.restaurant?.name) {
+        restaurantsMap.set(order.restaurantId.toString(), {
+          _id: order.restaurantId,
+          name: order.restaurant.name
+        });
+      }
+    });
+    
+    const restaurants = Array.from(restaurantsMap.values());
+    
     res.json({
       success: true,
       data: {
-        orders,
+        orders: filteredOrders,
+        restaurants,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
+          total: search ? filteredOrders.length : total,
+          pages: Math.ceil((search ? filteredOrders.length : total) / limit)
         }
       }
     });

@@ -97,7 +97,7 @@ function AdminOrders() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm đơn hàng theo tên khách hàng, ID đơn hàng hoặc nhà hàng..."
+              placeholder="Tìm kiếm theo số đơn hàng, tên người nhận hoặc số điện thoại..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -211,10 +211,10 @@ function AdminOrders() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.customer?.name || 'Không xác định'}
+                          {order.deliveryAddress?.contactName || 'Không xác định'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {order.contactInfo?.phone || order.customer?.email}
+                          {order.deliveryAddress?.contactPhone || 'Chưa có thông tin'}
                         </div>
                       </div>
                     </td>
@@ -232,7 +232,7 @@ function AdminOrders() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(order.totalAmount)}
+                      {formatCurrency(order.amount?.total || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(order.createdAt)}
@@ -282,7 +282,20 @@ function AdminOrders() {
 // Order Detail Modal Component
 function OrderDetailModal({ order, onClose }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="bg-black bg-opacity-50 flex items-center justify-center" 
+      style={{ 
+        zIndex: 99999, 
+        position: 'fixed',
+        top: '-100px',
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        margin: 0,
+        padding: 0,
+        transform: 'translateY(100px)'
+      }}
+    >
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -301,9 +314,8 @@ function OrderDetailModal({ order, onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-2">Thông Tin Khách Hàng</h3>
-              <p className="text-sm text-gray-600">{order.customer?.name}</p>
-              <p className="text-sm text-gray-600">{order.contactInfo?.phone}</p>
-              <p className="text-sm text-gray-600">{order.customer?.email}</p>
+              <p className="text-sm text-gray-600">{order.deliveryAddress?.contactName || 'Không xác định'}</p>
+              <p className="text-sm text-gray-600">{order.deliveryAddress?.contactPhone || 'Chưa có thông tin'}</p>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
@@ -315,7 +327,7 @@ function OrderDetailModal({ order, onClose }) {
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-2">Tóm Tắt Đơn Hàng</h3>
               <p className="text-sm text-gray-600">Món ăn: {order.items.length}</p>
-              <p className="text-sm text-gray-600">Tổng: {formatCurrency(order.totalAmount)}</p>
+              <p className="text-sm text-gray-600">Tổng: {formatCurrency(order.amount?.total || 0)}</p>
               <p className="text-sm text-gray-600">Trạng thái: {formatOrderStatus(order.status)}</p>
             </div>
           </div>
@@ -326,20 +338,28 @@ function OrderDetailModal({ order, onClose }) {
             <div className="space-y-3">
               {order.items.map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {item.quantity}x {formatCurrency(item.price)}
-                    </p>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 mb-2">{item.name}</p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Đơn giá:</span> {formatCurrency(item.price)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Số lượng:</span> {item.quantity}
+                      </p>
+                    </div>
                     {item.specialInstructions && (
-                      <p className="text-xs text-gray-500 italic">
-                        "{item.specialInstructions}"
+                      <p className="text-xs text-gray-500 italic mt-2">
+                        Ghi chú: "{item.specialInstructions}"
                       </p>
                     )}
                   </div>
-                  <p className="font-medium">
-                    {formatCurrency(item.price * item.quantity)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-600 mb-1">Thành tiền</p>
+                    <p className="font-bold text-lg text-gray-900">
+                      {formatCurrency(item.price * item.quantity)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -353,9 +373,9 @@ function OrderDetailModal({ order, onClose }) {
                 <div className="flex items-start space-x-3">
                   <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-gray-900">{order.deliveryAddress.street}</p>
+                    <p className="text-gray-900">{order.deliveryAddress.text}</p>
                     <p className="text-sm text-gray-600">
-                      {order.deliveryAddress.city}, {order.deliveryAddress.district}, {order.deliveryAddress.ward}
+                      Liên hệ: {order.deliveryAddress.contactName} - {order.deliveryAddress.contactPhone}
                     </p>
                     {order.deliveryAddress.notes && (
                       <p className="text-sm text-gray-600 mt-1">
@@ -369,38 +389,45 @@ function OrderDetailModal({ order, onClose }) {
           )}
 
           {/* Mission Information */}
-          {order.deliveryMission && (
+          {order.missionId && (
             <div>
               <h3 className="text-lg font-medium mb-4">Đơn Giao Hàng</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Drone
+                      Mã Đơn Giao
                     </label>
-                    <p className="text-gray-900">Drone #{order.deliveryMission.drone?.name}</p>
+                    <p className="text-gray-900">{order.missionId}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Trạng Thái Đơn Giao
-                    </label>
-                    <p className="text-gray-900">{order.deliveryMission.status}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bắt Đầu Lúc
-                    </label>
-                    <p className="text-gray-900">{formatDateTime(order.deliveryMission.startedAt)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dự Kiến Đến
+                      Thời Gian Dự Kiến
                     </label>
                     <p className="text-gray-900">
-                      {order.deliveryMission.estimatedArrival ? 
-                        formatDateTime(order.deliveryMission.estimatedArrival) : 
+                      {order.estimatedDeliveryTime ? 
+                        formatDateTime(order.estimatedDeliveryTime) : 
                         'Không có thông tin'
                       }
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Thời Gian Thực Tế
+                    </label>
+                    <p className="text-gray-900">
+                      {order.actualDeliveryTime ? 
+                        formatDateTime(order.actualDeliveryTime) : 
+                        'Chưa giao hàng'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Thời Gian Giao Hàng
+                    </label>
+                    <p className="text-gray-900">
+                      {order.duration ? `${order.duration} phút` : 'Chưa có thông tin'}
                     </p>
                   </div>
                 </div>
@@ -420,12 +447,23 @@ function OrderDetailModal({ order, onClose }) {
                 </div>
               </div>
               
-              {order.statusTimeline?.map((event, index) => (
+              {order.timeline?.map((event, index) => (
                 <div key={index} className="flex items-center space-x-3">
-                  <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                   <div className="flex-shrink-0">
+                     {event.status === 'PLACED' || event.status === 'DELIVERED' ? (
+                       <CheckCircle className="h-4 w-4 text-green-500" />
+                     ) : event.status === 'CANCELLED' || event.status === 'FAILED' ? (
+                       <XCircle className="h-4 w-4 text-red-500" />
+                     ) : (
+                       <CheckCircle className="h-4 w-4 text-blue-500" />
+                     )}
+                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{event.status}</p>
+                    <p className="text-sm font-medium text-gray-900">{formatOrderStatus(event.status)}</p>
                     <p className="text-xs text-gray-500">{formatDateTime(event.timestamp)}</p>
+                    {event.note && (
+                      <p className="text-xs text-gray-400 italic">{event.note}</p>
+                    )}
                   </div>
                 </div>
               ))}

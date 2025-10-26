@@ -191,7 +191,7 @@ function Login() {
 
       {/* Demo credentials */}
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Tài khoản Demo:</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Tài khoản:</h3>
         <div className="space-y-2 text-xs text-gray-600">
           <div>
             <strong>Quản trị viên:</strong> admin@gmail.com / 12345678
