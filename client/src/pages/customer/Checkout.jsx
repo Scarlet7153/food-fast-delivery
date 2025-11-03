@@ -37,8 +37,7 @@ function Checkout() {
       phone: '',
       name: ''
     },
-    paymentMethod: 'cod',
-    specialInstructions: ''
+    paymentMethod: 'cod'
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -219,8 +218,7 @@ function Checkout() {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          totalPrice: item.price * item.quantity,
-          specialInstructions: item.specialInstructions || ''
+          totalPrice: item.price * item.quantity
         })),
         amount: {
           subtotal: getSubtotal(),
@@ -435,22 +433,6 @@ function Checkout() {
                 <span className="font-bold text-lg text-primary-600">
                   {formatCurrency(total)}
                 </span>
-              </div>
-            </div>
-
-            {/* Delivery Info */}
-            <div className="space-y-3 text-sm text-gray-600 mb-6">
-              <div className="flex items-center space-x-2">
-                <Truck className="h-4 w-4" />
-                <span>Tổng khối lượng {formatWeight(totalWeight)}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4" />
-                <span>Giao trong 25-35 phút</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Shield className="h-4 w-4" />
-                <span>Giao không tiếp xúc</span>
               </div>
             </div>
 
@@ -686,18 +668,6 @@ function DeliveryInfoStep({ formData, onChange, savedPaymentInfo, showSavedAddre
           </div>
         </div>
       </div>
-
-      {/* Special Instructions */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h3 className="text-lg font-semibold mb-4">Hướng dẫn đặc biệt</h3>
-        <textarea
-          value={formData.specialInstructions}
-          onChange={(e) => onChange('specialInstructions', e.target.value)}
-          className="input w-full"
-          rows={3}
-          placeholder="Ghi chú đặc biệt cho đơn hàng..."
-        />
-      </div>
     </div>
   )
 }
@@ -765,17 +735,6 @@ function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Payment Security */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div className="flex items-center space-x-2">
-          <Shield className="h-5 w-5 text-green-600" />
-          <span className="font-medium text-green-800">Thanh Toán An Toàn</span>
-        </div>
-        <p className="text-sm text-green-700 mt-1">
-          Thông tin thanh toán được mã hóa và bảo mật. Chúng tôi sử dụng mã hóa SSL chuẩn công nghiệp.
-        </p>
       </div>
 
       {paymentUrl && (

@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 // Import routes
 const droneRoutes = require('./routes/drone.routes');
 const adminRoutes = require('./routes/admin.routes');
+const internalRoutes = require('./routes/internal.routes');
 
 class DroneService {
   constructor() {
@@ -69,7 +70,10 @@ class DroneService {
       });
     });
 
-    // API routes
+    // Internal routes (for service-to-service communication, no auth required)
+    this.app.use('/api/internal', internalRoutes);
+
+    // API routes (require authentication)
     this.app.use('/api/drones', droneRoutes);
     this.app.use('/api/admin', adminRoutes);
 

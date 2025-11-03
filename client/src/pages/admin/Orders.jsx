@@ -5,7 +5,7 @@ import {
   Search, Filter, ShoppingBag, Clock, MapPin, User, 
   CheckCircle, XCircle, AlertTriangle, Eye, Plane
 } from 'lucide-react'
-import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
+import { formatCurrency, formatDateTime, formatOrderStatus, formatDistance } from '../../utils/formatters'
 import { t } from '../../utils/translations'
 
 function AdminOrders() {
@@ -440,7 +440,8 @@ function OrderDetailModal({ order, onClose }) {
                   <Plane className="h-5 w-5 text-blue-600" />
                   <h4 className="font-medium text-blue-900">Đã giao cho Drone</h4>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Mission Info */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Mã Đơn Giao
@@ -458,25 +459,31 @@ function OrderDetailModal({ order, onClose }) {
                       }
                     </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Thời Gian Thực Tế
-                    </label>
-                    <p className="text-gray-900">
-                      {order.actualDeliveryTime ? 
-                        formatDateTime(order.actualDeliveryTime) : 
-                        'Đang giao hàng...'
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Thời Gian Giao Hàng
-                    </label>
-                    <p className="text-gray-900">
-                      {order.duration ? `${order.duration} phút` : 'Đang tính toán...'}
-                    </p>
-                  </div>
+                  
+                  {/* Drone Info */}
+                  {order.droneInfo && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tên Drone
+                        </label>
+                        <p className="text-gray-900 font-medium">{order.droneInfo.name}</p>
+                        <p className="text-xs text-gray-600">{order.droneInfo.model}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tải Trọng Tối Đa
+                        </label>
+                        <p className="text-gray-900">{order.droneInfo.maxPayloadGrams}g</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tầm Bay
+                        </label>
+                        <p className="text-gray-900">{formatDistance(order.droneInfo.maxRangeMeters)}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ) : order.status === 'READY_FOR_PICKUP' ? (

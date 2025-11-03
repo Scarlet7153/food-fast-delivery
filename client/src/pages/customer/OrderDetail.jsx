@@ -505,7 +505,7 @@ function DroneMissionCard({ mission }) {
         {mission.estimatedArrival && (
           <div className="flex items-center space-x-3 text-sm text-gray-600">
             <Clock className="h-4 w-4" />
-            <span>ETA: {formatDateTime(mission.estimatedArrival)}</span>
+            <span>Thời gian dự kiến: {formatDateTime(mission.estimatedArrival)}</span>
           </div>
         )}
 
@@ -513,7 +513,7 @@ function DroneMissionCard({ mission }) {
           <div className="flex items-center space-x-3 text-sm text-gray-600">
             <MapPin className="h-4 w-4" />
             <span>
-              Current: {mission.currentLocation.lat.toFixed(4)}, {mission.currentLocation.lng.toFixed(4)}
+              Vị trí hiện tại: {mission.currentLocation.lat.toFixed(4)}, {mission.currentLocation.lng.toFixed(4)}
             </span>
           </div>
         )}
@@ -523,7 +523,7 @@ function DroneMissionCard({ mission }) {
             <p className="text-sm font-medium text-gray-900 mb-2">Tuyến Bay</p>
             <div className="text-xs text-gray-600">
               <p>Tổng khoảng cách: {formatDistance(mission.totalDistance || 0)}</p>
-              <p>Thời gian bay dự kiến: {mission.estimatedFlightTime || 'N/A'}</p>
+              <p>Thời gian bay dự kiến: {mission.estimatedFlightTime || 'Chưa xác định'}</p>
             </div>
           </div>
         )}

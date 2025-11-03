@@ -29,7 +29,8 @@ const getAllOrders = async (req, res) => {
       filter.$or = [
         { orderNumber: { $regex: escapedSearch, $options: 'i' } },
         { 'restaurant.name': { $regex: escapedSearch, $options: 'i' } },
-        { 'customer.name': { $regex: escapedSearch, $options: 'i' } }
+        { 'deliveryAddress.contactName': { $regex: escapedSearch, $options: 'i' } },
+        { 'deliveryAddress.contactPhone': { $regex: escapedSearch, $options: 'i' } }
       ];
     }
     
@@ -61,8 +62,6 @@ const getAllOrders = async (req, res) => {
       .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .populate('userId', 'name email phone')
-      .populate('restaurantId', 'name address phone')
       .lean();
 
     const total = await Order.countDocuments(filter);
@@ -148,24 +147,24 @@ const assignDroneToOrder = async (req, res) => {
     // Select the first available drone
     const selectedDrone = availableDrones[0];
     
-    // Create delivery mission via drone service
+    // Create delivery mission via drone service (internal endpoint)
     let mission;
     try {
       const missionResponse = await axios.post(
-        `${config.DRONE_SERVICE_URL}/api/admin/missions`,
+        `${config.DRONE_SERVICE_URL}/api/internal/missions`,
         {
           orderId: order._id,
           droneId: selectedDrone._id,
-          restaurantId: order.restaurantId
-        },
-        {
-          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+          restaurantId: order.restaurantId,
+          deliveryAddress: order.deliveryAddress,
+          payloadWeight: order.items.reduce((total, item) => total + (item.weightGrams || 200) * item.quantity, 0)
         }
       );
       
       mission = missionResponse.data.data.mission;
+      logger.info(`Mission ${mission.missionNumber} created by admin`);
     } catch (error) {
-      logger.error('Failed to create mission:', error.response?.data || error);
+      logger.error('Failed to create mission:', error.response?.data || error.message);
       return res.status(500).json({
         success: false,
         error: error.response?.data?.error || 'Failed to create delivery mission'

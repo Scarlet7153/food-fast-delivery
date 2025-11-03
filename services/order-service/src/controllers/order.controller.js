@@ -710,9 +710,10 @@ const assignDroneToOrder = async (req, res) => {
     }
     
     // Verify restaurant ownership
+    let restaurant;
     try {
       const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${req.user._id}`);
-      const restaurant = restaurantResponse.data.data.restaurant;
+      restaurant = restaurantResponse.data.data.restaurant;
       
       if (order.restaurantId.toString() !== restaurant._id.toString()) {
         return res.status(403).json({
@@ -769,19 +770,26 @@ const assignDroneToOrder = async (req, res) => {
     let mission;
     try {
       const missionResponse = await axios.post(
-        `${config.DRONE_SERVICE_URL}/api/restaurant/missions`,
+        `${config.DRONE_SERVICE_URL}/api/internal/missions`,
         {
           orderId: order._id,
-          droneId: selectedDrone._id
-        },
-        {
-          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+          droneId: selectedDrone._id,
+          restaurantId: restaurant._id,
+          deliveryAddress: order.deliveryAddress,
+          payloadWeight: order.items.reduce((total, item) => total + (item.weightGrams || 200) * item.quantity, 0)
         }
       );
       
       mission = missionResponse.data.data.mission;
+      logger.info(`Mission ${mission.missionNumber} created successfully`);
     } catch (error) {
-      logger.error('Failed to create mission, using fallback:', error.message);
+      logger.error('Failed to create mission:', {
+        message: error.message,
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data
+      });
       
       // Fallback: Create mock mission if drone service is not available
       const mongoose = require('mongoose');
@@ -796,13 +804,12 @@ const assignDroneToOrder = async (req, res) => {
     
     // Update drone status to BUSY
     try {
+      // Call internal endpoint (no auth required for service-to-service)
       await axios.patch(
-        `${config.DRONE_SERVICE_URL}/api/drones/${selectedDrone._id}/status`,
-        { status: 'BUSY' },
-        {
-          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
-        }
+        `${config.DRONE_SERVICE_URL}/api/internal/drones/${selectedDrone._id}/status`,
+        { status: 'BUSY' }
       );
+      logger.info(`Drone ${selectedDrone.name} status updated to BUSY`);
     } catch (error) {
       logger.error('Failed to update drone status:', error.message);
       // Fallback: Just log the status change (in real scenario, this would be handled by drone service)
@@ -824,7 +831,7 @@ const assignDroneToOrder = async (req, res) => {
     order.timeline.push({
       status: 'IN_FLIGHT',
       timestamp: new Date(),
-      note: `Được giao cho drone ${selectedDrone.name} (${selectedDrone.serialNumber || 'N/A'}) - Mission ${mission.missionNumber}`,
+      note: `Được giao cho drone ${selectedDrone.name} (${selectedDrone.serialNumber || 'Chưa có'}) - Nhiệm vụ ${mission.missionNumber}`,
       updatedBy: req.user._id
     });
     
@@ -886,29 +893,23 @@ const confirmDelivery = async (req, res) => {
     order.timeline.push({
       status: 'DELIVERED',
       timestamp: new Date(),
-      note: 'Customer confirmed delivery',
+      note: 'Khách hàng đã xác nhận nhận hàng',
       updatedBy: req.user._id
     });
     
     await order.save();
     
-    // Update drone status back to IDLE if mission exists
+    // Update mission status to COMPLETED (drone will be auto-updated to IDLE)
     if (order.missionId) {
       try {
-        // Get drone info from order
-        const droneId = order.droneInfo?.id;
-        if (droneId) {
-          await axios.patch(
-            `${config.DRONE_SERVICE_URL}/api/drones/${droneId}/status`,
-            { status: 'IDLE' },
-            {
-              headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
-            }
-          );
-        }
+        await axios.patch(
+          `${config.DRONE_SERVICE_URL}/api/internal/missions/${order.missionId}/status`,
+          { status: 'COMPLETED' }
+        );
+        logger.info(`Mission ${order.missionId} completed, drone auto-released to IDLE`);
       } catch (error) {
-        logger.error('Failed to update drone status to IDLE:', error.message);
-        // Don't fail the whole operation if drone status update fails
+        logger.error('Failed to update mission status:', error.message);
+        // Don't fail the whole operation if status update fails
       }
     }
     
