@@ -149,11 +149,40 @@ router.post('/missions', async (req, res) => {
     
     logger.info('[INTERNAL] Creating mission with data:', { orderId, droneId, missionNumber });
     
+    // Calculate distance and estimates
+    const distanceKm = 2.5; // Mock distance - in real app, calculate from coordinates
+    const etaMinutes = 15;
+    const batteryConsumption = 20;
+    
     const mission = new DeliveryMission({
       orderId,
       droneId,
+      restaurantId,
       missionNumber,
-      status: 'QUEUED'
+      status: 'PENDING',
+      route: {
+        pickup: {
+          location: {
+            type: 'Point',
+            coordinates: [0, 0] // Restaurant coordinates - should get from restaurant service
+          },
+          address: 'Restaurant Address'
+        },
+        delivery: {
+          location: deliveryAddress.location,
+          address: deliveryAddress.address || deliveryAddress.street,
+          contactPhone: deliveryAddress.contactPhone,
+          contactName: deliveryAddress.contactName
+        }
+      },
+      estimates: {
+        distanceKm,
+        etaMinutes,
+        batteryConsumption
+      },
+      parameters: {
+        payloadWeight: payloadWeight || 500
+      }
     });
     
     await mission.save();
@@ -168,6 +197,7 @@ router.post('/missions', async (req, res) => {
           _id: mission._id,
           orderId: mission.orderId,
           droneId: mission.droneId,
+          restaurantId: mission.restaurantId,
           missionNumber: mission.missionNumber,
           status: mission.status
         }
