@@ -9,6 +9,7 @@
 - **Lê Thanh Hùng** – [Mã sinh viên]
 
 ---
+
 ## 🎯 Giới thiệu
 
 **Fast Food Delivery Drone System** là nền tảng giao đồ ăn hiện đại, tự động hóa việc giao hàng bằng drone.  
@@ -24,51 +25,61 @@ Hệ thống được xây dựng theo **kiến trúc microservices**, đảm b�
 
 ## ✨ Tính năng chính
 
-### 👤 Customer
-- Đăng ký / Đăng nhập  
-- Duyệt danh sách nhà hàng và món ăn  
-- Đặt món và thanh toán MoMo (QR + App-to-App)  
-- Theo dõi drone giao hàng trực tiếp  
-- Xem lịch sử đơn hàng  
+### 👤 Khách hàng (Customer)
+- ✅ Đăng ký / Đăng nhập tài khoản
+- ✅ Duyệt danh sách nhà hàng và món ăn
+- ✅ Đặt món ăn và thanh toán MoMo (QR code + App-to-App)
+- ✅ Theo dõi drone giao hàng **real-time** trên bản đồ
+- ✅ Xem lịch sử đơn hàng
 
-### 🍴 Restaurant
-- Quản lý menu, đơn hàng và drone  
-- Theo dõi doanh thu và nhiệm vụ giao hàng  
-- Nhận thông báo real-time  
+### 🍴 Nhà hàng (Restaurant)
+- ✅ Quản lý menu (thêm, sửa, xóa món ăn)
+- ✅ Quản lý đơn hàng (xác nhận, từ chối, xử lý)
+- ✅ Quản lý drone giao hàng
+- ✅ Theo dõi doanh thu
+- ✅ Theo dõi nhiệm vụ giao hàng
+- ✅ Nhận thông báo **real-time**
 
-### 👨‍💼 Admin
-- Quản lý người dùng, nhà hàng, đơn hàng  
-- Duyệt nhà hàng mới đăng ký  
-- Thống kê và báo cáo toàn hệ thống  
+### 👨‍💼 Quản trị viên (Admin)
+- ✅ Quản lý người dùng hệ thống
+- ✅ Quản lý nhà hàng (phê duyệt, cấp quyền)
+- ✅ Quản lý đơn hàng toàn hệ thống
+- ✅ Duyệt nhà hàng mới đăng ký
+- ✅ Xem thống kê và báo cáo toàn hệ thống
 
 ---
 
 ## 🏗️ Kiến trúc hệ thống
 
 **Microservices chính:**
-- API Gateway  
-- User Service  
-- Restaurant Service  
-- Order Service  
-- Drone Service  
-- Payment Service  
+- **API Gateway** – Điểm vào duy nhất cho tất cả request
+- **User Service** – Quản lý xác thực và tài khoản người dùng
+- **Restaurant Service** – Quản lý nhà hàng và menu
+- **Order Service** – Quản lý đơn hàng và logic giao hàng
+- **Drone Service** – Quản lý drone, tracking vị trí real-time
+- **Payment Service** – Xử lý thanh toán MoMo
+
+**Frontend:**
+- Customer Interface  
+- Restaurant Dashboard  
+- Admin Dashboard  
 
 **Database:** MongoDB  
-**Frontend:** React + Vite  
-**Realtime:** Socket.IO  
+**Realtime Communication:** Socket.IO  
 
 ---
 
-## 🛠️ Công nghệ
+## 🛠️ Công nghệ sử dụng
 
 | Loại | Công nghệ |
 |------|------------|
 | **Frontend** | React, Vite, TailwindCSS, Axios, Zustand |
 | **Backend** | Node.js, Express, MongoDB, Mongoose |
 | **Realtime** | Socket.IO |
-| **Auth** | JWT, Bcrypt |
-| **Payment** | MoMo API |
-| **DevOps** | Docker, Nginx, Concurrently |
+| **Authentication** | JWT, Bcrypt |
+| **Payment Gateway** | MoMo API |
+| **DevOps** | Docker, Nginx |
+| **Build Tools** | Concurrently, npm |
 
 ---
 
@@ -84,3 +95,24 @@ npm run install:all
 
 # Chạy toàn bộ hệ thống
 npm run microservices:start
+```
+
+---
+
+## 📂 Cấu trúc dự án
+
+```
+food-fast-delivery/
+├── services/
+│   ├── api-gateway/
+│   ├── user-service/
+│   ├── restaurant-service/
+│   ├── order-service/
+│   ├── drone-service/
+│   └── payment-service/
+├── client/
+│   ├── customer/
+│   ├── restaurant/
+│   └── admin/
+└── docker-compose.yml
+```
