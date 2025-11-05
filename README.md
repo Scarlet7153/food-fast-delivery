@@ -6,7 +6,7 @@
 
 ## 👥 Thành viên thực hiện
 - **Võ Duy Toàn** – 3122411218  
-- **Lê Thanh Hùng** – [Mã sinh viên]
+- **Lê Thanh Hùng** – 3122411059
 
 ---
 ## 🎯 Giới thiệu
