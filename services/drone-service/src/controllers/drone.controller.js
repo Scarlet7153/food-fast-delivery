@@ -295,59 +295,6 @@ const updateDroneLocation = async (req, res) => {
   }
 };
 
-// Schedule maintenance
-const scheduleMaintenance = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { daysFromNow = 30 } = req.body;
-    
-    const drone = await Drone.findById(id);
-    if (!drone) {
-      return res.status(404).json({
-        success: false,
-        error: 'Drone not found'
-      });
-    }
-    
-    // Check if user owns the restaurant
-    try {
-      const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${req.user._id}`);
-      const restaurant = restaurantResponse.data.data.restaurant;
-      
-      if (drone.restaurantId.toString() !== restaurant._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          error: 'You do not have permission to schedule maintenance for this drone'
-        });
-      }
-    } catch (error) {
-      return res.status(403).json({
-        success: false,
-        error: 'Restaurant not found'
-      });
-    }
-    
-    await drone.scheduleMaintenance(daysFromNow);
-    
-    logger.info(`Maintenance scheduled for drone: ${drone.name}`);
-    
-    res.json({
-      success: true,
-      message: 'Maintenance scheduled successfully',
-      data: {
-        drone
-      }
-    });
-    
-  } catch (error) {
-    logger.error('Schedule maintenance error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to schedule maintenance'
-    });
-  }
-};
-
 // Get available drones
 const getAvailableDrones = async (req, res) => {
   try {
@@ -404,21 +351,16 @@ const getDroneStatistics = async (req, res) => {
       status: 'IDLE',
       batteryLevel: { $gte: 30 }
     });
-    const inFlightDrones = await Drone.countDocuments({ 
+    const busyDrones = await Drone.countDocuments({ 
       restaurantId, 
-      status: 'IN_FLIGHT' 
-    });
-    const maintenanceDrones = await Drone.countDocuments({ 
-      restaurantId, 
-      status: 'MAINTENANCE' 
+      status: 'BUSY' 
     });
     
     const stats = {
       totalDrones,
       availableDrones,
-      inFlightDrones,
-      maintenanceDrones,
-      utilizationRate: totalDrones > 0 ? Math.round((inFlightDrones / totalDrones) * 100) : 0
+      busyDrones,
+      utilizationRate: totalDrones > 0 ? Math.round((busyDrones / totalDrones) * 100) : 0
     };
     
     res.json({
@@ -483,7 +425,6 @@ module.exports = {
   updateDrone,
   updateDroneStatus,
   updateDroneLocation,
-  scheduleMaintenance,
   getAvailableDrones,
   getDroneStatistics
 };
