@@ -2,7 +2,17 @@ name: API Gateway CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branc  # Job 2: Build and Push Docker Image
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:ain, develop ]
     paths:
       - 'services/api-gateway/**'
       - '.github/workflows/api-gateway.yml'
