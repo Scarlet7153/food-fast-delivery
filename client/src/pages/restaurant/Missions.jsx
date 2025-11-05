@@ -43,6 +43,20 @@ function RestaurantMissions() {
     }
   )
 
+  // Start flight simulation mutation
+  const startSimulationMutation = useMutation(
+    (missionId) => missionService.startFlightSimulation(missionId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['restaurant-missions'])
+        toast.success('Bắt đầu giả lập bay - Drone đang giao hàng!')
+      },
+      onError: (error) => {
+        toast.error('Không thể khởi động giả lập bay')
+      }
+    }
+  )
+
   // Assign drone mutation
   const assignDroneMutation = useMutation(
     ({ missionId, droneId }) => missionService.assignDroneToMission(missionId, droneId),
@@ -112,6 +126,10 @@ function RestaurantMissions() {
 
   const handleAssignDrone = (missionId, droneId) => {
     assignDroneMutation.mutate({ missionId, droneId })
+  }
+
+  const handleStartSimulation = (missionId) => {
+    startSimulationMutation.mutate(missionId)
   }
 
   const getNextStatus = (currentStatus) => {
@@ -217,10 +235,11 @@ function RestaurantMissions() {
                 mission={mission} 
                 onStatusUpdate={handleStatusUpdate}
                 onAssignDrone={handleAssignDrone}
+                onStartSimulation={handleStartSimulation}
                 getNextStatus={getNextStatus}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
-                isUpdating={updateStatusMutation.isLoading || assignDroneMutation.isLoading}
+                isUpdating={updateStatusMutation.isLoading || assignDroneMutation.isLoading || startSimulationMutation.isLoading}
               />
             ))}
           </div>
@@ -257,12 +276,13 @@ function RestaurantMissions() {
 }
 
 // Mission Card Component
-function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, getStatusIcon, getStatusColor, isUpdating }) {
+function MissionCard({ mission, onStatusUpdate, onAssignDrone, onStartSimulation, getNextStatus, getStatusIcon, getStatusColor, isUpdating }) {
   const [showDroneSelect, setShowDroneSelect] = useState(false)
   const [selectedDroneId, setSelectedDroneId] = useState('')
   
   const nextStatus = getNextStatus(mission.status)
   const canUpdate = ['PENDING', 'ASSIGNED', 'IN_PROGRESS'].includes(mission.status)
+  const isInFlight = mission.status === 'IN_PROGRESS'
 
   const handleUpdateStatus = (newStatus) => {
     onStatusUpdate(mission._id, newStatus)
@@ -316,17 +336,44 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
                 </div>
               </div>
               
-              {mission.deliveryAddress && (
+              {mission.route?.delivery?.address && (
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-3 w-3" />
-                  <span>{mission.deliveryAddress.street}</span>
+                  <span>{mission.route.delivery.address}</span>
                 </div>
               )}
 
-              {mission.assignedDrone && (
+              {mission.droneId && (
                 <div className="flex items-center space-x-1">
                   <Truck className="h-3 w-3" />
-                  <span>Drone: {mission.assignedDrone.name}</span>
+                  <span>Drone: {mission.droneId.name || 'Unknown'}</span>
+                  {mission.droneId.batteryLevel && (
+                    <span className="ml-2 text-xs">
+                      🔋 {mission.droneId.batteryLevel}%
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Flight progress for IN_PROGRESS missions */}
+              {isInFlight && mission.flightPath && mission.flightPath.length > 0 && (
+                <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-blue-900">
+                      🚁 Đang bay - {mission.flightPath.length} điểm theo dõi
+                    </span>
+                    {mission.flightPath[mission.flightPath.length - 1]?.batteryPercent && (
+                      <span className="text-blue-700">
+                        Pin: {mission.flightPath[mission.flightPath.length - 1].batteryPercent}%
+                      </span>
+                    )}
+                  </div>
+                  {mission.estimates && (
+                    <div className="mt-1 text-xs text-blue-700">
+                      Khoảng cách: {mission.estimates.distanceKm?.toFixed(2)} km • 
+                      Thời gian ước tính: {mission.estimates.etaMinutes} phút
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -347,6 +394,22 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
             <Eye className="h-4 w-4" />
             <span>Xem</span>
           </button>
+
+          {/* Start simulation button for ASSIGNED missions */}
+          {mission.status === 'ASSIGNED' && (
+            <button
+              onClick={() => onStartSimulation(mission._id)}
+              disabled={isUpdating}
+              className="btn btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Truck className="h-4 w-4" />
+              )}
+              <span>Giả Lập Bay</span>
+            </button>
+          )}
 
           {canUpdate && nextStatus && (
             <button
@@ -386,7 +449,7 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, getNextStatus, ge
               }}
               className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
             >
-              Cancel
+              Hủy
             </button>
           )}
         </div>

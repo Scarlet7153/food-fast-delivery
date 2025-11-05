@@ -17,6 +17,9 @@ const queryClient = new QueryClient({
   },
 })
 
+// Make queryClient available globally for logout function
+window.queryClient = queryClient
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>

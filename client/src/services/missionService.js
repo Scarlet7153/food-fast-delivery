@@ -54,6 +54,24 @@ const missionService = {
     const response = await api.post(`/restaurant/missions/${missionId}/cancel`, { reason })
     return response.data
   },
+  
+  // Start flight simulation
+  async startFlightSimulation(missionId) {
+    const response = await api.post(`/restaurant/missions/${missionId}/simulate`)
+    return response.data
+  },
+  
+  // Stop flight simulation
+  async stopFlightSimulation(missionId) {
+    const response = await api.post(`/restaurant/missions/${missionId}/stop-simulation`)
+    return response.data
+  },
+  
+  // Get active simulations
+  async getActiveSimulations() {
+    const response = await api.get('/restaurant/simulations/active')
+    return response.data
+  },
 }
 
 export { missionService }

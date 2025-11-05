@@ -303,6 +303,16 @@ class APIGateway {
       }
     }));
 
+    // Restaurant simulation routes (protected)
+    this.app.use('/api/restaurant/simulations', this.authenticateToken.bind(this), createProxyMiddleware({
+      target: config.DRONE_SERVICE_URL,
+      changeOrigin: true,
+      timeout: 30000, // 30 seconds timeout
+      pathRewrite: {
+        '^/api/restaurant/simulations': '/api/drones/simulations'
+      }
+    }));
+
     // Restaurant owner routes (protected)
     this.app.use('/api/restaurants', this.authenticateToken.bind(this), createProxyMiddleware({
       target: config.RESTAURANT_SERVICE_URL,

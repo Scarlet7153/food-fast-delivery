@@ -4,6 +4,7 @@ const { auth, requireRole } = require('../middlewares/auth');
 const { validate, schemas } = require('../middlewares/validation');
 const droneController = require('../controllers/drone.controller');
 const missionController = require('../controllers/mission.controller');
+const simulationController = require('../controllers/simulation.controller');
 
 // Mission routes - MUST BE FIRST to avoid conflicts with /:id
 router.get('/missions', auth, requireRole('restaurant'), missionController.getRestaurantMissions);
@@ -12,6 +13,11 @@ router.get('/missions/:id', auth, requireRole('restaurant'), missionController.g
 router.post('/missions', auth, requireRole('restaurant'), validate(schemas.createMission), missionController.createMission);
 router.patch('/missions/:id/status', auth, requireRole('restaurant'), validate(schemas.updateMissionStatus), missionController.updateMissionStatus);
 router.post('/missions/:id/path', auth, requireRole('restaurant'), validate(schemas.addPathPoint), missionController.addPathPoint);
+
+// Simulation routes
+router.post('/missions/:id/simulate', auth, requireRole('restaurant'), simulationController.startFlightSimulation);
+router.post('/missions/:id/stop-simulation', auth, requireRole('restaurant'), simulationController.stopFlightSimulation);
+router.get('/simulations/active', auth, requireRole('restaurant'), simulationController.getActiveSimulations);
 
 // Drone routes - Specific routes BEFORE /:id
 router.get('/', auth, requireRole('restaurant'), droneController.getRestaurantDrones);
