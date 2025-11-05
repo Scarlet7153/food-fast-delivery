@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest"
+    "test": "jest",
+    "cleanup:menuitem": "node scripts/cleanup-menuitem.js",
+    "migrate:menuitem": "node scripts/migrate-menuitem.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
