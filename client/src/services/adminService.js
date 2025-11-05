@@ -108,9 +108,15 @@ export const adminService = {
     const response = await api.get('/admin/analytics/revenue', { params })
     return response.data
   },
+// Tổng doanh thu toàn hệ thống
+async getTotalRevenue(params = {}) {
+  const response = await api.get('/admin/analytics/total-revenue', { params })
+  return response.data
+},
 
   async getOrderReport(params = {}) {
     const response = await api.get('/admin/analytics/orders', { params })
     return response.data
   }
 }
+
