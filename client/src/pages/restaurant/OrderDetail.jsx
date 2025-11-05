@@ -234,13 +234,13 @@ function RestaurantOrderDetail() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Tên drone:</span>
                 <span className="text-sm font-medium text-blue-800">
-                  {order.droneInfo?.name || 'Drone Backup 1'}
+                  {order.droneInfo?.name || 'Chưa phân công'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Model:</span>
                 <span className="text-sm font-medium text-blue-800">
-                  {order.droneInfo?.model || 'DJI Mini 3'}
+                  {order.droneInfo?.model || 'N/A'}
                 </span>
               </div>
               <div className="flex items-center justify-between">

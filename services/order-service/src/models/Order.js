@@ -180,6 +180,14 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DeliveryMission'
   },
+  droneInfo: {
+    id: mongoose.Schema.Types.ObjectId,
+    name: String,
+    model: String,
+    maxPayloadGrams: Number,
+    maxRangeMeters: Number,
+    status: String
+  },
   // Customer feedback
   rating: {
     food: {

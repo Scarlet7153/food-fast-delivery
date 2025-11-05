@@ -155,14 +155,6 @@ const getAllDrones = async (req, res) => {
     }
     
     const drones = await Drone.find(query)
-      .populate({
-        path: 'currentMission',
-        select: 'missionNumber orderId status createdAt',
-        populate: {
-          path: 'orderId',
-          select: 'orderNumber'
-        }
-      })
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -192,26 +184,48 @@ const getAllDrones = async (req, res) => {
       }
     }
     
-    // Transform drones to include restaurant info
+    // Fetch current missions for drones
+    const droneIds = drones.map(d => d._id);
+    const currentMissions = await DeliveryMission.find({
+      droneId: { $in: droneIds },
+      status: { $in: ['PENDING', 'ASSIGNED', 'IN_FLIGHT'] }
+    }).lean();
+    
+    const missionsMap = currentMissions.reduce((map, mission) => {
+      map[mission.droneId.toString()] = mission;
+      return map;
+    }, {});
+    
+    // Transform drones to include restaurant info and current mission
     const dronesWithRestaurants = drones.map(drone => ({
       ...drone,
       restaurant: restaurantsMap[drone.restaurantId?.toString()] || null,
+      currentMission: missionsMap[drone._id.toString()] || null,
       lastUpdatedAt: drone.updatedAt
     }));
     
-    // Get unique restaurants from drones for filter
-    const allRestaurants = Object.values(restaurantsMap)
-      .filter(Boolean)
-      .map(restaurant => ({
-        _id: restaurant._id,
-        name: restaurant.name
-      }));
+    // Get ALL unique restaurants for filter dropdown (not just from current page)
+    let allRestaurantsForFilter = [];
+    try {
+      // Fetch approved restaurants from restaurant service (internal endpoint)
+      const restaurantsResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/internal/restaurants`, {
+        params: { 
+          limit: 1000
+        }
+      });
+      
+      if (restaurantsResponse.data.success && restaurantsResponse.data.data.restaurants) {
+        allRestaurantsForFilter = restaurantsResponse.data.data.restaurants;
+      }
+    } catch (error) {
+      logger.warn('Failed to fetch restaurants for filter:', error.message);
+    }
     
     res.json({
       success: true,
       data: {
         drones: dronesWithRestaurants,
-        restaurants: allRestaurants,
+        restaurants: allRestaurantsForFilter,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -235,16 +249,7 @@ const getDroneById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const drone = await Drone.findById(id)
-      .populate({
-        path: 'currentMission',
-        select: 'missionNumber orderId status createdAt',
-        populate: {
-          path: 'orderId',
-          select: 'orderNumber'
-        }
-      })
-      .lean();
+    const drone = await Drone.findById(id).lean();
       
     if (!drone) {
       return res.status(404).json({
@@ -264,15 +269,81 @@ const getDroneById = async (req, res) => {
       }
     }
     
+    // Fetch and enrich current mission
+    let currentMission = null;
+    if (drone.currentMission) {
+      try {
+        const mission = await DeliveryMission.findById(drone.currentMission)
+          .select('_id missionNumber orderId restaurantId status createdAt')
+          .lean();
+        
+        if (mission) {
+          // Fetch order info
+          let orderInfo = null;
+          if (mission.orderId) {
+            try {
+              const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/internal/orders/${mission.orderId}`);
+              orderInfo = {
+                orderNumber: orderResponse.data.data.order.orderNumber
+              };
+            } catch (error) {
+              logger.warn('Failed to fetch order details for current mission:', error);
+            }
+          }
+          
+          // Fetch restaurant info for mission
+          let missionRestaurant = null;
+          if (mission.restaurantId) {
+            try {
+              const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/${mission.restaurantId}`);
+              missionRestaurant = restaurantResponse.data.data.restaurant;
+            } catch (error) {
+              logger.warn('Failed to fetch restaurant details for current mission:', error);
+            }
+          }
+          
+          currentMission = {
+            ...mission,
+            orderId: orderInfo,
+            restaurant: missionRestaurant
+          };
+        }
+      } catch (error) {
+        logger.warn('Failed to fetch current mission:', error);
+      }
+    }
+    
     // Fetch recent missions
     let recentMissions = [];
     try {
       recentMissions = await DeliveryMission.find({ droneId: id })
-        .select('_id missionNumber orderId status createdAt completedAt')
-        .populate('orderId', 'orderNumber')
+        .select('_id missionNumber orderId restaurantId status createdAt completedAt')
         .sort({ createdAt: -1 })
         .limit(10)
         .lean();
+      
+      // Enrich missions with restaurant info
+      const missionRestaurantIds = [...new Set(recentMissions.map(m => m.restaurantId?.toString()).filter(Boolean))];
+      
+      if (missionRestaurantIds.length > 0) {
+        const restaurantsPromises = missionRestaurantIds.map(id =>
+          axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/${id}`)
+            .then(res => ({ id, restaurant: res.data.data.restaurant }))
+            .catch(() => ({ id, restaurant: null }))
+        );
+        
+        const restaurantsData = await Promise.all(restaurantsPromises);
+        const restaurantsMap = restaurantsData.reduce((map, { id, restaurant }) => {
+          if (restaurant) map[id] = restaurant;
+          return map;
+        }, {});
+        
+        // Add restaurant info to missions
+        recentMissions = recentMissions.map(mission => ({
+          ...mission,
+          restaurant: restaurantsMap[mission.restaurantId?.toString()] || null
+        }));
+      }
     } catch (error) {
       logger.warn('Failed to fetch recent missions:', error);
     }
@@ -283,6 +354,7 @@ const getDroneById = async (req, res) => {
         drone: {
           ...drone,
           restaurant,
+          currentMission,
           recentMissions,
           lastUpdatedAt: drone.updatedAt
         }
@@ -406,12 +478,6 @@ const getStatistics = async (req, res) => {
       }
     ]);
 
-    // Average battery levels
-    const avgBatteryLevel = await Drone.aggregate([
-      { $match: { status: { $ne: 'maintenance' } } },
-      { $group: { _id: null, avgBattery: { $avg: '$batteryPercent' } } }
-    ]);
-
     // Mission completion rate
     const completionRate = totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0;
 
@@ -452,7 +518,6 @@ const getStatistics = async (req, res) => {
           idle: idleDrones,
           inFlight: inFlightDrones,
           maintenance: maintenanceDrones,
-          averageBattery: avgBatteryLevel[0]?.avgBattery || 0,
           statusDistribution: droneStatusDistribution
         },
         missions: {

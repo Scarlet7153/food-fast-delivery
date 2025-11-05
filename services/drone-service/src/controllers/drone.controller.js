@@ -348,8 +348,7 @@ const getDroneStatistics = async (req, res) => {
     const totalDrones = await Drone.countDocuments({ restaurantId });
     const availableDrones = await Drone.countDocuments({ 
       restaurantId, 
-      status: 'IDLE',
-      batteryLevel: { $gte: 30 }
+      status: 'IDLE'
     });
     const busyDrones = await Drone.countDocuments({ 
       restaurantId, 
@@ -389,7 +388,6 @@ const getAllDrones = async (req, res) => {
     if (restaurantId) query.restaurantId = restaurantId;
     
     const drones = await Drone.find(query)
-      .populate('restaurantId', 'name')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);

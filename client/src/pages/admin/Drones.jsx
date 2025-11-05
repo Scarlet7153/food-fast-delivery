@@ -6,7 +6,7 @@ import {
   Search, Filter, Truck, MapPin, Activity, 
   CheckCircle, XCircle, AlertTriangle, Eye, Settings, Battery
 } from 'lucide-react'
-import { formatDateTime, formatDroneStatus, formatWeight, formatDistance } from '../../utils/formatters'
+import { formatDateTime, formatDroneStatus, formatWeight, formatDistance, formatMissionStatus } from '../../utils/formatters'
 import { t } from '../../utils/translations'
 
 function AdminDrones() {
@@ -22,7 +22,7 @@ function AdminDrones() {
     () => adminService.getAllDrones({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      restaurant: restaurantFilter !== 'all' ? restaurantFilter : undefined
+      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined
     }),
     {
       staleTime: 2 * 60 * 1000, // 2 minutes
@@ -192,11 +192,6 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor }) {
       {/* Drone Info */}
       <div className="space-y-2 mb-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">Nhà hàng</span>
-          <span className="font-medium text-gray-900">{drone.restaurant?.name}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">Tải Trọng Tối Đa</span>
           <span className="font-medium">{formatWeight(drone.maxPayloadGrams)}</span>
         </div>
@@ -215,13 +210,13 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor }) {
             <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
           </div>
           <p className="text-sm text-blue-700">
-            Order #{drone.currentMission.orderId?.orderNumber || 'N/A'}
+            Mission #{drone.currentMission.missionNumber || drone.currentMission._id || 'N/A'}
           </p>
         </div>
       )}
 
-      {/* Location */}
-      {drone.currentLocation && (
+      {/* Location - Only show if exists */}
+      {drone.currentLocation?.lat && drone.currentLocation?.lng && (
         <div className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
           <MapPin className="h-4 w-4" />
           <span className="text-xs">
@@ -294,7 +289,6 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
             <div className="flex-1">
               <h3 className="text-2xl font-bold text-gray-900">{drone.name}</h3>
               <p className="text-gray-600 mb-2">{drone.model}</p>
-              <p className="text-sm text-gray-500">Serial: {drone.serialNumber}</p>
             </div>
           </div>
 
@@ -328,8 +322,8 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Nhà hàng</span>
-                  <span className="font-medium">{drone.restaurant?.name}</span>
+                  <span className="text-gray-600">Nhà Hàng</span>
+                  <span className="font-medium text-sm">{drone.restaurant?.name || 'Chưa phân công'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Ngày Đăng Ký</span>
@@ -344,7 +338,7 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
           </div>
 
           {/* Current Location */}
-          {drone.currentLocation && (
+          {drone.currentLocation?.lat && drone.currentLocation?.lng && (
             <div>
               <h4 className="text-lg font-medium mb-4">Vị Trí Hiện Tại</h4>
               <div className="bg-gray-50 rounded-lg p-4">
@@ -357,9 +351,11 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
                     <p className="text-gray-900">
                       Kinh độ: {drone.currentLocation.lng.toFixed(6)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Cập nhật lần cuối: {formatDateTime(drone.currentLocation.timestamp)}
-                    </p>
+                    {drone.currentLocation.timestamp && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Cập nhật lần cuối: {formatDateTime(drone.currentLocation.timestamp)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -388,13 +384,19 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Trạng Thái Đơn Giao
                     </label>
-                    <p className="text-gray-900">{drone.currentMission.status}</p>
+                    <p className="text-gray-900">{formatMissionStatus(drone.currentMission.status)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nhà Hàng
+                    </label>
+                    <p className="text-gray-900">{drone.currentMission.restaurant?.name || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Bắt Đầu Lúc
                     </label>
-                    <p className="text-gray-900">{formatDateTime(drone.currentMission.startedAt)}</p>
+                    <p className="text-gray-900">{formatDateTime(drone.currentMission.createdAt || drone.currentMission.startedAt)}</p>
                   </div>
                 </div>
               </div>
@@ -418,18 +420,19 @@ function DroneDetailModal({ drone: initialDrone, onClose }) {
                 {drone.recentMissions?.length > 0 ? (
                   drone.recentMissions.map((mission) => (
                     <div key={mission._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">Đơn giao #{mission._id.slice(-6)}</p>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">Đơn giao #{mission.missionNumber || mission._id.slice(-6)}</p>
                         <p className="text-sm text-gray-600">
-                          Order #{mission.orderId?.orderNumber || 'N/A'} • {formatDateTime(mission.createdAt)}
+                          {mission.restaurant?.name || 'N/A'} • {formatDateTime(mission.createdAt)}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        mission.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        mission.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                         mission.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                        mission.status === 'IN_FLIGHT' ? 'bg-blue-100 text-blue-800' :
                         'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {mission.status}
+                        {formatMissionStatus(mission.status)}
                       </span>
                     </div>
                   ))

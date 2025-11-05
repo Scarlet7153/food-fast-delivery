@@ -511,8 +511,6 @@ const rejectRestaurant = async (req, res) => {
 // Get my restaurant (Restaurant owner)
 const getMyRestaurant = async (req, res) => {
   try {
-    logger.info(`Get my restaurant for user: ${req.user?._id || req.user?.userId}`);
-    
     // Handle both _id and userId from JWT token
     const userId = req.user._id || req.user.userId;
     
@@ -546,8 +544,6 @@ const getMyRestaurant = async (req, res) => {
       restaurantObj.status = 'approved';
     }
     
-    logger.info(`Restaurant found: ${restaurant.name} - Status: ${restaurantObj.status}`);
-    
     res.json({
       success: true,
       data: {
@@ -571,8 +567,6 @@ const updateMyRestaurant = async (req, res) => {
     const updateData = req.body;
     const userId = req.user._id || req.user.userId;
     
-    logger.info(`Updating restaurant for user: ${userId}`);
-    
     const restaurant = await Restaurant.findOneAndUpdate(
       { ownerUserId: userId },
       updateData,
@@ -585,8 +579,6 @@ const updateMyRestaurant = async (req, res) => {
         error: 'Restaurant not found'
       });
     }
-    
-    logger.info(`Restaurant updated: ${restaurant.name}`);
     
     res.json({
       success: true,
@@ -679,8 +671,36 @@ const updateRestaurantStatus = async (req, res) => {
   }
 };
 
+// Internal API - Get all restaurants (for service-to-service communication)
+const getAllRestaurantsInternal = async (req, res) => {
+  try {
+    const { limit = 1000 } = req.query;
+    
+    // Return only approved restaurants for admin filters
+    const restaurants = await Restaurant.find({ approved: true })
+      .select('_id name')
+      .limit(limit * 1)
+      .sort({ name: 1 });
+    
+    res.json({
+      success: true,
+      data: {
+        restaurants
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Get all restaurants (internal) error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get restaurants'
+    });
+  }
+};
+
 module.exports = {
   getAllRestaurants,
+  getAllRestaurantsInternal,
   getRestaurantById,
   getRestaurantByOwner,
   createRestaurant,

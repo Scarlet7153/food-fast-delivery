@@ -66,10 +66,28 @@ const getAllOrders = async (req, res) => {
 
     const total = await Order.countDocuments(filter);
 
+    // Get ALL restaurants for filter dropdown
+    let allRestaurantsForFilter = [];
+    try {
+      // Fetch ALL restaurants from restaurant service (internal endpoint - no auth required)
+      const restaurantsResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/internal/restaurants`, {
+        params: { 
+          limit: 1000
+        }
+      });
+      
+      if (restaurantsResponse.data.success && restaurantsResponse.data.data.restaurants) {
+        allRestaurantsForFilter = restaurantsResponse.data.data.restaurants;
+      }
+    } catch (error) {
+      logger.warn('Failed to fetch restaurants for filter:', error.message);
+    }
+
     res.json({
       success: true,
       data: {
         orders,
+        restaurants: allRestaurantsForFilter,
         pagination: {
           current: parseInt(page),
           pages: Math.ceil(total / limit),

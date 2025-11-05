@@ -24,12 +24,6 @@ const droneSchema = new mongoose.Schema({
     default: 'IDLE',
     required: true,
   },
-  batteryLevel: {
-    type: Number,
-    default: 100,
-    min: [0, 'Battery level cannot be negative'],
-    max: [100, 'Battery level cannot exceed 100']
-  },
   maxPayloadGrams: {
     type: Number,
     default: 2000,
@@ -77,7 +71,7 @@ droneSchema.index({ status: 1 });
 
 // Instance method to check if drone is available
 droneSchema.methods.isAvailable = function() {
-  return this.status === 'IDLE' && this.batteryLevel >= 20;
+  return this.status === 'IDLE';
 };
 
 // Instance method to update location
@@ -110,11 +104,10 @@ droneSchema.methods.updateStatus = function(newStatus) {
 };
 
 // Static method to find available drones
-droneSchema.statics.findAvailable = function(restaurantId, minBattery = 30) {
+droneSchema.statics.findAvailable = function(restaurantId) {
   return this.find({
     restaurantId,
-    status: 'IDLE',
-    batteryLevel: { $gte: minBattery }
+    status: 'IDLE'
   });
 };
 

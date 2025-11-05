@@ -460,18 +460,81 @@ const getAllMissions = async (req, res) => {
     
     const missions = await DeliveryMission.find(query)
       .populate('droneId', 'name model')
-      .populate('restaurantId', 'name')
-      .populate('orderId', 'orderNumber')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
     const total = await DeliveryMission.countDocuments(query);
     
+    // Enrich missions with order and restaurant info
+    const enrichedMissions = await Promise.all(
+      missions.map(async (mission) => {
+        const missionObj = mission.toObject();
+        
+        // Fetch order info
+        if (mission.orderId) {
+          try {
+            const orderResponse = await axios.get(
+              `${config.ORDER_SERVICE_URL}/api/orders/${mission.orderId}`,
+              { headers: req.headers }
+            );
+            missionObj.order = {
+              orderNumber: orderResponse.data.data.order.orderNumber,
+              totalAmount: orderResponse.data.data.order.totalAmount,
+              customer: orderResponse.data.data.order.customer,
+              items: orderResponse.data.data.order.items,
+              deliveryAddress: orderResponse.data.data.order.deliveryAddress
+            };
+          } catch (error) {
+            logger.warn(`Failed to fetch order ${mission.orderId}:`, error.message);
+            missionObj.order = null;
+          }
+        }
+        
+        // Fetch restaurant info
+        if (mission.restaurantId) {
+          try {
+            const restaurantResponse = await axios.get(
+              `${config.RESTAURANT_SERVICE_URL}/api/restaurants/${mission.restaurantId}`
+            );
+            missionObj.restaurant = {
+              name: restaurantResponse.data.data.restaurant.name,
+              phone: restaurantResponse.data.data.restaurant.phone,
+              address: restaurantResponse.data.data.restaurant.address,
+              location: restaurantResponse.data.data.restaurant.location
+            };
+          } catch (error) {
+            logger.warn(`Failed to fetch restaurant ${mission.restaurantId}:`, error.message);
+            missionObj.restaurant = null;
+          }
+        }
+        
+        return missionObj;
+      })
+    );
+    
+    // Get ALL unique restaurants for filter dropdown
+    let allRestaurantsForFilter = [];
+    try {
+      // Fetch approved restaurants from restaurant service (internal endpoint)
+      const restaurantsResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/internal/restaurants`, {
+        params: { 
+          limit: 1000
+        }
+      });
+      
+      if (restaurantsResponse.data.success && restaurantsResponse.data.data.restaurants) {
+        allRestaurantsForFilter = restaurantsResponse.data.data.restaurants;
+      }
+    } catch (error) {
+      logger.warn('Failed to fetch restaurants for filter:', error.message);
+    }
+    
     res.json({
       success: true,
       data: {
-        missions,
+        missions: enrichedMissions,
+        restaurants: allRestaurantsForFilter,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

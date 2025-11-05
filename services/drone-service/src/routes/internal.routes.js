@@ -8,6 +8,40 @@ const logger = require('../utils/logger');
 // These routes should NOT be exposed through API Gateway
 
 /**
+ * Get mission by ID (internal)
+ * Used by Order Service to fetch drone info
+ */
+router.get('/missions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const mission = await DeliveryMission.findById(id)
+      .populate('droneId', 'name model status');
+    
+    if (!mission) {
+      return res.status(404).json({
+        success: false,
+        error: 'Mission not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        mission
+      }
+    });
+    
+  } catch (error) {
+    logger.error('[INTERNAL] Get mission error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get mission'
+    });
+  }
+});
+
+/**
  * Update drone status (internal)
  * Used by Order Service when delivery is confirmed
  */
@@ -149,40 +183,12 @@ router.post('/missions', async (req, res) => {
     
     logger.info('[INTERNAL] Creating mission with data:', { orderId, droneId, missionNumber });
     
-    // Calculate distance and estimates
-    const distanceKm = 2.5; // Mock distance - in real app, calculate from coordinates
-    const etaMinutes = 15;
-    const batteryConsumption = 20;
-    
     const mission = new DeliveryMission({
       orderId,
       droneId,
       restaurantId,
       missionNumber,
-      status: 'PENDING',
-      route: {
-        pickup: {
-          location: {
-            type: 'Point',
-            coordinates: [0, 0] // Restaurant coordinates - should get from restaurant service
-          },
-          address: 'Restaurant Address'
-        },
-        delivery: {
-          location: deliveryAddress.location,
-          address: deliveryAddress.address || deliveryAddress.street,
-          contactPhone: deliveryAddress.contactPhone,
-          contactName: deliveryAddress.contactName
-        }
-      },
-      estimates: {
-        distanceKm,
-        etaMinutes,
-        batteryConsumption
-      },
-      parameters: {
-        payloadWeight: payloadWeight || 500
-      }
+      status: 'PENDING'
     });
     
     await mission.save();
