@@ -22,6 +22,11 @@ const useAuthStore = create(
         try {
           set({ isLoading: true })
           
+          // Clear any existing cache before login
+          if (window.queryClient) {
+            window.queryClient.clear()
+          }
+          
           const response = await authService.login(credentials)
           const { user, accessToken, refreshToken } = response.data
 
@@ -49,6 +54,11 @@ const useAuthStore = create(
       register: async (userData) => {
         try {
           set({ isLoading: true })
+          
+          // Clear any existing cache before register
+          if (window.queryClient) {
+            window.queryClient.clear()
+          }
           
           const response = await authService.register(userData)
           
@@ -93,7 +103,29 @@ const useAuthStore = create(
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
           
+          // Clear all cached data in localStorage that might be user-specific
+          // Remove any cached restaurant data, orders, etc.
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('restaurant-') || 
+                key.startsWith('order-') || 
+                key.startsWith('mission-') ||
+                key.startsWith('drone-') ||
+                key.startsWith('menu-')) {
+              localStorage.removeItem(key)
+            }
+          })
+          
+          // Clear React Query cache (if available)
+          if (window.queryClient) {
+            window.queryClient.clear()
+          }
+          
           toast.success('Đăng xuất thành công')
+          
+          // Force reload to clear all state
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 500)
         }
       },
 
@@ -254,10 +286,28 @@ const useAuthStore = create(
 
       // Force logout (for token expiration)
       forceLogout: () => {
+        // Clear state and localStorage
         set({ user: null, isAuthenticated: false })
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
+        
+        // Clear all cached data
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('restaurant-') || 
+              key.startsWith('order-') || 
+              key.startsWith('mission-') ||
+              key.startsWith('drone-') ||
+              key.startsWith('menu-')) {
+            localStorage.removeItem(key)
+          }
+        })
+        
+        // Clear React Query cache
+        if (window.queryClient) {
+          window.queryClient.clear()
+        }
+        
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
       },
     }),

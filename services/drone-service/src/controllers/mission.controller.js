@@ -3,6 +3,7 @@ const Drone = require('../models/Drone');
 const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../config/env');
+const { autoStartSimulation } = require('./simulation.controller');
 
 // Create delivery mission
 const createMission = async (req, res) => {
@@ -115,6 +116,12 @@ const createMission = async (req, res) => {
     }
     
     logger.info(`New delivery mission created: ${mission.missionNumber} for order ${orderId}`);
+    
+    // Auto-start flight simulation
+    const io = req.app.get('io');
+    if (io) {
+      autoStartSimulation(mission._id.toString(), io);
+    }
     
     res.status(201).json({
       success: true,
