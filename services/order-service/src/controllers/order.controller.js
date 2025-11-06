@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const axios = require('axios');
 const config = require('../config/env');
 
+// Order Controller - Updated to fetch restaurants for filter
 // Create order
 const createOrder = async (req, res) => {
   try {
@@ -15,21 +16,17 @@ const createOrder = async (req, res) => {
     let restaurant;
     let menuItems;
     try {
-      console.log('Checking restaurant:', orderData.restaurantId);
       const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/${orderData.restaurantId}`);
-      console.log('Restaurant response:', restaurantResponse.data);
       restaurant = restaurantResponse.data.data.restaurant;
       menuItems = restaurantResponse.data.data.menuItems;
       
       if (!restaurant.active || !restaurant.approved) {
-        console.log('Restaurant not available:', { active: restaurant.active, approved: restaurant.approved });
         return res.status(400).json({
           success: false,
           error: 'Restaurant is not available for orders'
         });
       }
     } catch (error) {
-      console.log('Restaurant validation error:', error.message);
       return res.status(404).json({
         success: false,
         error: 'Restaurant not found'
@@ -174,6 +171,25 @@ const getOrderById = async (req, res) => {
       phone: order.deliveryAddress?.contactPhone || ''
     };
     
+    // If order has missionId but no droneInfo, fetch from drone service
+    if (order.missionId && !order.droneInfo?.name) {
+      try {
+        const droneResponse = await axios.get(`${config.DRONE_SERVICE_URL}/api/internal/missions/${order.missionId}`);
+        const mission = droneResponse.data.data.mission;
+        
+        if (mission && mission.droneId) {
+          enrichedOrder.droneInfo = {
+            id: mission.droneId._id,
+            name: mission.droneId.name,
+            model: mission.droneId.model,
+            status: mission.droneId.status
+          };
+        }
+      } catch (error) {
+        logger.warn('Failed to fetch drone info from mission:', error.message);
+      }
+    }
+    
     res.json({
       success: true,
       data: {
@@ -237,7 +253,6 @@ const updateOrderStatus = async (req, res) => {
     try {
       await order.updateStatus(status, req.user._id, note);
     } catch (error) {
-      console.log('Status update error:', error.message);
       return res.status(400).json({
         success: false,
         error: error.message
@@ -436,7 +451,7 @@ const getOrderStatistics = async (req, res) => {
     res.json({
       success: true,
       data: {
-        statistics: stats[0] || {
+        stats: stats[0] || {
           totalOrders: 0,
           completedOrders: 0,
           totalRevenue: 0,
@@ -591,19 +606,6 @@ const getAllOrders = async (req, res) => {
     // Filter by search query on frontend (only orderNumber, customer name, phone)
     let filteredOrders = enrichedOrders;
     if (search) {
-      console.log('=== Search Debug ===');
-      console.log('Search query:', search);
-      console.log('Total orders:', enrichedOrders.length);
-      
-      // Log first order to see structure
-      if (enrichedOrders.length > 0) {
-        console.log('Sample order data:');
-        console.log('- orderNumber:', enrichedOrders[0].orderNumber);
-        console.log('- deliveryAddress:', enrichedOrders[0].deliveryAddress);
-        console.log('- contactName:', enrichedOrders[0].deliveryAddress?.contactName);
-        console.log('- contactPhone:', enrichedOrders[0].deliveryAddress?.contactPhone);
-      }
-      
       // Function to remove Vietnamese accents for better search
       const removeAccents = (str) => {
         if (!str) return '';
@@ -631,37 +633,32 @@ const getAllOrders = async (req, res) => {
           return fieldLower.includes(searchLower) || fieldNoAccent.includes(searchNoAccent);
         });
         
-        if (matches) {
-          console.log('✓ Found match in order:', order.orderNumber);
-        }
-        
         return matches;
       });
-      
-      console.log('Filtered orders:', filteredOrders.length);
-      console.log('===================');
     }
     
-    // Get unique restaurants from all orders (not just current page)
-    const allOrders = await Order.find({}).select('restaurantId restaurant');
-    const restaurantsMap = new Map();
-    
-    allOrders.forEach(order => {
-      if (order.restaurantId && order.restaurant?.name) {
-        restaurantsMap.set(order.restaurantId.toString(), {
-          _id: order.restaurantId,
-          name: order.restaurant.name
-        });
+    // Get ALL restaurants for filter dropdown
+    let allRestaurantsForFilter = [];
+    try {
+      // Fetch ALL restaurants from restaurant service (internal endpoint - no auth required)
+      const restaurantsResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/internal/restaurants`, {
+        params: { 
+          limit: 1000
+        }
+      });
+      
+      if (restaurantsResponse.data.success && restaurantsResponse.data.data.restaurants) {
+        allRestaurantsForFilter = restaurantsResponse.data.data.restaurants;
       }
-    });
-    
-    const restaurants = Array.from(restaurantsMap.values());
+    } catch (error) {
+      logger.warn('Failed to fetch restaurants for filter:', error.message);
+    }
     
     res.json({
       success: true,
       data: {
         orders: filteredOrders,
-        restaurants,
+        restaurants: allRestaurantsForFilter,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -824,7 +821,6 @@ const assignDroneToOrder = async (req, res) => {
       model: selectedDrone.model,
       maxPayloadGrams: selectedDrone.maxPayloadGrams,
       maxRangeMeters: selectedDrone.maxRangeMeters,
-      batteryLevel: selectedDrone.batteryLevel,
       status: 'BUSY'
     };
     order.status = 'IN_FLIGHT';

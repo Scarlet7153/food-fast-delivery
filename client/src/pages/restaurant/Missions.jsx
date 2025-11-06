@@ -347,11 +347,6 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, onStartSimulation
                 <div className="flex items-center space-x-1">
                   <Truck className="h-3 w-3" />
                   <span>Drone: {mission.droneId.name || 'Unknown'}</span>
-                  {mission.droneId.batteryLevel && (
-                    <span className="ml-2 text-xs">
-                      🔋 {mission.droneId.batteryLevel}%
-                    </span>
-                  )}
                 </div>
               )}
 

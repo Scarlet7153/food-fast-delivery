@@ -439,15 +439,6 @@ const checkEmailAvailability = async (req, res) => {
 // Register new user
 const register = async (req, res) => {
   try {
-    logger.info('Registration request received:', { 
-      email: req.body.email, 
-      role: req.body.role,
-      hasRestaurantName: !!req.body.restaurantName,
-      hasRestaurantPhone: !!req.body.restaurantPhone,
-      phone: req.body.phone,
-      restaurantPhone: req.body.restaurantPhone
-    });
-    
     const { 
       name, email, password, phone, address, role = 'customer',
       // Restaurant-specific fields
@@ -503,7 +494,6 @@ const register = async (req, res) => {
           active: false     // Restaurant will be activated after admin approval
         };
 
-        logger.info(`Creating restaurant with data:`, restaurantData);
         await axios.post(`${config.RESTAURANT_SERVICE_URL}/api/restaurants`, restaurantData);
         logger.info(`New restaurant registered (pending approval): ${user.email} - ${restaurantName}`);
       } catch (restaurantError) {
@@ -614,14 +604,10 @@ const login = async (req, res) => {
     // Check if restaurant is approved (for restaurant owners)
     if (user.role === 'restaurant') {
       try {
-        logger.info(`Checking restaurant approval for user ${user._id}`);
         const response = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${user._id}`);
         const restaurant = response.data.data.restaurant;
         
-        logger.info(`Restaurant found: ${restaurant ? 'Yes' : 'No'}, Approved: ${restaurant?.approved}`);
-        
         if (restaurant && !restaurant.approved) {
-          logger.info(`Restaurant ${restaurant.name} is pending approval for user ${user._id}`);
           return res.status(401).json({
             success: false,
             error: 'Nhà hàng của bạn đang chờ xét duyệt. Vui lòng chờ admin phê duyệt.',

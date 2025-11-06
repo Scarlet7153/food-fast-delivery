@@ -131,8 +131,6 @@ async function simulateDroneFlight(mission, io) {
   
   let currentStep = 0;
   const drone = mission.droneId;
-  let currentBattery = drone.batteryLevel || 100;
-  const batteryConsumptionPerStep = (mission.estimates.batteryConsumption || 20) / totalSteps;
   
   logger.info(`Starting flight simulation for mission ${mission.missionNumber}`);
   
@@ -198,7 +196,6 @@ async function simulateDroneFlight(mission, io) {
             lng: currentLng,
             timestamp: new Date()
           };
-          droneDoc.batteryLevel = Math.round(currentBattery);
           await droneDoc.save();
         }
         

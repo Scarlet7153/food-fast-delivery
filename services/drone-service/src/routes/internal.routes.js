@@ -8,6 +8,40 @@ const logger = require('../utils/logger');
 // These routes should NOT be exposed through API Gateway
 
 /**
+ * Get mission by ID (internal)
+ * Used by Order Service to fetch drone info
+ */
+router.get('/missions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const mission = await DeliveryMission.findById(id)
+      .populate('droneId', 'name model status');
+    
+    if (!mission) {
+      return res.status(404).json({
+        success: false,
+        error: 'Mission not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        mission
+      }
+    });
+    
+  } catch (error) {
+    logger.error('[INTERNAL] Get mission error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get mission'
+    });
+  }
+});
+
+/**
  * Update drone status (internal)
  * Used by Order Service when delivery is confirmed
  */
@@ -152,8 +186,9 @@ router.post('/missions', async (req, res) => {
     const mission = new DeliveryMission({
       orderId,
       droneId,
+      restaurantId,
       missionNumber,
-      status: 'QUEUED'
+      status: 'PENDING'
     });
     
     await mission.save();
@@ -168,6 +203,7 @@ router.post('/missions', async (req, res) => {
           _id: mission._id,
           orderId: mission.orderId,
           droneId: mission.droneId,
+          restaurantId: mission.restaurantId,
           missionNumber: mission.missionNumber,
           status: mission.status
         }

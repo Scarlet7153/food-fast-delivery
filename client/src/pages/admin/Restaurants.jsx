@@ -207,7 +207,7 @@ function AdminRestaurants() {
 // Restaurant Card Component
 function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor, getStatusLabel }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -223,7 +223,7 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor, get
       </div>
 
       {/* Restaurant Info */}
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2 mb-4 flex-1">
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <MapPin className="h-4 w-4" />
           <span className="truncate">{restaurant.address}</span>

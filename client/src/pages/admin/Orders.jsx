@@ -21,7 +21,7 @@ function AdminOrders() {
     () => adminService.getAllOrders({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      restaurant: restaurantFilter !== 'all' ? restaurantFilter : undefined
+      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined
     }),
     {
       staleTime: 2 * 60 * 1000, // 2 minutes

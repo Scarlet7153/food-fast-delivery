@@ -28,6 +28,5 @@ router.post('/', auth, requireRole('restaurant'), validate(schemas.createDrone),
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateDrone), droneController.updateDrone);
 router.patch('/:id/status', auth, requireRole('restaurant'), validate(schemas.updateDroneStatus), droneController.updateDroneStatus);
 router.patch('/:id/location', auth, requireRole('restaurant'), validate(schemas.updateDroneLocation), droneController.updateDroneLocation);
-router.post('/:id/maintenance', auth, requireRole('restaurant'), validate(schemas.scheduleMaintenance), droneController.scheduleMaintenance);
 
 module.exports = router;
