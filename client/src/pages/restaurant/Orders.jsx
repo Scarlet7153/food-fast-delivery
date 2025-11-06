@@ -17,6 +17,8 @@ function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
+  const [showDroneConfirmModal, setShowDroneConfirmModal] = useState(false)
+  const [selectedOrderForDrone, setSelectedOrderForDrone] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch orders
@@ -62,6 +64,8 @@ function RestaurantOrders() {
       }
     }
   )
+
+  const orders = ordersData?.data?.orders || []
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
@@ -125,10 +129,16 @@ function RestaurantOrders() {
   }
 
   const handleAssignDrone = (order) => {
-    if (!window.confirm('Bạn có chắc muốn giao đơn hàng này cho drone không?')) {
-      return
+    setSelectedOrderForDrone(order)
+    setShowDroneConfirmModal(true)
+  }
+
+  const confirmAssignDrone = () => {
+    if (selectedOrderForDrone) {
+      assignDroneMutation.mutate(selectedOrderForDrone._id)
+      setShowDroneConfirmModal(false)
+      setSelectedOrderForDrone(null)
     }
-    assignDroneMutation.mutate(order._id)
   }
 
   const getNextStatus = (currentStatus) => {

@@ -159,16 +159,20 @@ export const formatOrderStatus = (status) => {
 // Format mission status
 export const formatMissionStatus = (status) => {
   const statusMap = {
-    QUEUED: 'Đang chờ',
-    PREPARING: 'Chuẩn bị',
-    TAKEOFF: 'Cất cánh',
-    CRUISING: 'Bay',
-    APPROACHING: 'Tiến gần',
-    LANDING: 'Hạ cánh',
-    DELIVERED: 'Đã giao',
-    RETURNING: 'Quay về',
+    PENDING: 'Đang giao',
+    ASSIGNED: 'Đang giao',
+    QUEUED: 'Đang giao',
+    PREPARING: 'Đang giao',
+    TAKEOFF: 'Đang giao',
+    CRUISING: 'Đang giao',
+    IN_FLIGHT: 'Đang giao',
+    APPROACHING: 'Đang giao',
+    LANDING: 'Đang giao',
+    DELIVERED: 'Hoàn thành',
+    RETURNING: 'Hoàn thành',
     COMPLETED: 'Hoàn thành',
-    ABORTED: 'Hủy bỏ',
+    ABORTED: 'Thất bại',
+    CANCELLED: 'Đã hủy',
     FAILED: 'Thất bại'
   }
   

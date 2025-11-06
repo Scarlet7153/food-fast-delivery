@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 // Import routes
 const orderRoutes = require('./routes/order.routes');
 const adminRoutes = require('./routes/admin.routes');
+const internalRoutes = require('./routes/internal.routes');
 
 class OrderService {
   constructor() {
@@ -72,6 +73,7 @@ class OrderService {
     // API routes
     this.app.use('/api/orders', orderRoutes);
     this.app.use('/api/admin', adminRoutes);
+    this.app.use('/api/internal', internalRoutes);
 
     logger.info('Order routes configured');
   }

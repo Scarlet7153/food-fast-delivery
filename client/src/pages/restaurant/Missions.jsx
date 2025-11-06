@@ -1,27 +1,26 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery } from 'react-query'
 import { missionService } from '../../services/missionService'
 import { 
-  Search, Filter, Clock, MapPin, Star, Eye, CheckCircle,
-  Truck, XCircle, AlertCircle, Package, Utensils, Loader2
+  Search, Clock, MapPin, Eye, CheckCircle,
+  Truck, XCircle, AlertCircle, Plane
 } from 'lucide-react'
-import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
-import toast from 'react-hot-toast'
+import { formatDateTime, formatMissionStatus } from '../../utils/formatters'
 import { t } from '../../utils/translations'
+import DroneTrackingMap from '../../components/DroneTrackingMap'
 
 function RestaurantMissions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('newest')
-  const queryClient = useQueryClient()
+  const [selectedMission, setSelectedMission] = useState(null)
+  const [showMissionModal, setShowMissionModal] = useState(false)
 
   // Fetch missions
-  const { data: missionsData, isLoading, refetch } = useQuery(
-    ['restaurant-missions', { search: searchQuery, status: statusFilter, sortBy }],
+  const { data: missionsData, isLoading } = useQuery(
+    ['restaurant-missions', { search: searchQuery, status: statusFilter }],
     () => missionService.getRestaurantMissions({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      sortBy
     }),
     {
       staleTime: 30 * 1000, // 30 seconds
@@ -29,119 +28,48 @@ function RestaurantMissions() {
     }
   )
 
-  // Update mission status mutation
-  const updateStatusMutation = useMutation(
-    ({ missionId, status, note }) => missionService.updateMissionStatus(missionId, status, note),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Cập nhật trạng thái đơn giao thành công')
-      },
-      onError: (error) => {
-        toast.error('Không thể cập nhật trạng thái đơn giao')
-      }
-    }
-  )
-
-  // Start flight simulation mutation
-  const startSimulationMutation = useMutation(
-    (missionId) => missionService.startFlightSimulation(missionId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Bắt đầu giả lập bay - Drone đang giao hàng!')
-      },
-      onError: (error) => {
-        toast.error('Không thể khởi động giả lập bay')
-      }
-    }
-  )
-
-  // Assign drone mutation
-  const assignDroneMutation = useMutation(
-    ({ missionId, droneId }) => missionService.assignDroneToMission(missionId, droneId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['restaurant-missions'])
-        toast.success('Phân công drone thành công')
-      },
-      onError: (error) => {
-        toast.error('Không thể phân công drone')
-      }
-    }
-  )
-
   const missions = missionsData?.data?.missions || []
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn Giao' },
-    { value: 'PENDING', label: 'Chờ Xử Lý' },
-    { value: 'ASSIGNED', label: 'Đã Phân Công' },
-    { value: 'IN_PROGRESS', label: 'Đang Thực Hiện' },
-    { value: 'COMPLETED', label: 'Hoàn Thành' },
-    { value: 'CANCELLED', label: 'Đã Hủy' },
-    { value: 'FAILED', label: 'Thất Bại' },
+    { value: 'IN_FLIGHT', label: 'Đang giao' },
+    { value: 'DELIVERED', label: 'Hoàn thành' },
   ]
 
-  const sortOptions = [
-    { value: 'newest', label: 'Mới Nhất' },
-    { value: 'oldest', label: 'Cũ Nhất' },
-    { value: 'priority', label: 'Ưu Tiên' },
-    { value: 'status', label: 'Theo Trạng Thái' },
-  ]
+  const handleViewMission = (mission) => {
+    setSelectedMission(mission)
+    setShowMissionModal(true)
+  }
 
   const getStatusIcon = (status) => {
     switch (status) {
+      case 'DELIVERED':
       case 'COMPLETED':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'CANCELLED':
+      case 'RETURNING':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'FAILED':
-        return <XCircle className="h-5 w-5 text-red-500" />
-      case 'IN_PROGRESS':
-      case 'ASSIGNED':
-        return <Clock className="h-5 w-5 text-yellow-500" />
+      case 'CANCELLED':
+      case 'ABORTED':
+        return <XCircle className="h-4 w-4 text-red-500" />
       default:
-        return <AlertCircle className="h-5 w-5 text-blue-500" />
+        // PENDING, ASSIGNED, QUEUED, PREPARING, TAKEOFF, CRUISING, IN_FLIGHT, APPROACHING, LANDING
+        return <Plane className="h-4 w-4 text-blue-500" />
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'DELIVERED':
       case 'COMPLETED':
+      case 'RETURNING':
         return 'bg-green-100 text-green-800'
-      case 'CANCELLED':
       case 'FAILED':
+      case 'CANCELLED':
+      case 'ABORTED':
         return 'bg-red-100 text-red-800'
-      case 'IN_PROGRESS':
-      case 'ASSIGNED':
-        return 'bg-yellow-100 text-yellow-800'
       default:
+        // PENDING, ASSIGNED, QUEUED, PREPARING, TAKEOFF, CRUISING, IN_FLIGHT, APPROACHING, LANDING
         return 'bg-blue-100 text-blue-800'
-    }
-  }
-
-  const handleStatusUpdate = (missionId, newStatus, note = '') => {
-    updateStatusMutation.mutate({ missionId, status: newStatus, note })
-  }
-
-  const handleAssignDrone = (missionId, droneId) => {
-    assignDroneMutation.mutate({ missionId, droneId })
-  }
-
-  const handleStartSimulation = (missionId) => {
-    startSimulationMutation.mutate(missionId)
-  }
-
-  const getNextStatus = (currentStatus) => {
-    switch (currentStatus) {
-      case 'PENDING':
-        return { status: 'ASSIGNED', label: 'Phân Công Drone', icon: Truck }
-      case 'ASSIGNED':
-        return { status: 'IN_PROGRESS', label: 'Bắt Đầu Giao Hàng', icon: Clock }
-      case 'IN_PROGRESS':
-        return { status: 'COMPLETED', label: 'Hoàn Thành Giao Hàng', icon: CheckCircle }
-      default:
-        return null
     }
   }
 
@@ -163,7 +91,7 @@ function RestaurantMissions() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm đơn giao theo số đơn hoặc tên khách hàng..."
+              placeholder="Tìm kiếm đơn giao theo số đơn hoặc drone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input pl-10 w-full"
@@ -182,28 +110,6 @@ function RestaurantMissions() {
               </option>
             ))}
           </select>
-
-          {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input lg:w-48"
-          >
-            {sortOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          {/* Refresh Button */}
-          <button
-            onClick={() => refetch()}
-            className="bg-gray-100 hover:bg-gray-200 text-blue-600 border border-gray-300 px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors duration-200"
-          >
-            <Clock className="h-4 w-4" />
-            <span>Làm Mới</span>
-          </button>
         </div>
       </div>
 
@@ -233,13 +139,9 @@ function RestaurantMissions() {
               <MissionCard 
                 key={mission._id} 
                 mission={mission} 
-                onStatusUpdate={handleStatusUpdate}
-                onAssignDrone={handleAssignDrone}
-                onStartSimulation={handleStartSimulation}
-                getNextStatus={getNextStatus}
+                onViewMission={() => handleViewMission(mission)}
                 getStatusIcon={getStatusIcon}
                 getStatusColor={getStatusColor}
-                isUpdating={updateStatusMutation.isLoading || assignDroneMutation.isLoading || startSimulationMutation.isLoading}
               />
             ))}
           </div>
@@ -271,37 +173,212 @@ function RestaurantMissions() {
           </div>
         )}
       </div>
+
+      {/* Mission Detail Modal */}
+      {showMissionModal && selectedMission && (
+        <MissionDetailModal
+          mission={selectedMission}
+          onClose={() => {
+            setShowMissionModal(false)
+            setSelectedMission(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Mission Detail Modal Component
+function MissionDetailModal({ mission, onClose }) {
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Đơn Giao #{mission.missionNumber}</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Mission Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 mb-2">Chi Tiết Đơn Giao</h3>
+              <p className="text-sm text-gray-600">ID: #{mission.missionNumber || mission._id?.slice(-6)}</p>
+              <p className="text-sm text-gray-600">Trạng thái: {formatMissionStatus(mission.status)}</p>
+              <p className="text-sm text-gray-600">
+                Tạo lúc: {formatDateTime(mission.createdAt)}
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 mb-2">Thông Tin Đơn Hàng</h3>
+              <p className="text-sm text-gray-600">
+                Đơn hàng: #{mission.order?.orderNumber || 'N/A'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Khách hàng: {mission.order?.customer?.name || 'N/A'}
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 mb-2">Thông Tin Drone</h3>
+              <p className="text-sm text-gray-600">
+                Drone: {mission.drone?.name || mission.droneId?.name || 'Chưa phân công'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Model: {mission.drone?.model || mission.droneId?.model || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* Order Items */}
+          {mission.order?.items && mission.order.items.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-4">Chi Tiết Món Ăn</h3>
+              <div className="bg-gray-50 rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Món Ăn
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                        Số Lượng
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        Đơn Giá
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        Thành Tiền
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {mission.order.items.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {item.name}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-900">
+                          {item.quantity}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-900">
+                          {item.price?.toLocaleString('vi-VN')}đ
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                          {(item.price * item.quantity)?.toLocaleString('vi-VN')}đ
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="bg-gray-50">
+                      <td colSpan="3" className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                        Tổng Cộng:
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {(mission.order.totalAmount || mission.order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0))?.toLocaleString('vi-VN')}đ
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Drone Tracking Map - Only show when in progress */}
+          {(mission.status === 'IN_FLIGHT' || mission.status === 'ASSIGNED' || mission.status === 'PENDING') && (
+            <div>
+              <h3 className="text-lg font-medium mb-4">Theo Dõi Drone</h3>
+              <DroneTrackingMap mission={mission} />
+            </div>
+          )}
+
+          {/* Mission Timeline */}
+          <div>
+            <h3 className="text-lg font-medium mb-4">Lịch Sử Đơn Giao</h3>
+            <div className="space-y-3">
+              {/* Always show: Created */}
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Đang Giao</p>
+                  <p className="text-xs text-gray-500">{formatDateTime(mission.createdAt)}</p>
+                </div>
+              </div>
+              
+              {/* Show completion based on status */}
+              {(mission.status === 'DELIVERED' || mission.status === 'COMPLETED' || mission.status === 'RETURNING') && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Hoàn Thành</p>
+                    <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
+                  </div>
+                </div>
+              )}
+              
+              {(mission.status === 'FAILED' || mission.status === 'ABORTED') && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Thất Bại</p>
+                    <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
+                  </div>
+                </div>
+              )}
+              
+              {mission.status === 'CANCELLED' && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Đã Hủy</p>
+                    <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-200 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="btn btn-secondary w-full"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
 // Mission Card Component
-function MissionCard({ mission, onStatusUpdate, onAssignDrone, onStartSimulation, getNextStatus, getStatusIcon, getStatusColor, isUpdating }) {
-  const [showDroneSelect, setShowDroneSelect] = useState(false)
-  const [selectedDroneId, setSelectedDroneId] = useState('')
-  
-  const nextStatus = getNextStatus(mission.status)
-  const canUpdate = ['PENDING', 'ASSIGNED', 'IN_PROGRESS'].includes(mission.status)
-  const isInFlight = mission.status === 'IN_PROGRESS'
-
-  const handleUpdateStatus = (newStatus) => {
-    onStatusUpdate(mission._id, newStatus)
-  }
-
-  const handleAssignDrone = () => {
-    if (selectedDroneId) {
-      onAssignDrone(mission._id, selectedDroneId)
-      setShowDroneSelect(false)
-      setSelectedDroneId('')
-    }
-  }
-
+function MissionCard({ mission, onViewMission, getStatusIcon, getStatusColor }) {
   return (
     <div className="p-6 hover:bg-gray-50 transition-colors">
       <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-4">
+        <div className="flex items-start space-x-4 flex-1">
           {/* Mission Icon */}
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
             {getStatusIcon(mission.status)}
           </div>
 
@@ -310,182 +387,56 @@ function MissionCard({ mission, onStatusUpdate, onAssignDrone, onStartSimulation
             <div className="flex items-start justify-between mb-2">
               <div>
                 <h3 className="font-semibold text-gray-900">
-                  Đơn Giao #{mission.missionNumber}
+                  Đơn Giao #{mission.missionNumber || mission._id?.slice(-6)}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Đơn: #{mission.order?.orderNumber}
+                  Đơn hàng: #{mission.order?.orderNumber || 'N/A'}
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(mission.status)}`}>
-                  {mission.status.toLowerCase().replace('_', ' ')}
-                </span>
-              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(mission.status)} ml-4`}>
+                {formatMissionStatus(mission.status)}
+              </span>
             </div>
 
             {/* Mission Details */}
-            <div className="space-y-1 text-sm text-gray-600 mb-3">
-              <div className="flex items-center space-x-4">
-                <span>{mission.order?.items?.length || 0} món</span>
-                <span>•</span>
-                <span>{formatCurrency(mission.order?.amount?.total || 0)}</span>
-                <span>•</span>
+            <div className="space-y-1 text-sm text-gray-600">
+              <div className="flex items-center space-x-4 flex-wrap">
                 <div className="flex items-center space-x-1">
                   <Clock className="h-3 w-3" />
                   <span>{formatDateTime(mission.createdAt)}</span>
                 </div>
+                {mission.drone && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Plane className="h-3 w-3" />
+                      <span>Drone: {mission.drone.name || mission.drone._id?.slice(-6)}</span>
+                    </div>
+                  </>
+                )}
               </div>
               
               {mission.route?.delivery?.address && (
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-3 w-3" />
-                  <span>{mission.route.delivery.address}</span>
-                </div>
-              )}
-
-              {mission.droneId && (
-                <div className="flex items-center space-x-1">
-                  <Truck className="h-3 w-3" />
-                  <span>Drone: {mission.droneId.name || 'Unknown'}</span>
-                </div>
-              )}
-
-              {/* Flight progress for IN_PROGRESS missions */}
-              {isInFlight && mission.flightPath && mission.flightPath.length > 0 && (
-                <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-blue-900">
-                      🚁 Đang bay - {mission.flightPath.length} điểm theo dõi
-                    </span>
-                    {mission.flightPath[mission.flightPath.length - 1]?.batteryPercent && (
-                      <span className="text-blue-700">
-                        Pin: {mission.flightPath[mission.flightPath.length - 1].batteryPercent}%
-                      </span>
-                    )}
-                  </div>
-                  {mission.estimates && (
-                    <div className="mt-1 text-xs text-blue-700">
-                      Khoảng cách: {mission.estimates.distanceKm?.toFixed(2)} km • 
-                      Thời gian ước tính: {mission.estimates.etaMinutes} phút
-                    </div>
-                  )}
+                  <span className="truncate">{mission.route.delivery.address}</span>
                 </div>
               )}
             </div>
-
-            {/* Mission Progress */}
-            {mission.estimatedArrival && (
-              <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
-                <Clock className="h-3 w-3" />
-                <span>ETA: {formatDateTime(mission.estimatedArrival)}</span>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center space-x-2 ml-4">
-          <button className="btn btn-outline btn-sm flex items-center space-x-1">
+        <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
+          <button 
+            onClick={onViewMission}
+            className="btn btn-outline btn-sm flex items-center space-x-1"
+          >
             <Eye className="h-4 w-4" />
             <span>Xem</span>
           </button>
-
-          {/* Start simulation button for ASSIGNED missions */}
-          {mission.status === 'ASSIGNED' && (
-            <button
-              onClick={() => onStartSimulation(mission._id)}
-              disabled={isUpdating}
-              className="btn btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Truck className="h-4 w-4" />
-              )}
-              <span>Giả Lập Bay</span>
-            </button>
-          )}
-
-          {canUpdate && nextStatus && (
-            <button
-              onClick={() => handleUpdateStatus(nextStatus.status)}
-              disabled={isUpdating}
-              className={`btn btn-primary btn-sm flex items-center space-x-1 ${
-                nextStatus.status === 'ASSIGNED' ? 'bg-green-600 hover:bg-green-700' :
-                nextStatus.status === 'IN_PROGRESS' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                'bg-purple-600 hover:bg-purple-700'
-              }`}
-            >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <nextStatus.icon className="h-4 w-4" />
-              )}
-              <span>{nextStatus.label}</span>
-            </button>
-          )}
-
-          {mission.status === 'PENDING' && (
-            <button
-              onClick={() => setShowDroneSelect(true)}
-              className="btn btn-outline btn-sm text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              Phân Công Drone
-            </button>
-          )}
-
-          {mission.status === 'PENDING' && (
-            <button
-              onClick={() => {
-                const reason = window.prompt('Lý do hủy:')
-                if (reason) {
-                  onStatusUpdate(mission._id, 'CANCELLED', reason)
-                }
-              }}
-              className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
-            >
-              Hủy
-            </button>
-          )}
         </div>
       </div>
-
-      {/* Drone Selection Modal */}
-      {showDroneSelect && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <label className="text-sm font-medium text-blue-900">
-              Chọn Drone:
-            </label>
-            <select
-              value={selectedDroneId}
-              onChange={(e) => setSelectedDroneId(e.target.value)}
-              className="input flex-1"
-            >
-              <option value="">Chọn drone...</option>
-              {/* This would be populated with available drones */}
-              <option value="drone1">Drone #1 (Sẵn sàng)</option>
-              <option value="drone2">Drone #2 (Sẵn sàng)</option>
-            </select>
-            <button
-              onClick={handleAssignDrone}
-              disabled={!selectedDroneId}
-              className="btn btn-primary btn-sm"
-            >
-              Phân Công
-            </button>
-            <button
-              onClick={() => {
-                setShowDroneSelect(false)
-                setSelectedDroneId('')
-              }}
-              className="btn btn-outline btn-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

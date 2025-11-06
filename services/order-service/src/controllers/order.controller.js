@@ -938,6 +938,44 @@ const confirmDelivery = async (req, res) => {
   }
 };
 
+// Internal API - Get order by ID (no authentication)
+const getOrderByIdInternal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Enrich order with customer information
+    let enrichedOrder = order.toObject();
+    enrichedOrder.customer = {
+      _id: order.userId,
+      name: order.deliveryAddress?.contactName || 'Khách hàng',
+      email: '',
+      phone: order.deliveryAddress?.contactPhone || ''
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        order: enrichedOrder
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Get order by ID (internal) error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get order'
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -948,5 +986,6 @@ module.exports = {
   getRestaurantOrders,
   getOrderStatistics,
   assignDroneToOrder,
-  confirmDelivery
+  confirmDelivery,
+  getOrderByIdInternal
 };

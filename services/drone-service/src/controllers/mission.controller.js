@@ -167,12 +167,38 @@ const getRestaurantMissions = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
+    // Fetch order details for each mission
+    const missionsWithOrders = await Promise.all(missions.map(async (mission) => {
+      const missionObj = mission.toObject();
+      
+      // Fetch order data from order-service
+      if (missionObj.orderId) {
+        try {
+          const orderResponse = await axios.get(
+            `${config.ORDER_SERVICE_URL}/api/internal/orders/${missionObj.orderId}`
+          );
+          missionObj.order = orderResponse.data.data.order;
+        } catch (error) {
+          logger.error(`Failed to fetch order ${missionObj.orderId}:`, error.message);
+          missionObj.order = null;
+        }
+      }
+      
+      // Rename droneId to drone for consistency
+      if (missionObj.droneId) {
+        missionObj.drone = missionObj.droneId;
+        delete missionObj.droneId;
+      }
+      
+      return missionObj;
+    }));
+    
     const total = await DeliveryMission.countDocuments({ restaurantId, ...options });
     
     res.json({
       success: true,
       data: {
-        missions,
+        missions: missionsWithOrders,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
