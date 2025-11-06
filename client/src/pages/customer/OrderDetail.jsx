@@ -6,7 +6,7 @@ import socketService from '../../services/socketService'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { 
   ArrowLeft, MapPin, Clock, Phone, Star, Truck,
-  CheckCircle, XCircle, AlertCircle, Loader2
+  CheckCircle, XCircle, AlertCircle, Loader2, Plane
 } from 'lucide-react'
 import { 
   formatCurrency, formatDateTime, formatOrderStatus, 
@@ -391,15 +391,24 @@ function OrderDetail() {
 function OrderTimeline({ order }) {
   const statuses = [
     { status: 'PLACED', label: 'Đã Đặt', icon: CheckCircle },
-    { status: 'CONFIRMED', label: 'Đã xác nhận', icon: CheckCircle },
-    { status: 'COOKING', label: 'Đang nấu', icon: Loader2 },
-    { status: 'READY_FOR_PICKUP', label: 'Sẵn sàng giao', icon: Truck },
-    { status: 'IN_FLIGHT', label: 'Đang giao', icon: Truck },
-    { status: 'DELIVERED', label: 'Đã giao', icon: CheckCircle },
+    { status: 'COOKING', label: 'Đang Chuẩn Bị', icon: Loader2 },
+    { status: 'IN_FLIGHT', label: 'Đang Giao', icon: Plane },
+    { status: 'DELIVERED', label: 'Đã Giao', icon: CheckCircle },
   ]
 
   const getStatusIndex = (status) => {
-    return statuses.findIndex(s => s.status === status)
+    // Map all intermediate statuses to their display status
+    const statusMap = {
+      'PLACED': 0,
+      'CONFIRMED': 1,
+      'COOKING': 1,
+      'READY_FOR_PICKUP': 2,
+      'IN_FLIGHT': 2,
+      'DELIVERED': 3,
+      'CANCELLED': -1,
+      'FAILED': -1
+    }
+    return statusMap[status] ?? 0
   }
 
   const currentIndex = getStatusIndex(order.status)
@@ -407,33 +416,33 @@ function OrderTimeline({ order }) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
-      <h2 className="text-lg font-semibold mb-4">Tiến Trình Đơn Hàng</h2>
+      <h2 className="text-lg font-semibold mb-6">Tiến Trình Đơn Hàng</h2>
       <div className="relative">
-        <div className="absolute top-8 left-8 right-8 h-0.5 bg-gray-200"></div>
-        <div className="flex justify-between">
+        <div className="absolute top-10 left-0 right-0 h-0.5 bg-gray-200" style={{ left: '10%', right: '10%' }}></div>
+        <div className="flex justify-between items-start">
           {statuses.map((status, index) => {
             const isActive = index <= currentIndex && !isCancelled
             const isCurrent = index === currentIndex && !isCancelled
             const Icon = status.icon
 
             return (
-              <div key={status.status} className="relative flex flex-col items-center">
-                <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                  isActive ? 'bg-primary-600' : 'bg-gray-200'
+              <div key={status.status} className="relative flex flex-col items-center flex-1">
+                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  isActive ? 'bg-primary-600 shadow-lg' : 'bg-gray-200'
                 }`}>
-                  <Icon className={`h-4 w-4 ${
+                  <Icon className={`h-5 w-5 ${
                     isActive ? 'text-white' : 'text-gray-400'
                   } ${isCurrent && status.status === 'COOKING' ? 'animate-spin' : ''}`} />
                 </div>
-                <div className="mt-2 text-center">
-                  <p className={`text-xs font-medium ${
+                <div className="mt-3 text-center max-w-[80px]">
+                  <p className={`text-sm font-medium ${
                     isActive ? 'text-gray-900' : 'text-gray-500'
                   }`}>
                     {status.label}
                   </p>
                   {isCurrent && order.status !== 'DELIVERED' && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Đang thực hiện...
+                    <p className="text-xs text-primary-600 mt-1 font-medium">
+                      Đang xử lý...
                     </p>
                   )}
                 </div>

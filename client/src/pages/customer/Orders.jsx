@@ -70,9 +70,7 @@ function Orders() {
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
     { value: 'PLACED', label: 'Đã đặt' },
-    { value: 'CONFIRMED', label: 'Đã xác nhận' },
-    { value: 'COOKING', label: 'Đang nấu' },
-    { value: 'READY_FOR_PICKUP', label: 'Sẵn sàng giao' },
+    { value: 'COOKING', label: 'Đang chuẩn bị' },
     { value: 'IN_FLIGHT', label: 'Đang giao' },
     { value: 'DELIVERED', label: 'Đã giao' },
     { value: 'CANCELLED', label: 'Đã hủy' },
@@ -269,7 +267,7 @@ function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
     }
   }
 
-  const canCancel = ['PLACED', 'CONFIRMED'].includes(order.status)
+  const canCancel = ['PLACED', 'CONFIRMED', 'COOKING'].includes(order.status)
   const canRate = order.status === 'DELIVERED' && !order.rating
   const canConfirmDelivery = order.status === 'IN_FLIGHT'
 

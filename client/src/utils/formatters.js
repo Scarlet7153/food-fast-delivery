@@ -144,9 +144,9 @@ export const formatDuration = (minutes) => {
 export const formatOrderStatus = (status) => {
   const statusMap = {
     PLACED: 'Đã đặt',
-    CONFIRMED: 'Đã xác nhận',
-    COOKING: 'Đang nấu',
-    READY_FOR_PICKUP: 'Sẵn sàng giao',
+    CONFIRMED: 'Đang chuẩn bị',
+    COOKING: 'Đang chuẩn bị',
+    READY_FOR_PICKUP: 'Đang giao',
     IN_FLIGHT: 'Đang giao',
     DELIVERED: 'Đã giao',
     CANCELLED: 'Đã hủy',

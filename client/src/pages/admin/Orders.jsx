@@ -34,9 +34,7 @@ function AdminOrders() {
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
     { value: 'PLACED', label: 'Đã đặt' },
-    { value: 'CONFIRMED', label: 'Đã xác nhận' },
-    { value: 'COOKING', label: 'Đang nấu' },
-    { value: 'READY_FOR_PICKUP', label: 'Sẵn sàng giao' },
+    { value: 'COOKING', label: 'Đang chuẩn bị' },
     { value: 'IN_FLIGHT', label: 'Đang giao' },
     { value: 'DELIVERED', label: 'Đã giao' },
     { value: 'CANCELLED', label: 'Đã hủy' },

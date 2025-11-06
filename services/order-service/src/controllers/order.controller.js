@@ -691,10 +691,10 @@ const assignDroneToOrder = async (req, res) => {
     }
     
     // Check if order is in correct status
-    if (order.status !== 'READY_FOR_PICKUP') {
+    if (!['COOKING', 'READY_FOR_PICKUP'].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        error: 'Order must be in READY_FOR_PICKUP status to assign drone'
+        error: 'Order must be in COOKING or READY_FOR_PICKUP status to assign drone'
       });
     }
     
@@ -823,6 +823,17 @@ const assignDroneToOrder = async (req, res) => {
       maxRangeMeters: selectedDrone.maxRangeMeters,
       status: 'BUSY'
     };
+    
+    // If assigning from COOKING, add READY_FOR_PICKUP to timeline first
+    if (order.status === 'COOKING') {
+      order.timeline.push({
+        status: 'READY_FOR_PICKUP',
+        timestamp: new Date(),
+        note: 'Món ăn đã sẵn sàng để drone lấy',
+        updatedBy: req.user._id
+      });
+    }
+    
     order.status = 'IN_FLIGHT';
     order.timeline.push({
       status: 'IN_FLIGHT',

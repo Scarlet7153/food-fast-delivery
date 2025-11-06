@@ -320,10 +320,21 @@ orderSchema.methods.updateStatus = function(newStatus, updatedBy, note) {
     throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
   }
   
+  const currentStatus = this.status;
   this.status = newStatus;
   
   if (newStatus === 'DELIVERED') {
     this.actualDeliveryTime = new Date();
+  }
+  
+  // If transitioning from PLACED to COOKING, add CONFIRMED to timeline first
+  if (currentStatus === 'PLACED' && newStatus === 'COOKING') {
+    this.timeline.push({
+      status: 'CONFIRMED',
+      timestamp: new Date(),
+      note: 'Đơn hàng đã được nhà hàng xác nhận',
+      updatedBy: updatedBy
+    });
   }
   
   this.timeline.push({
@@ -339,8 +350,8 @@ orderSchema.methods.updateStatus = function(newStatus, updatedBy, note) {
 // Instance method to check if status transition is valid
 orderSchema.methods.canTransitionTo = function(newStatus) {
   const validTransitions = {
-    PLACED: ['CONFIRMED', 'CANCELLED'],
-    CONFIRMED: ['COOKING', 'CANCELLED'],
+    PLACED: ['CONFIRMED', 'COOKING', 'CANCELLED'], // Allow direct transition to COOKING (will auto-add CONFIRMED to timeline)
+    CONFIRMED: ['COOKING', 'READY_FOR_PICKUP', 'CANCELLED'], // Allow direct transition to READY_FOR_PICKUP
     COOKING: ['READY_FOR_PICKUP', 'CANCELLED'],
     READY_FOR_PICKUP: ['IN_FLIGHT', 'CANCELLED'],
     IN_FLIGHT: ['DELIVERED', 'FAILED'],

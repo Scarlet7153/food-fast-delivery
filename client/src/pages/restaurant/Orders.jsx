@@ -17,8 +17,6 @@ function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
-  const [showDroneConfirmModal, setShowDroneConfirmModal] = useState(false)
-  const [selectedOrderForDrone, setSelectedOrderForDrone] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch orders
@@ -65,15 +63,11 @@ function RestaurantOrders() {
     }
   )
 
-  const orders = ordersData?.data?.orders || []
-
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
     { value: 'PLACED', label: 'Đã Đặt' },
-    { value: 'CONFIRMED', label: 'Đã Xác Nhận' },
-    { value: 'COOKING', label: 'Đang Nấu' },
-    { value: 'READY_FOR_PICKUP', label: 'Sẵn Sàng' },
-    { value: 'IN_FLIGHT', label: 'Đang Bay' },
+    { value: 'COOKING', label: 'Đang Chuẩn Bị' },
+    { value: 'IN_FLIGHT', label: 'Đang Giao' },
     { value: 'DELIVERED', label: 'Đã Giao' },
     { value: 'CANCELLED', label: 'Đã Hủy' },
   ]
@@ -118,20 +112,23 @@ function RestaurantOrders() {
   }
 
   const handleStatusUpdate = (orderId, newStatus, note = '') => {
-    updateStatusMutation.mutate({ orderId, status: newStatus, note })
+    // When confirming an order, automatically set to COOKING instead
+    if (newStatus === 'CONFIRMED') {
+      updateStatusMutation.mutate({ 
+        orderId, 
+        status: 'COOKING', 
+        note: note || 'Đã xác nhận và bắt đầu chuẩn bị món'
+      })
+    } else {
+      updateStatusMutation.mutate({ orderId, status: newStatus, note })
+    }
   }
 
   const handleAssignDrone = (order) => {
-    setSelectedOrderForDrone(order)
-    setShowDroneConfirmModal(true)
-  }
-
-  const confirmAssignDrone = () => {
-    if (selectedOrderForDrone) {
-      assignDroneMutation.mutate(selectedOrderForDrone._id)
-      setShowDroneConfirmModal(false)
-      setSelectedOrderForDrone(null)
+    if (!window.confirm('Bạn có chắc muốn giao đơn hàng này cho drone không?')) {
+      return
     }
+    assignDroneMutation.mutate(order._id)
   }
 
   const getNextStatus = (currentStatus) => {
@@ -139,9 +136,8 @@ function RestaurantOrders() {
       case 'PLACED':
         return { status: 'CONFIRMED', label: 'Xác Nhận Đơn', icon: CheckCircle }
       case 'CONFIRMED':
-        return { status: 'COOKING', label: 'Bắt Đầu Nấu', icon: Utensils }
       case 'COOKING':
-        return { status: 'READY_FOR_PICKUP', label: 'Sẵn Sàng', icon: Package }
+        return { status: 'ASSIGN_DRONE', label: 'Giao Cho Drone', icon: Plane }
       case 'READY_FOR_PICKUP':
         return { status: 'ASSIGN_DRONE', label: 'Giao Cho Drone', icon: Plane }
       default:
