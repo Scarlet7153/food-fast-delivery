@@ -8,4 +8,7 @@ const orderController = require('../controllers/order.controller');
 // Get order by ID (for drone-service to fetch order details)
 router.get('/orders/:id', orderController.getOrderByIdInternal);
 
+// Update order status (for payment-service after payment confirmation)
+router.patch('/orders/:id/status', orderController.updateOrderStatusInternal);
+
 module.exports = router;

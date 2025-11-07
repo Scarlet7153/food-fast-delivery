@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { adminService } from '../../services/adminService'
 import { 
   Search, Filter, ShoppingBag, Clock, MapPin, User, 
-  CheckCircle, XCircle, AlertTriangle, Eye, Plane
+  CheckCircle, XCircle, AlertTriangle, Eye, Plane, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus, formatDistance } from '../../utils/formatters'
 import { t } from '../../utils/translations'
@@ -14,22 +14,29 @@ function AdminOrders() {
   const [restaurantFilter, setRestaurantFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   // Fetch orders
   const { data: ordersData, isLoading } = useQuery(
-    ['admin-orders', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter }],
+    ['admin-orders', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter, page: currentPage }],
     () => adminService.getAllOrders({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined
+      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined,
+      page: currentPage,
+      limit: pageSize
     }),
     {
       staleTime: 2 * 60 * 1000, // 2 minutes
+      keepPreviousData: true
     }
   )
 
   const orders = ordersData?.data?.orders || []
   const restaurants = ordersData?.data?.restaurants || []
+  const totalOrders = ordersData?.data?.pagination?.total || 0
+  const totalPages = Math.ceil(totalOrders / pageSize)
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
@@ -97,7 +104,10 @@ function AdminOrders() {
               type="text"
               placeholder="Tìm kiếm theo số đơn hàng, tên người nhận hoặc số điện thoại..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1) // Reset to page 1 when searching
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -105,7 +115,10 @@ function AdminOrders() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1) // Reset to page 1 when filtering
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -118,7 +131,10 @@ function AdminOrders() {
           {/* Restaurant Filter */}
           <select
             value={restaurantFilter}
-            onChange={(e) => setRestaurantFilter(e.target.value)}
+            onChange={(e) => {
+              setRestaurantFilter(e.target.value)
+              setCurrentPage(1) // Reset to page 1 when filtering
+            }}
             className="input lg:w-48"
           >
             <option value="all">Tất Cả Nhà Hàng</option>
@@ -264,6 +280,61 @@ function AdminOrders() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Hiển thị <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> đến{' '}
+              <span className="font-medium">{Math.min(currentPage * pageSize, totalOrders)}</span> trong{' '}
+              <span className="font-medium">{totalOrders}</span> đơn hàng
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex items-center space-x-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return <span key={page} className="px-2 text-gray-500">...</span>
+                  }
+                  return null
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Order Detail Modal */}
@@ -419,7 +490,7 @@ function OrderDetailModal({ order, onClose }) {
           {/* Drone Assignment Section */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">Thông Tin Giao Hàng</h3>
+              <h3 className="text-lg font-medium">Thông Tin Vận Chuyển</h3>
               {order.status === 'READY_FOR_PICKUP' && !order.missionId && (
                 <button
                   onClick={handleAssignDrone}
@@ -494,7 +565,7 @@ function OrderDetailModal({ order, onClose }) {
                   Đơn hàng đã được chuẩn bị xong và sẵn sàng để giao cho drone. Nhấn nút "Giao Cho Drone" để tự động chọn drone phù hợp.
                 </p>
               </div>
-            ) : (
+            ) : ['PLACED', 'CONFIRMED', 'COOKING'].includes(order.status) ? (
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center space-x-2 mb-2">
                   <Clock className="h-5 w-5 text-gray-400" />
@@ -504,7 +575,27 @@ function OrderDetailModal({ order, onClose }) {
                   Đơn hàng cần ở trạng thái "Sẵn sàng giao" để có thể giao cho drone.
                 </p>
               </div>
-            )}
+            ) : order.status === 'DELIVERED' ? (
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <h4 className="font-medium text-green-900">Đã giao hàng thành công</h4>
+                </div>
+                <p className="text-sm text-green-800">
+                  Đơn hàng đã được giao thành công đến khách hàng.
+                </p>
+              </div>
+            ) : order.status === 'CANCELLED' ? (
+              <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  <h4 className="font-medium text-red-900">Đơn hàng đã bị hủy</h4>
+                </div>
+                <p className="text-sm text-red-800">
+                  {order.cancellation?.reason || 'Đơn hàng đã bị hủy'}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {/* Timeline */}

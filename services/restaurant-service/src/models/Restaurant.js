@@ -125,43 +125,10 @@ const restaurantSchema = new mongoose.Schema({
       min: 5
     }
   },
-  // Operating hours
-  operatingHours: {
-    monday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    tuesday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    wednesday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    thursday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    friday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    saturday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    },
-    sunday: {
-      open: { type: String, default: '08:00' },
-      close: { type: String, default: '22:00' },
-      closed: { type: Boolean, default: false }
-    }
+  // Store status
+  isOpen: {
+    type: Boolean,
+    default: false // Restaurant is closed by default
   },
   // Statistics
   stats: {
@@ -189,24 +156,14 @@ const restaurantSchema = new mongoose.Schema({
 });
 
 // Indexes
-restaurantSchema.index({ ownerUserId: 1 });
+// ownerUserId already has `unique: true` on the schema path, so avoid duplicate index declaration
 restaurantSchema.index({ location: '2dsphere' });
 restaurantSchema.index({ active: 1, approved: 1 });
 restaurantSchema.index({ name: 'text', description: 'text' });
 
-// Instance method to check if restaurant is open
-restaurantSchema.methods.isOpen = function() {
-  if (!this.active || !this.approved) return false;
-  
-  const now = new Date();
-  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const dayKey = dayNames[now.getDay()]; // Get day of week
-  const todayHours = this.operatingHours[dayKey];
-  
-  if (!todayHours || todayHours.closed) return false;
-  
-  const currentTime = now.toTimeString().slice(0, 5); // 'HH:MM'
-  return currentTime >= todayHours.open && currentTime <= todayHours.close;
+// Instance method to check if restaurant is accepting orders
+restaurantSchema.methods.canAcceptOrders = function() {
+  return this.active && this.approved && this.isOpen;
 };
 
 // Instance method to calculate delivery fee

@@ -3,16 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { useCartStore } from '../../stores/cartStore'
+import { useAuthStore } from '../../stores/authStore'
 import { 
   Clock, MapPin, Phone, Plus, 
   ShoppingCart, Heart, Share2, Filter, Grid, List 
 } from 'lucide-react'
+
+// Filled gold star SVG
+const FilledStar = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#FBBF24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21z" />
+  </svg>
+)
 import { formatCurrency, formatDistance, formatTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 
 function RestaurantDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
   const { addItem, cartRestaurant, restaurantId } = useCartStore()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [viewMode, setViewMode] = useState('grid')
@@ -54,10 +63,7 @@ function RestaurantDetail() {
     ? menuItems 
     : menuItems.filter(item => item.category === selectedCategory)
   
-  // Debug: Log categories and filtered items
-  console.log('Categories:', categories)
-  console.log('Selected category:', selectedCategory)
-  console.log('Filtered items count:', filteredMenuItems.length)
+  // (debug logs removed)
 
   // Safe access for restaurant properties
   const restaurantName = currentRestaurant?.name || 'Nhà hàng'
@@ -67,6 +73,19 @@ function RestaurantDetail() {
   const isSameRestaurant = restaurantId === id
 
   const handleAddToCart = (item) => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm món vào giỏ hàng')
+      navigate('/login', { state: { from: `/customer/restaurants/${id}` } })
+      return
+    }
+
+    // Check if restaurant is open
+    if (!currentRestaurant?.isOpen) {
+      toast.error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng')
+      return
+    }
+
     if (!isSameRestaurant && restaurantId) {
       if (window.confirm('Bạn có món từ nhà hàng khác trong giỏ. Bạn có muốn xóa và thêm món từ nhà hàng này?')) {
         addItem(item, currentRestaurant)
@@ -77,6 +96,11 @@ function RestaurantDetail() {
   }
 
   const handleGoToCart = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để xem giỏ hàng')
+      navigate('/login', { state: { from: '/customer/cart' } })
+      return
+    }
     navigate('/customer/cart')
   }
 
@@ -128,58 +152,59 @@ function RestaurantDetail() {
             }}
           />
           <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-          
-          {/* Header Actions */}
-          <div className="absolute top-4 right-4 flex space-x-2">
-            <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className={`p-2 rounded-full ${
-                isFavorite ? 'bg-red-500 text-white' : 'bg-white text-gray-600'
-              } hover:bg-opacity-80 transition-colors`}
-            >
-              <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
-            </button>
-            <button className="p-2 bg-white text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
-              <Share2 className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-4 left-4 p-2 bg-white text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            ←
-          </button>
         </div>
 
         {/* Restaurant Info */}
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {restaurantName}
-              </h1>
+            <div className="pr-4">
+              <div className="flex items-center space-x-3 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {restaurantName}
+                </h1>
+                {currentRestaurant?.isOpen ? (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                    Đang mở cửa
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+                    Đang đóng cửa
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600 mb-3">
                 {restaurantDescription}
               </p>
+              {!currentRestaurant?.isOpen && (
+                <p className="text-sm text-red-600 font-medium">
+                  Nhà hàng hiện đang đóng cửa, không thể đặt hàng
+                </p>
+              )}
+            </div>
+
+            {/* Rating block */}
+            <div className="flex flex-col items-end text-right ml-4">
+              <div className="flex items-center space-x-2">
+                <FilledStar className="h-5 w-5" />
+                <span className="text-lg font-semibold text-gray-900">
+                  {currentRestaurant?.rating?.average ? currentRestaurant.rating.average.toFixed(1) : '0.0'}
+                </span>
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                {currentRestaurant?.rating?.count ? `${currentRestaurant.rating.count} lượt đánh giá` : 'Chưa có đánh giá'}
+              </div>
             </div>
           </div>
 
           {/* Restaurant Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <MapPin className="h-5 w-5" />
-              <span>Cách {formatDistance(currentRestaurant.distance || 1500)}</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Clock className="h-5 w-5" />
-              <span>Giao trong {estimatedTime} phút</span>
-            </div>
+            {/* Removed distance and ETA display as requested; keep phone only */}
             <div className="flex items-center space-x-2 text-gray-600">
               <Phone className="h-5 w-5" />
               <span>{currentRestaurant.phone || 'Không có SĐT'}</span>
             </div>
+            <div />
+            <div />
           </div>
 
           {/* Delivery Info */}
@@ -285,7 +310,7 @@ function RestaurantDetail() {
 function MenuItemGridCard({ item, onAddToCart }) {
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
       <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
         <img
           src={item.imageUrl || '/api/placeholder/400/225'}
@@ -297,7 +322,7 @@ function MenuItemGridCard({ item, onAddToCart }) {
         />
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{item.name}</h3>
           <span className="font-bold text-primary-600">
@@ -315,7 +340,7 @@ function MenuItemGridCard({ item, onAddToCart }) {
           </p>
         )}
 
-        <div className="flex items-end justify-between -mt-2">
+        <div className="mt-auto flex items-center justify-between -mt-2">
           <div className="flex flex-col space-y-1">
             {item.category && (
               <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full w-fit">
@@ -353,7 +378,7 @@ function MenuItemListCard({ item, onAddToCart }) {
         />
       </div>
 
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 flex flex-col">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{item.name}</h3>
           <span className="font-bold text-primary-600">
@@ -365,7 +390,7 @@ function MenuItemListCard({ item, onAddToCart }) {
           {item.description}
         </p>
 
-        <div className="flex items-end justify-between -mt-1">
+        <div className="mt-auto flex items-center justify-between -mt-1">
           <div className="flex flex-col space-y-1">
             <div className="flex items-center space-x-4 text-xs text-gray-500">
               {item.weightGrams && <span>Khối lượng: {item.weightGrams}g</span>}

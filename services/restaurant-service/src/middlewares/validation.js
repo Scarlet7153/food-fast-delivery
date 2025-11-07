@@ -22,43 +22,7 @@ const schemas = {
       maxDeliveryDistance: Joi.number().min(1).optional(),
       estimatedPrepTime: Joi.number().min(5).max(120).optional()
     }).optional(),
-    operatingHours: Joi.object({
-      monday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      tuesday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      wednesday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      thursday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      friday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      saturday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional(),
-      sunday: Joi.object({
-        open: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        close: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        closed: Joi.boolean().optional()
-      }).optional()
-    }).optional()
+  // operatingHours removed from Restaurant model; no validation required
   }),
 
   updateRestaurant: Joi.object({
@@ -133,33 +97,10 @@ const schemas = {
     description: Joi.string().max(500).optional(),
     price: Joi.number().min(0).required(),
     originalPrice: Joi.number().min(0).optional(),
-    imageUrl: Joi.string().uri().optional(),
-    images: Joi.array().items(Joi.object({
-      url: Joi.string().uri().required(),
-      alt: Joi.string().optional()
-    })).optional(),
-    category: Joi.string().min(2).max(50).required(),
-    available: Joi.boolean().optional(),
-    featured: Joi.boolean().optional(),
-    weightGrams: Joi.number().min(1).max(5000).optional(),
-    nutrition: Joi.object({
-      calories: Joi.number().min(0).optional(),
-      protein: Joi.number().min(0).optional(),
-      carbs: Joi.number().min(0).optional(),
-      fat: Joi.number().min(0).optional(),
-      fiber: Joi.number().min(0).optional(),
-      sodium: Joi.number().min(0).optional()
-    }).optional(),
-    allergens: Joi.array().items(Joi.string().valid('gluten', 'dairy', 'nuts', 'eggs', 'soy', 'shellfish', 'fish', 'sesame')).optional(),
-    dietary: Joi.array().items(Joi.string().valid('vegetarian', 'vegan', 'halal', 'kosher', 'keto', 'low-carb', 'dairy-free', 'gluten-free')).optional(),
-    prepTimeMinutes: Joi.number().min(1).max(120).optional(),
-    inventory: Joi.object({
-      trackInventory: Joi.boolean().optional(),
-      stockQuantity: Joi.number().min(0).optional(),
-      lowStockThreshold: Joi.number().min(0).optional()
-    }).optional(),
-    tags: Joi.array().items(Joi.string().trim().lowercase()).optional(),
-    searchKeywords: Joi.array().items(Joi.string().trim().lowercase()).optional()
+  imageUrl: Joi.string().uri().optional(),
+  category: Joi.string().min(2).max(50).required(),
+  available: Joi.boolean().optional(),
+  featured: Joi.boolean().optional()
   }),
 
   updateMenuItem: Joi.object({
@@ -167,33 +108,10 @@ const schemas = {
     description: Joi.string().max(500).optional(),
     price: Joi.number().min(0).optional(),
     originalPrice: Joi.number().min(0).optional(),
-    imageUrl: Joi.string().uri().optional(),
-    images: Joi.array().items(Joi.object({
-      url: Joi.string().uri().required(),
-      alt: Joi.string().optional()
-    })).optional(),
-    category: Joi.string().min(2).max(50).optional(),
-    available: Joi.boolean().optional(),
-    featured: Joi.boolean().optional(),
-    weightGrams: Joi.number().min(1).max(5000).optional(),
-    nutrition: Joi.object({
-      calories: Joi.number().min(0).optional(),
-      protein: Joi.number().min(0).optional(),
-      carbs: Joi.number().min(0).optional(),
-      fat: Joi.number().min(0).optional(),
-      fiber: Joi.number().min(0).optional(),
-      sodium: Joi.number().min(0).optional()
-    }).optional(),
-    allergens: Joi.array().items(Joi.string().valid('gluten', 'dairy', 'nuts', 'eggs', 'soy', 'shellfish', 'fish', 'sesame')).optional(),
-    dietary: Joi.array().items(Joi.string().valid('vegetarian', 'vegan', 'halal', 'kosher', 'keto', 'low-carb', 'dairy-free', 'gluten-free')).optional(),
-    prepTimeMinutes: Joi.number().min(1).max(120).optional(),
-    inventory: Joi.object({
-      trackInventory: Joi.boolean().optional(),
-      stockQuantity: Joi.number().min(0).optional(),
-      lowStockThreshold: Joi.number().min(0).optional()
-    }).optional(),
-    tags: Joi.array().items(Joi.string().trim().lowercase()).optional(),
-    searchKeywords: Joi.array().items(Joi.string().trim().lowercase()).optional()
+  imageUrl: Joi.string().uri().optional(),
+  category: Joi.string().min(2).max(50).optional(),
+  available: Joi.boolean().optional(),
+  featured: Joi.boolean().optional()
   }),
 
   updateStock: Joi.object({

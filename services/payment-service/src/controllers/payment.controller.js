@@ -12,7 +12,7 @@ const createPayment = async (req, res) => {
     // Get order details
     let order;
     try {
-      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/orders/${orderId}`);
+      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/internal/orders/${orderId}`);
       order = orderResponse.data.data.order;
     } catch (error) {
       return res.status(404).json({
@@ -513,19 +513,30 @@ const checkPaymentStatus = async (req, res) => {
 // Create MoMo payment request (simplified version)
 const createMoMoPayment = async (req, res) => {
   try {
-    const { orderId, amount, orderInfo, extraData } = req.body;
+    const { orderId } = req.body;
     
     // Get order details to extract restaurantId and amount breakdown
     let order;
     try {
-      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/orders/${orderId}`);
+      const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/internal/orders/${orderId}`);
+      logger.info('Order response:', orderResponse.data);
       order = orderResponse.data.data.order;
+      logger.info('Extracted order:', order);
     } catch (error) {
+      logger.error('Failed to fetch order:', error.message);
       return res.status(404).json({
         success: false,
         error: 'Order not found'
       });
     }
+    
+    // Auto-generate payment data from order
+    const amount = order.amount.total;
+    const momoOrderInfo = `Order ${order.orderNumber}`;
+    const momoExtraData = JSON.stringify({
+      orderNumber: order.orderNumber,
+      restaurantId: order.restaurantId
+    });
     
     // Generate payment number
     const paymentNumber = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -548,8 +559,30 @@ const createMoMoPayment = async (req, res) => {
           discount: order.amount.discount || 0
         }
       },
-      orderInfo,
-      extraData
+      security: {
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        riskScore: 0  // Default low risk, can be calculated by fraud detection service
+      },
+      metadata: {
+        customerInfo: {
+          name: req.user.name,
+          email: req.user.email,
+          phone: req.user.phone
+        },
+        orderInfo: {
+          orderNumber: order.orderNumber,
+          items: order.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          }))
+        },
+        deliveryInfo: {
+          address: order.deliveryAddress.text,
+          contactPhone: order.deliveryAddress.contactPhone
+        }
+      }
     });
     
     await payment.save();
@@ -558,13 +591,16 @@ const createMoMoPayment = async (req, res) => {
     const paymentResult = await momoService.createPaymentRequest({
       orderId: payment._id,
       amount,
-      orderInfo,
-      extraData
+      orderInfo: momoOrderInfo,
+      extraData: momoExtraData,
+      customerName: req.user.name,
+      customerEmail: req.user.email,
+      customerPhone: req.user.phone
     });
     
     if (paymentResult.success) {
       // Update payment with MoMo data
-      payment.momoData = {
+      payment.momo = {
         requestId: paymentResult.data.requestId,
         payUrl: paymentResult.data.payUrl
       };
@@ -593,9 +629,95 @@ const createMoMoPayment = async (req, res) => {
   }
 };
 
+// Verify MoMo payment callback and update order status
+const verifyMoMoPayment = async (req, res) => {
+  try {
+    const {
+      orderId: momoOrderId,  // This is payment ID from MoMo
+      resultCode,
+      transId,
+      signature,
+      ...otherData
+    } = req.body;
+
+    // Find payment by MoMo order ID (which is payment._id)
+    const payment = await Payment.findById(momoOrderId);
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found'
+      });
+    }
+
+    // Verify signature
+    const isValid = momoService.verifySignature(
+      `accessKey=${config.MOMO_ACCESS_KEY}&amount=${otherData.amount}&extraData=${otherData.extraData || ''}&message=${otherData.message}&orderId=${momoOrderId}&orderInfo=${otherData.orderInfo}&orderType=${otherData.orderType}&partnerCode=${otherData.partnerCode}&payType=${otherData.payType}&requestId=${otherData.requestId}&responseTime=${otherData.responseTime}&resultCode=${resultCode}&transId=${transId}`,
+      signature
+    );
+
+    if (!isValid) {
+      logger.warn('Invalid MoMo signature for payment:', momoOrderId);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid signature'
+      });
+    }
+
+    // Update payment status
+    if (resultCode === '0') {
+      payment.status = 'COMPLETED';
+      payment.momo.transId = transId;
+      payment.momo.resultCode = parseInt(resultCode);
+      payment.momo.responseTime = otherData.responseTime;
+      await payment.save();
+
+      // Update order status from PENDING_PAYMENT to PLACED
+      try {
+        await axios.patch(
+          `${config.ORDER_SERVICE_URL}/api/internal/orders/${payment.orderId}/status`,
+          {
+            status: 'PLACED',
+            paymentStatus: 'PAID'
+          }
+        );
+      } catch (error) {
+        logger.error('Failed to update order status:', error);
+      }
+
+      res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: {
+          orderId: payment.orderId,  // Return real order ID
+          paymentId: payment._id,
+          transId
+        }
+      });
+    } else {
+      payment.status = 'FAILED';
+      payment.momo.resultCode = parseInt(resultCode);
+      payment.momo.responseTime = otherData.responseTime;
+      await payment.save();
+
+      res.status(400).json({
+        success: false,
+        error: 'Payment failed',
+        resultCode
+      });
+    }
+  } catch (error) {
+    logger.error('Verify MoMo payment error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
 module.exports = {
   createPayment,
   createMoMoPayment,
+  verifyMoMoPayment,
   getPaymentById,
   getUserPayments,
   getRestaurantPayments,

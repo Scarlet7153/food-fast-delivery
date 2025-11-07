@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
+import { paymentService } from '../../services/paymentService'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import RatingModal from '../../components/RatingModal'
+import Pagination from '../../components/common/Pagination'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye,
-  Truck, CheckCircle, XCircle, AlertCircle, Package
+  Truck, CheckCircle, XCircle, AlertCircle, Package, CreditCard, Loader2
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatOrderStatus } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -14,25 +17,35 @@ import { t } from '../../utils/translations'
 function Orders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('newest')
+  
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelOrderId, setCancelOrderId] = useState(null)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [selectedOrderForRating, setSelectedOrderForRating] = useState(null)
+  const [rating, setRating] = useState(0)
+  const [ratingComment, setRatingComment] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   // Fetch orders
   const { data: ordersData, isLoading, refetch } = useQuery(
-    ['orders', { search: searchQuery, status: statusFilter, sortBy }],
+    ['orders', { search: searchQuery, status: statusFilter, page: currentPage }],
     () => orderService.getMyOrders({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      sortBy
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 2 * 60 * 1000, // 2 minutes
       refetchInterval: 30 * 1000, // Refetch every 30 seconds for real-time updates
     }
   )
 
   const orders = ordersData?.data?.orders || []
+  const totalOrders = ordersData?.data?.pagination?.total || ordersData?.data?.total || 0
+  const totalPages = Math.ceil(totalOrders / pageSize)
   const queryClient = useQueryClient()
 
   // Confirm delivery mutation
@@ -45,6 +58,25 @@ function Orders() {
       },
       onError: (error) => {
         toast.error('Không thể xác nhận nhận hàng')
+      }
+    }
+  )
+
+  // Payment mutation for PENDING_PAYMENT orders
+  const createPaymentMutation = useMutation(
+    (paymentData) => paymentService.createMoMoPayment(paymentData),
+    {
+      onSuccess: (response) => {
+        const { payUrl } = response.data
+        if (payUrl) {
+          window.location.href = payUrl
+        } else {
+          toast.error('Không nhận được URL thanh toán')
+        }
+      },
+      onError: (error) => {
+        console.error('Payment creation error:', error)
+        toast.error('Không thể tạo thanh toán. Vui lòng thử lại.')
       }
     }
   )
@@ -67,6 +99,38 @@ function Orders() {
     confirmDeliveryMutation.mutate(orderId)
   }
 
+  const handlePayNow = (orderId, order) => {
+    if (order && order.payment.method === 'MOMO') {
+      createPaymentMutation.mutate({
+        orderId: order._id,
+        method: 'MOMO'
+      })
+    }
+  }
+
+  const handleOpenRating = (order) => {
+    setSelectedOrderForRating(order)
+    setRating(0)
+    setRatingComment('')
+    setShowRatingModal(true)
+  }
+
+  const handleSubmitRating = async () => {
+    if (!selectedOrderForRating) return
+    try {
+      await orderService.rateOrder(selectedOrderForRating._id, { 
+        rating: rating, 
+        comment: ratingComment 
+      })
+      toast.success('Cảm ơn bạn đã đánh giá!')
+      setShowRatingModal(false)
+      queryClient.invalidateQueries(['orders'])
+      refetch()
+    } catch (err) {
+      toast.error('Không thể gửi đánh giá')
+    }
+  }
+
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
     { value: 'PLACED', label: 'Đã đặt' },
@@ -76,12 +140,6 @@ function Orders() {
     { value: 'CANCELLED', label: 'Đã hủy' },
   ]
 
-  const sortOptions = [
-    { value: 'newest', label: 'Mới Nhất' },
-    { value: 'oldest', label: 'Cũ Nhất' },
-    { value: 'total', label: 'Số Tiền Cao' },
-    { value: 'status', label: 'Theo Trạng Thái' },
-  ]
 
   return (
     <div className="space-y-6">
@@ -103,7 +161,10 @@ function Orders() {
               type="text"
               placeholder="Tìm kiếm đơn hàng theo tên nhà hàng hoặc mã đơn..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -111,7 +172,10 @@ function Orders() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -121,18 +185,7 @@ function Orders() {
             ))}
           </select>
 
-          {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input lg:w-48"
-          >
-            {sortOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          {/* Sort removed */}
 
           {/* Refresh Button */}
           <button
@@ -177,6 +230,8 @@ function Orders() {
                 }}
                 onConfirmDelivery={handleConfirmDelivery}
                 isConfirming={confirmDeliveryMutation.isLoading}
+                onPayNow={(orderId) => handlePayNow(orderId, order)}
+                onOpenRating={handleOpenRating}
               />
             ))}
           </div>
@@ -213,6 +268,15 @@ function Orders() {
         )}
       </div>
 
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalOrders}
+        itemsPerPage={pageSize}
+        onPageChange={setCurrentPage}
+      />
+
       {/* Cancel Order Modal */}
       {showCancelModal && (
         <ConfirmationModal
@@ -229,12 +293,24 @@ function Orders() {
           type="danger"
         />
       )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <RatingModal
+          rating={rating}
+          setRating={setRating}
+          comment={ratingComment}
+          setComment={setRatingComment}
+          onSubmit={handleSubmitRating}
+          onClose={() => setShowRatingModal(false)}
+        />
+      )}
     </div>
   )
 }
 
 // Order Card Component
-function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
+function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming, onPayNow, onOpenRating }) {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'DELIVERED':
@@ -267,9 +343,11 @@ function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
     }
   }
 
-  const canCancel = ['PLACED', 'CONFIRMED', 'COOKING'].includes(order.status)
+  // Chỉ cho phép hủy khi chưa thanh toán hoặc chưa được nhà hàng xác nhận
+  const canCancel = order.status === 'PENDING_PAYMENT' || order.status === 'PLACED'
   const canRate = order.status === 'DELIVERED' && !order.rating
   const canConfirmDelivery = order.status === 'IN_FLIGHT'
+  const needsPayment = order.status === 'PENDING_PAYMENT' && order.payment.method === 'MOMO'
 
   return (
     <div className="p-6 hover:bg-gray-50 transition-colors">
@@ -367,6 +445,16 @@ function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
             <span>Xem</span>
           </Link>
 
+          {needsPayment && (
+            <button
+              onClick={() => onPayNow(order._id)}
+              className="btn btn-primary btn-sm flex items-center space-x-1"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span>Thanh toán</span>
+            </button>
+          )}
+
           {canCancel && (
             <button
               onClick={() => onCancelOrder(order._id)}
@@ -389,7 +477,7 @@ function OrderCard({ order, onCancelOrder, onConfirmDelivery, isConfirming }) {
 
           {canRate && (
             <button
-              onClick={() => handleRateOrder(order._id)}
+              onClick={() => onOpenRating(order)}
               className="btn btn-primary btn-sm flex items-center space-x-1"
             >
               <Star className="h-4 w-4" />

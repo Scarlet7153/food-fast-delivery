@@ -7,6 +7,7 @@ const paymentController = require('../controllers/payment.controller');
 // Protected routes
 router.post('/create', auth, validate(schemas.createPayment), paymentController.createPayment);
 router.post('/momo/create', auth, paymentController.createMoMoPayment);
+router.post('/momo/verify', auth, paymentController.verifyMoMoPayment);
 router.get('/user', auth, paymentController.getUserPayments);
 router.get('/:id', auth, paymentController.getPaymentById);
 router.get('/:id/status', auth, paymentController.checkPaymentStatus);

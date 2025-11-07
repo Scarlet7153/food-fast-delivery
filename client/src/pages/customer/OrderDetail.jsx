@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from 'react-query'
+import { useQuery, useMutation } from 'react-query'
 import { orderService } from '../../services/orderService'
+import { paymentService } from '../../services/paymentService'
 import socketService from '../../services/socketService'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import RatingModal from '../../components/RatingModal'
 import { 
-  ArrowLeft, MapPin, Clock, Phone, Star, Truck,
-  CheckCircle, XCircle, AlertCircle, Loader2, Plane
+  ArrowLeft, MapPin, Clock, Phone, Truck,
+  CheckCircle, XCircle, AlertCircle, Loader2, Plane, CreditCard
 } from 'lucide-react'
+
+// Filled gold star SVG
+const FilledStar = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#FBBF24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21z" />
+  </svg>
+)
 import { 
   formatCurrency, formatDateTime, formatOrderStatus, 
   formatMissionStatus, formatDistance 
@@ -19,6 +28,7 @@ function OrderDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [rating, setRating] = useState(0)
+  const [ratingComment, setRatingComment] = useState('')
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
 
@@ -34,6 +44,20 @@ function OrderDetail() {
   )
 
   const order = orderData?.data?.order
+
+  // Confirm delivery mutation (customer)
+  const confirmDeliveryMutation = useMutation(
+    (orderId) => orderService.confirmDelivery(orderId),
+    {
+      onSuccess: () => {
+        refetch()
+        toast.success('Xác nhận nhận hàng thành công!')
+      },
+      onError: () => {
+        toast.error('Không thể xác nhận nhận hàng')
+      }
+    }
+  )
 
   // Socket connection for real-time updates
   useEffect(() => {
@@ -70,7 +94,7 @@ function OrderDetail() {
       setShowCancelModal(false)
       refetch()
     } catch (error) {
-      toast.error('Không thể hủy đơn hàng')
+      toast.error(error.response?.data?.error || 'Không thể hủy đơn hàng')
     }
   }
 
@@ -81,17 +105,51 @@ function OrderDetail() {
     }
 
     try {
-      await orderService.rateOrder(id, { rating })
+      await orderService.rateOrder(id, { 
+        rating: rating, 
+        comment: ratingComment 
+      })
       toast.success('Cảm ơn bạn đã đánh giá!')
       setShowRatingModal(false)
+      setRatingComment('')
       refetch()
     } catch (error) {
       toast.error('Không thể gửi đánh giá')
     }
   }
 
-  const canCancel = order && ['PLACED', 'CONFIRMED'].includes(order.status)
+  // Payment mutation for PENDING_PAYMENT orders
+  const createPaymentMutation = useMutation(
+    (paymentData) => paymentService.createMoMoPayment(paymentData),
+    {
+      onSuccess: (response) => {
+        const { payUrl } = response.data
+        if (payUrl) {
+          window.location.href = payUrl
+        } else {
+          toast.error('Không nhận được URL thanh toán')
+        }
+      },
+      onError: (error) => {
+        console.error('Payment creation error:', error)
+        toast.error('Không thể tạo thanh toán. Vui lòng thử lại.')
+      }
+    }
+  )
+
+  const handlePayNow = () => {
+    if (order && order.payment.method === 'MOMO') {
+      createPaymentMutation.mutate({
+        orderId: order._id,
+        method: 'MOMO'
+      })
+    }
+  }
+
+  // Chỉ cho phép hủy khi chưa thanh toán hoặc chưa được nhà hàng xác nhận
+  const canCancel = order && (order.status === 'PENDING_PAYMENT' || order.status === 'PLACED')
   const canRate = order && order.status === 'DELIVERED' && !order.rating
+  const needsPayment = order && order.status === 'PENDING_PAYMENT' && order.payment.method === 'MOMO'
 
   if (isLoading) {
     return (
@@ -145,6 +203,8 @@ function OrderDetail() {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'PENDING_PAYMENT':
+        return 'bg-amber-100 text-amber-800'
       case 'DELIVERED':
         return 'bg-green-100 text-green-800'
       case 'CANCELLED':
@@ -188,6 +248,23 @@ function OrderDetail() {
         </div>
       </div>
 
+      {/* Payment Pending Alert */}
+      {needsPayment && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 mb-1">
+                Đơn hàng đang chờ thanh toán
+              </h3>
+              <p className="text-sm text-amber-700">
+                Vui lòng hoàn tất thanh toán để nhà hàng bắt đầu xử lý đơn hàng của bạn.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Order Status Timeline */}
       <OrderTimeline order={order} />
 
@@ -203,19 +280,36 @@ function OrderDetail() {
             />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">
-              {order.restaurant?.name || 'Nhà Hàng ABC'}
-            </h3>
-            <p className="text-gray-600 mb-2">
-              {order.restaurant?.description || 'Nhà hàng abc .....'}
-            </p>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              {order.restaurant?.phone && (
-                <div className="flex items-center space-x-1">
-                  <Phone className="h-4 w-4" />
-                  <span>{order.restaurant.phone}</span>
+            <div className="flex items-start justify-between">
+              <div className="pr-4">
+                <h3 className="font-semibold text-gray-900">
+                  {order.restaurant?.name || 'Nhà Hàng ABC'}
+                </h3>
+                <p className="text-gray-600 mb-2">
+                  {order.restaurant?.description || 'Nhà hàng abc .....'}
+                </p>
+                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  {order.restaurant?.phone && (
+                    <div className="flex items-center space-x-1">
+                      <Phone className="h-4 w-4" />
+                      <span>{order.restaurant.phone}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Rating block on the right */}
+              <div className="flex flex-col items-end text-right ml-4">
+                <div className="flex items-center space-x-2">
+                  <FilledStar className="h-5 w-5" />
+                  <span className="text-lg font-semibold text-gray-900">
+                    {order.restaurant?.rating?.average ? order.restaurant.rating.average.toFixed(1) : '0.0'}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {order.restaurant?.rating?.count ? `${order.restaurant.rating.count} lượt đánh giá` : 'Chưa có đánh giá'}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -323,10 +417,6 @@ function OrderDetail() {
             <span className="text-gray-600">Phí giao hàng</span>
             <span className="font-medium">{formatCurrency(order.amount?.deliveryFee || 0)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Phí dịch vụ</span>
-            <span className="font-medium">Miễn phí</span>
-          </div>
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between">
               <span className="font-semibold text-lg">Tổng</span>
@@ -340,6 +430,26 @@ function OrderDetail() {
 
       {/* Actions */}
       <div className="flex justify-center space-x-4">
+        {needsPayment && (
+          <button
+            onClick={handlePayNow}
+            disabled={createPaymentMutation.isLoading}
+            className="btn btn-primary flex items-center space-x-2"
+          >
+            {createPaymentMutation.isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Đang xử lý...</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-4 w-4" />
+                <span>Thanh toán ngay</span>
+              </>
+            )}
+          </button>
+        )}
+
         {canCancel && (
           <button
             onClick={() => setShowCancelModal(true)}
@@ -349,12 +459,33 @@ function OrderDetail() {
           </button>
         )}
 
+        {/* Confirm delivery button for customers (when order is IN_FLIGHT) */}
+        {order.status === 'IN_FLIGHT' && (
+          <button
+            onClick={() => confirmDeliveryMutation.mutate(order._id)}
+            disabled={confirmDeliveryMutation.isLoading}
+            className="btn btn-primary flex items-center space-x-2"
+          >
+            {confirmDeliveryMutation.isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Đang xác nhận...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                <span>Xác nhận nhận hàng</span>
+              </>
+            )}
+          </button>
+        )}
+
         {canRate && (
           <button
             onClick={() => setShowRatingModal(true)}
             className="btn btn-primary flex items-center space-x-2"
           >
-            <Star className="h-4 w-4" />
+            <FilledStar className="h-4 w-4" />
             <span>Đánh Giá</span>
           </button>
         )}
@@ -365,6 +496,8 @@ function OrderDetail() {
         <RatingModal
           rating={rating}
           setRating={setRating}
+          comment={ratingComment}
+          setComment={setRatingComment}
           onSubmit={handleRateOrder}
           onClose={() => setShowRatingModal(false)}
         />
@@ -457,7 +590,7 @@ function OrderTimeline({ order }) {
           <div className="flex items-center space-x-2">
             <XCircle className="h-5 w-5 text-red-500" />
             <span className="text-sm font-medium text-red-800">
-              Đơn hàng {order.status.toLowerCase()}
+              Đơn hàng {formatOrderStatus(order.status)}
             </span>
           </div>
           {order.cancellationReason && (
@@ -536,47 +669,6 @@ function DroneMissionCard({ mission }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
-  )
-}
-
-// Rating Modal Component
-function RatingModal({ rating, setRating, onSubmit, onClose }) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4">Đánh Giá Đơn Hàng</h3>
-        
-        <div className="flex justify-center space-x-2 mb-6">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              onClick={() => setRating(star)}
-              className={`text-3xl transition-colors ${
-                star <= rating ? 'text-yellow-400' : 'text-gray-300'
-              }`}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="btn btn-outline"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={onSubmit}
-            disabled={rating === 0}
-            className="btn btn-primary"
-          >
-            Gửi Đánh Giá
-          </button>
-        </div>
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 // Layouts
 import AuthLayout from './components/layouts/AuthLayout'
 import CustomerLayout from './components/layouts/CustomerLayout'
+import PublicCustomerLayout from './components/layouts/PublicCustomerLayout'
 import RestaurantLayout from './components/layouts/RestaurantLayout'
 import AdminLayout from './components/layouts/AdminLayout'
 
@@ -23,6 +24,7 @@ import Checkout from './pages/customer/Checkout'
 import Orders from './pages/customer/Orders'
 import OrderDetail from './pages/customer/OrderDetail'
 import Profile from './pages/customer/Profile'
+import PaymentResult from './pages/customer/PaymentResult'
 
 // Restaurant Pages
 import RestaurantDashboard from './pages/restaurant/Dashboard'
@@ -43,7 +45,9 @@ import RevenueStats from './pages/admin/RevenueStats'
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, authInitialized } = useAuthStore()
+  // Wait until auth state rehydration/initialization completes
+  if (!authInitialized) return null
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -58,9 +62,55 @@ function ProtectedRoute({ children, allowedRoles }) {
 
 // Role-based redirect
 function RoleRedirect() {
-  const { user } = useAuthStore()
+  const { user, isAuthenticated, refreshUser, authInitialized } = useAuthStore()
+  const [loading, setLoading] = useState(false)
+
   
-  switch (user?.role) {
+
+  // Try to refresh user info if authenticated but user is missing.
+  // Note: call hooks unconditionally to satisfy React rules.
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    let mounted = true
+    const token = localStorage.getItem('accessToken')
+    if (isAuthenticated && !user) {
+  if (!token) {
+        const { forceLogout } = useAuthStore.getState()
+        forceLogout()
+        // Do not navigate to /login here — avoid intermediate redirect that causes flicker.
+      } else {
+        setLoading(true)
+        refreshUser()
+          .catch(err => console.error('refreshUser failed in RoleRedirect:', err))
+          .finally(() => { if (mounted) setLoading(false) })
+      }
+    }
+    return () => { mounted = false }
+  }, [isAuthenticated, user, refreshUser, navigate])
+
+  // Wait for auth initialization
+  if (!authInitialized) return null
+
+  // If not authenticated, redirect to customer page (public)
+  if (!isAuthenticated) {
+    return <Navigate to="/customer" replace />
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Đang tải...</div>
+      </div>
+    )
+  }
+
+  // If after refresh user is still not available, don't redirect yet
+  if (!user) return null
+
+  const role = user.role
+
+  switch (role) {
     case 'customer':
       return <Navigate to="/customer" replace />
     case 'restaurant':
@@ -68,7 +118,7 @@ function RoleRedirect() {
     case 'admin':
       return <Navigate to="/admin" replace />
     default:
-      return <Navigate to="/login" replace />
+      return <Navigate to="/customer" replace />
   }
 }
 
@@ -96,24 +146,31 @@ function App() {
           </AuthLayout>
         } />
 
-        {/* Root redirect */}
+        {/* Root redirect - based on user role */}
         <Route path="/" element={<RoleRedirect />} />
 
-        {/* Customer Routes */}
+        {/* Public Customer Routes (no authentication required) */}
+        <Route path="/customer" element={<PublicCustomerLayout />}>
+          <Route index element={<CustomerHome />} />
+          <Route path="restaurants" element={<Restaurants />} />
+          <Route path="restaurants/:id" element={<RestaurantDetail />} />
+        </Route>
+
+        {/* Protected Customer Routes (authentication required) */}
         <Route path="/customer" element={
           <ProtectedRoute allowedRoles={['customer']}>
             <CustomerLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<CustomerHome />} />
-          <Route path="restaurants" element={<Restaurants />} />
-          <Route path="restaurants/:id" element={<RestaurantDetail />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="profile" element={<Profile />} />
         </Route>
+
+        {/* Payment Result Page (public - no layout) */}
+        <Route path="/payment/result" element={<PaymentResult />} />
 
         {/* Restaurant Routes */}
         <Route path="/restaurant" element={

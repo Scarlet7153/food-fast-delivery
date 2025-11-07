@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { adminService } from '../../services/adminService'
+import Pagination from '../../components/common/Pagination'
 import { 
   Search, Filter, MapPin, Clock, Truck, ShoppingBag, 
   CheckCircle, XCircle, AlertTriangle, Eye
@@ -15,31 +16,34 @@ function AdminMissions() {
   const [restaurantFilter, setRestaurantFilter] = useState('all')
   const [selectedMission, setSelectedMission] = useState(null)
   const [showMissionModal, setShowMissionModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   // Fetch missions
   const { data: missionsData, isLoading } = useQuery(
-    ['admin-missions', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter }],
+    ['admin-missions', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter, page: currentPage }],
     () => adminService.getAllMissions({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined
+      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined,
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 2 * 60 * 1000, // 2 minutes
     }
   )
 
   const missions = missionsData?.data?.missions || []
   const restaurants = missionsData?.data?.restaurants || []
+  const totalMissions = missionsData?.data?.pagination?.total || missionsData?.data?.total || 0
+  const totalPages = Math.ceil(totalMissions / pageSize)
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
-    { value: 'PENDING', label: 'Chờ Xử Lý' },
-    { value: 'ASSIGNED', label: 'Đã Phân Công' },
     { value: 'IN_FLIGHT', label: 'Đang giao' },
-    { value: 'DELIVERED', label: 'Đã giao' },
-    { value: 'FAILED', label: 'Thất bại' },
-    { value: 'CANCELLED', label: 'Đã hủy' },
+    { value: 'DELIVERED', label: 'Hoàn thành' },
   ]
 
   const handleViewMission = (mission) => {
@@ -50,29 +54,31 @@ function AdminMissions() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'DELIVERED':
+      case 'COMPLETED':
+      case 'RETURNING':
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'FAILED':
       case 'CANCELLED':
+      case 'ABORTED':
         return <XCircle className="h-4 w-4 text-red-500" />
-      case 'IN_FLIGHT':
-      case 'ASSIGNED':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       default:
-        return <Clock className="h-4 w-4 text-blue-500" />
+        // PENDING, ASSIGNED, QUEUED, PREPARING, TAKEOFF, CRUISING, IN_FLIGHT, APPROACHING, LANDING
+        return <Truck className="h-4 w-4 text-blue-500" />
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'DELIVERED':
+      case 'COMPLETED':
+      case 'RETURNING':
         return 'bg-green-100 text-green-800'
       case 'FAILED':
       case 'CANCELLED':
+      case 'ABORTED':
         return 'bg-red-100 text-red-800'
-      case 'IN_FLIGHT':
-      case 'ASSIGNED':
-        return 'bg-yellow-100 text-yellow-800'
       default:
+        // PENDING, ASSIGNED, QUEUED, PREPARING, TAKEOFF, CRUISING, IN_FLIGHT, APPROACHING, LANDING
         return 'bg-blue-100 text-blue-800'
     }
   }
@@ -97,7 +103,10 @@ function AdminMissions() {
               type="text"
               placeholder="Tìm kiếm đơn giao theo ID, số đơn hàng hoặc drone..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -105,7 +114,10 @@ function AdminMissions() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -118,7 +130,10 @@ function AdminMissions() {
           {/* Restaurant Filter */}
           <select
             value={restaurantFilter}
-            onChange={(e) => setRestaurantFilter(e.target.value)}
+            onChange={(e) => {
+              setRestaurantFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             <option value="all">Tất Cả Nhà Hàng</option>
@@ -258,6 +273,17 @@ function AdminMissions() {
         </div>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalMissions}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
       {/* Mission Detail Modal */}
       {showMissionModal && selectedMission && (
         <MissionDetailModal
@@ -389,39 +415,41 @@ function MissionDetailModal({ mission, onClose }) {
           <div>
             <h3 className="text-lg font-medium mb-4">Lịch Sử Đơn Giao</h3>
             <div className="space-y-3">
+              {/* Always show: Created */}
               <div className="flex items-center space-x-3">
                 <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Tạo Đơn Giao</p>
+                  <p className="text-sm font-medium text-gray-900">Đang Giao</p>
                   <p className="text-xs text-gray-500">{formatDateTime(mission.createdAt)}</p>
                 </div>
               </div>
               
-              {mission.status === 'DELIVERED' && (
-                <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Bắt Đầu Giao Hàng</p>
-                    <p className="text-xs text-gray-500">Đã cập nhật status</p>
-                  </div>
-                </div>
-              )}
-              
-              {mission.status === 'DELIVERED' && (
+              {/* Show completion based on status */}
+              {(mission.status === 'DELIVERED' || mission.status === 'COMPLETED' || mission.status === 'RETURNING') && (
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Hoàn Thành Giao Hàng</p>
+                    <p className="text-sm font-medium text-gray-900">Hoàn Thành</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
                   </div>
                 </div>
               )}
               
-              {mission.status === 'FAILED' && (
+              {(mission.status === 'FAILED' || mission.status === 'ABORTED') && (
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Đơn Giao Thất Bại</p>
+                    <p className="text-sm font-medium text-gray-900">Thất Bại</p>
+                    <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
+                  </div>
+                </div>
+              )}
+              
+              {mission.status === 'CANCELLED' && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Đã Hủy</p>
                     <p className="text-xs text-gray-500">{formatDateTime(mission.updatedAt)}</p>
                   </div>
                 </div>

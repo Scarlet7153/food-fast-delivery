@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
 import { 
@@ -8,10 +8,16 @@ import {
 
 function AdminLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuthStore()
   
   // Use auth guard to check token expiration
   useAuthGuard()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/customer', { replace: true })
+  }
 
   const navigation = [
     { name: 'Người Dùng', href: '/admin/users', icon: Users },
@@ -75,7 +81,7 @@ function AdminLayout() {
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <LogOut className="h-4 w-4" />

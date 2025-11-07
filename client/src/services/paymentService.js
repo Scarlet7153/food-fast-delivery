@@ -7,6 +7,12 @@ export const paymentService = {
     return response.data
   },
 
+  // Verify MoMo payment callback
+  async verifyMoMoPayment(callbackData) {
+    const response = await api.post('/payments/momo/verify', callbackData)
+    return response.data
+  },
+
   // Get payment status
   async getPaymentStatus(orderId) {
     const response = await api.get(`/payments/momo/${orderId}/status`)

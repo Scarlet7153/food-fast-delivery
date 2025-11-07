@@ -223,10 +223,6 @@ function Cart() {
                 <span className="font-medium">{formatCurrency(deliveryFee)}</span>
               </div>
               
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Phí dịch vụ</span>
-                <span className="font-medium">Miễn phí</span>
-              </div>
             </div>
 
             {/* Total */}

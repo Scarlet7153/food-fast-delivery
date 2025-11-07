@@ -124,7 +124,7 @@ const userSchema = new mongoose.Schema({
 // Indexes
 userSchema.index({ role: 1 });
 userSchema.index({ restaurantId: 1 });
-userSchema.index({ phone: 1 }, { unique: true });
+// phone is already declared unique on the schema path; avoid duplicate index declaration
 userSchema.index({ 'address.location': '2dsphere' }, { sparse: true });
 
 // Virtual for restaurant info (for restaurant users)

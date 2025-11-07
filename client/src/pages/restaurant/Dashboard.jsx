@@ -257,7 +257,7 @@ function RestaurantDashboard() {
                   
                   <div className="flex items-center space-x-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {order.status.toLowerCase().replace('_', ' ')}
+                      {formatOrderStatus(order.status)}
                     </span>
                     {order.deliveryMission && (
                       <div className="flex items-center space-x-1 text-xs text-gray-500">

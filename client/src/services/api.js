@@ -82,7 +82,9 @@ api.interceptors.response.use(
             refreshToken
           })
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data
+          // Support both response.data and response.data.data shapes
+          const payload = response.data?.data || response.data
+          const { accessToken, refreshToken: newRefreshToken } = payload
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', newRefreshToken)
 

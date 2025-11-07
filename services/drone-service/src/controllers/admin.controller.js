@@ -438,20 +438,16 @@ const getStatistics = async (req, res) => {
 
     const [
       totalDrones,
-      activeDrones,
       idleDrones,
-      inFlightDrones,
-      maintenanceDrones,
+      busyDrones,
       totalMissions,
       completedMissions,
       inProgressMissions,
       failedMissions
     ] = await Promise.all([
       Drone.countDocuments(),
-      Drone.countDocuments({ status: 'active' }),
-      Drone.countDocuments({ status: 'idle' }),
-      Drone.countDocuments({ status: 'in_flight' }),
-      Drone.countDocuments({ status: 'maintenance' }),
+      Drone.countDocuments({ status: 'IDLE' }),
+      Drone.countDocuments({ status: 'BUSY' }),
       DeliveryMission.countDocuments(),
       DeliveryMission.countDocuments({ status: 'completed' }),
       DeliveryMission.countDocuments({ status: { $in: ['assigned', 'in_progress', 'returning'] } }),
@@ -514,10 +510,8 @@ const getStatistics = async (req, res) => {
       data: {
         drones: {
           total: totalDrones,
-          active: activeDrones,
           idle: idleDrones,
-          inFlight: inFlightDrones,
-          maintenance: maintenanceDrones,
+          busy: busyDrones,
           statusDistribution: droneStatusDistribution
         },
         missions: {
@@ -571,13 +565,8 @@ const getOverview = async (req, res) => {
       .select('missionId status droneId startTime endTime')
       .populate('droneId', 'name model');
 
-    // Low battery drones
-    const lowBatteryDrones = await Drone.find({
-      batteryPercent: { $lt: 30 },
-      status: { $ne: 'maintenance' }
-    })
-    .select('name model batteryPercent status')
-    .limit(10);
+  // Low battery info removed from simplified model
+  const lowBatteryDrones = [];
 
     // Performance metrics
     const performanceStats = await DeliveryMission.aggregate([

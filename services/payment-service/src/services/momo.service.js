@@ -8,7 +8,7 @@ class MoMoPaymentService {
     this.partnerCode = config.MOMO_PARTNER_CODE;
     this.accessKey = config.MOMO_ACCESS_KEY;
     this.secretKey = config.MOMO_SECRET_KEY;
-    this.endpoint = config.MOMO_ENDPOINT;
+    this.endpoint = config.MOMO_ENDPOINT_CREATE;
     this.ipnUrl = config.MOMO_IPN_URL;
     this.returnUrl = config.MOMO_RETURN_URL;
   }

@@ -341,40 +341,34 @@ function DroneCard({ drone, onEdit, onDelete, onStatusChange, getStatusIcon, get
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <MapPin className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">Tầm Bay</span>
+            <span className="text-sm text-gray-600">Tầm Bay Tối Đa</span>
           </div>
           <span className="text-sm font-medium text-gray-900">
             {formatDistance(drone.maxRangeMeters)}
           </span>
         </div>
 
-        {/* Current Mission */}
-        {drone.currentMission && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
-              <span className="text-xs text-blue-700">
-                #{drone.currentMission.orderNumber}
-              </span>
+        {/* Current Mission - Fixed height container */}
+        <div className="min-h-[76px]">
+          {drone.currentMission && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
+                <span className="text-xs text-blue-700">
+                  Mission #{drone.currentMission.missionNumber || drone.currentMission._id?.slice(-6)}
+                </span>
+              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                Cập nhật lần cuối: {formatDateTime(drone.currentMission.updatedAt || drone.updatedAt)}
+              </p>
             </div>
-            <p className="text-xs text-blue-700 mt-1">
-              ETA: {formatDateTime(drone.currentMission.estimatedArrival)}
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Location */}
-        {drone.location && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-600">Vị Trí</span>
-            </div>
-            <span className="text-xs text-gray-500">
-              {drone.location.lat.toFixed(4)}, {drone.location.lng.toFixed(4)}
-            </span>
-          </div>
-        )}
+        {/* Last Updated */}
+        <div className="text-xs text-gray-500">
+          Cập nhật lần cuối: {formatDateTime(drone.updatedAt)}
+        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200">
@@ -490,7 +484,7 @@ function DroneModal({ drone, onClose, onSubmit, isLoading }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mẫu *
+                Hãng *
               </label>
               <input
                 type="text"

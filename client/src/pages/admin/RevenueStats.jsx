@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardContent } from "@/components/common/card";
-import { Button } from "@/components/common/button";
+import { Card, CardContent } from "@/components/common/Card";
+import { Button } from "@/components/common/Button";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";

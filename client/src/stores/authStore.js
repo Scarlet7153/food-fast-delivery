@@ -6,15 +6,19 @@ import toast from 'react-hot-toast'
 const useAuthStore = create(
   persist(
     (set, get) => ({
-      // State
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
+  // State
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  // Indicates whether auth has been initialized (rehydration + token check)
+  authInitialized: false,
 
       // Actions
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-      setLoading: (isLoading) => set({ isLoading }),
+  setLoading: (isLoading) => set({ isLoading }),
+
+  setAuthInitialized: (value) => set({ authInitialized: value }),
 
 
       // Login
@@ -27,8 +31,9 @@ const useAuthStore = create(
             window.queryClient.clear()
           }
           
-          const response = await authService.login(credentials)
-          const { user, accessToken, refreshToken } = response.data
+          const data = await authService.login(credentials)
+          const payload = data?.data || data
+          const { user, accessToken, refreshToken } = payload
 
           // Store tokens and user data
           localStorage.setItem('accessToken', accessToken)
@@ -60,17 +65,18 @@ const useAuthStore = create(
             window.queryClient.clear()
           }
           
-          const response = await authService.register(userData)
+          const data = await authService.register(userData)
+          const payload = data?.data || data
           
           // For restaurant registration, don't auto-login as they need approval
           if (userData.role === 'restaurant') {
-            const { user } = response.data
+            const { user } = payload
             set({ isLoading: false })
             return { success: true, user }
           }
 
           // For other roles, auto-login as before
-          const { user, accessToken, refreshToken } = response.data
+          const { user, accessToken, refreshToken } = payload
           
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', refreshToken)
@@ -98,7 +104,8 @@ const useAuthStore = create(
           console.error('Logout error:', error)
         } finally {
           // Clear state and localStorage
-          set({ user: null, isAuthenticated: false })
+          // Set authInitialized: true to prevent re-initialization on next mount
+          set({ user: null, isAuthenticated: false, authInitialized: true })
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
@@ -122,10 +129,8 @@ const useAuthStore = create(
           
           toast.success('Đăng xuất thành công')
           
-          // Force reload to clear all state
-          setTimeout(() => {
-            window.location.href = '/login'
-          }, 500)
+          // Don't use window.location here - let the Layout components handle navigation
+          // to avoid intermediate redirect to /login page during page reload
         }
       },
 
@@ -134,8 +139,9 @@ const useAuthStore = create(
         try {
           set({ isLoading: true })
           
-          const response = await authService.updateProfile(profileData)
-          const { user } = response.data
+          const data = await authService.updateProfile(profileData)
+          const payload = data?.data || data
+          const { user } = payload
 
           // Update stored user data
           localStorage.setItem('user', JSON.stringify(user))
@@ -200,8 +206,9 @@ const useAuthStore = create(
       // Refresh user data
       refreshUser: async () => {
         try {
-          const response = await authService.getProfile()
-          const { user } = response.data
+          const data = await authService.getProfile()
+          const payload = data?.data || data
+          const { user } = payload
 
           // Update stored user data
           localStorage.setItem('user', JSON.stringify(user))
@@ -269,7 +276,7 @@ const useAuthStore = create(
                 localStorage.removeItem('refreshToken')
                 set({ user: null, isAuthenticated: false })
               }
-            } else {
+              } else {
               // Token is still valid
               set({ user: parsedUser, isAuthenticated: true })
             }
@@ -282,12 +289,15 @@ const useAuthStore = create(
             set({ user: null, isAuthenticated: false })
           }
         }
+        // Mark initialization complete regardless of outcome
+        set({ authInitialized: true })
       },
 
       // Force logout (for token expiration)
       forceLogout: () => {
         // Clear state and localStorage
-        set({ user: null, isAuthenticated: false })
+        // Set authInitialized: true to prevent re-initialization
+        set({ user: null, isAuthenticated: false, authInitialized: true })
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')

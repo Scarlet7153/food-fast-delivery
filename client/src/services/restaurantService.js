@@ -73,6 +73,12 @@ export const restaurantService = {
     return response.data
   },
 
+  // For restaurant owner to toggle open/close status
+  async toggleRestaurantStatus() {
+    const response = await api.post('/restaurants/me/toggle-status')
+    return response.data
+  },
+
   // For restaurant owner to get their own menu
   async getMyMenuItems(params = {}) {
     const response = await api.get('/restaurants/me/menu', { params })

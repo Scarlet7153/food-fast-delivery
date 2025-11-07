@@ -173,10 +173,8 @@ async function simulateDroneFlight(mission, io) {
       // Simulate speed (km/h)
       const speed = progress < 0.1 || progress > 0.9 ? 20 : 40; // Slower at start/end
       
-      // Update battery
-      currentBattery = Math.max(0, currentBattery - batteryConsumptionPerStep);
       
-      // Add path point to mission
+      // Add path point to mission and update drone location
       const updatedMission = await DeliveryMission.findById(missionId);
       if (updatedMission) {
         await updatedMission.addPathPoint(
@@ -184,11 +182,10 @@ async function simulateDroneFlight(mission, io) {
           currentLng,
           Math.round(altitude),
           Math.round(heading),
-          Math.round(speed),
-          Math.round(currentBattery)
+          Math.round(speed)
         );
         
-        // Update drone location and battery
+        // Update drone location
         const droneDoc = await Drone.findById(updatedMission.droneId);
         if (droneDoc) {
           droneDoc.currentLocation = {
@@ -211,7 +208,7 @@ async function simulateDroneFlight(mission, io) {
             },
             heading: Math.round(heading),
             speed: Math.round(speed),
-            batteryPercent: Math.round(currentBattery),
+            // batteryPercent removed in simplified model
             progress: Math.round(progress * 100),
             timestamp: new Date()
           });
@@ -235,14 +232,11 @@ async function simulateDroneFlight(mission, io) {
           finalMission.actual.batteryUsed = Math.round(mission.estimates.batteryConsumption || 20);
           await finalMission.save();
           
-          // Update drone status back to IDLE
+          // Update drone status back to IDLE and clear mission
           const droneDoc = await Drone.findById(finalMission.droneId);
           if (droneDoc) {
             droneDoc.status = 'IDLE';
             droneDoc.currentMission = undefined;
-            droneDoc.maintenance.totalFlights = (droneDoc.maintenance.totalFlights || 0) + 1;
-            droneDoc.maintenance.totalFlightHours = (droneDoc.maintenance.totalFlightHours || 0) + 
-              (finalMission.actual.durationMinutes || 30) / 60;
             await droneDoc.save();
           }
           

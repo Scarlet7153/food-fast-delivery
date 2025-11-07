@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useCartStore } from '../../stores/cartStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
@@ -7,11 +7,17 @@ import { formatCurrency } from '../../utils/formatters'
 
 function CustomerLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuthStore()
   const { getTotalItems, getTotal } = useCartStore()
   
   // Use auth guard to check token expiration
   useAuthGuard()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/customer', { replace: true })
+  }
 
   const navigation = [
     { name: 'Trang Chủ', href: '/customer' },
@@ -100,7 +106,7 @@ function CustomerLayout() {
                     Hồ Sơ
                   </Link>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Đăng Xuất

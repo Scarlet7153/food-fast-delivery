@@ -3,6 +3,13 @@ import { useQuery } from 'react-query'
 import { Link } from 'react-router-dom'
 import { restaurantService } from '../../services/restaurantService'
 import { Search, Clock, MapPin, Filter, Grid, List } from 'lucide-react'
+
+// Filled gold star SVG
+const FilledStar = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#FBBF24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21z" />
+  </svg>
+)
 import { formatCurrency, formatDistance } from '../../utils/formatters'
 
 function Restaurants() {
@@ -191,7 +198,7 @@ function Restaurants() {
           <RestaurantSkeleton viewMode={viewMode} />
         ) : restaurants.length > 0 ? (
           <div className={viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr' 
             : 'space-y-4'
           }>
             {restaurants.map(restaurant => (
@@ -239,50 +246,66 @@ function RestaurantGridCard({ restaurant }) {
   const restaurantName = restaurant?.name || 'Nhà hàng'
   const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
   const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
+  const isOpen = restaurant?.isOpen || false
 
   return (
     <Link
       to={`/customer/restaurants/${restaurant._id}`}
-      className="group block"
+      className="group block h-full"
     >
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-        <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
+        <div className="h-48 bg-gray-200 overflow-hidden relative">
           <img
             src={restaurantImage}
             alt={restaurantName}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
             onError={(e) => {
               e.target.src = '/placeholder-restaurant.jpg'
             }}
           />
+          {!isOpen && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg">
+                Đang đóng cửa
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="p-4">
-          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">
-            {restaurantName}
-          </h3>
-
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {restaurantDescription}
-          </p>
-
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-1">
-              <MapPin className="h-4 w-4" />
-              <span>{formatDistance(restaurant?.distance || 1500)}</span>
+        <div className="p-4 flex flex-col flex-1">
+          <div className="flex items-start justify-between mb-2">
+            <div className="pr-4">
+              <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                {restaurantName}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                {restaurantDescription}
+              </p>
             </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="h-4 w-4" />
-              <span>{estimatedTime} phút</span>
+            <div className="flex flex-col items-end text-right ml-4">
+              <div className="flex items-center space-x-2">
+                <FilledStar className="h-5 w-5" />
+                <span className="text-sm font-semibold text-gray-900">
+                  {restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '0.0'}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {restaurant?.rating?.count ? `${restaurant.rating.count} lượt` : 'Chưa có đánh giá'}
+              </div>
+            </div>
+            <div className="ml-3">
+              {isOpen && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  Đang mở
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
+          {/* Distance and ETA removed */}
+          <div className="mt-auto flex items-center justify-between">
             <span className="text-sm text-gray-600">
               Phí giao: {formatCurrency(deliveryFee)}
-            </span>
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-              Giao bằng Drone
             </span>
           </div>
         </div>
@@ -299,6 +322,7 @@ function RestaurantListCard({ restaurant }) {
   const restaurantName = restaurant?.name || 'Nhà hàng'
   const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
   const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
+  const isOpen = restaurant?.isOpen || false
 
   return (
     <Link
@@ -306,7 +330,7 @@ function RestaurantListCard({ restaurant }) {
       className="group block"
     >
       <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-        <div className="w-32 h-24 bg-gray-200 flex-shrink-0">
+        <div className="w-32 h-24 bg-gray-200 flex-shrink-0 relative overflow-hidden">
           <img
             src={restaurantImage}
             alt={restaurantName}
@@ -315,29 +339,48 @@ function RestaurantListCard({ restaurant }) {
               e.target.src = '/placeholder-restaurant.jpg'
             }}
           />
+          {!isOpen && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="px-3 py-1 bg-red-600 text-white text-sm font-medium rounded-lg">
+                Đang đóng cửa
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 p-4">
-          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">
-            {restaurantName}
-          </h3>
-
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {restaurantDescription}
-          </p>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <div className="flex items-center space-x-1">
-                <MapPin className="h-4 w-4" />
-                <span>{formatDistance(restaurant?.distance || 1500)}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{estimatedTime} phút</span>
-              </div>
-              <span>Phí giao: {formatCurrency(deliveryFee)}</span>
+          <div className="flex items-start justify-between mb-2">
+            <div className="pr-4">
+              <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                {restaurantName}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                {restaurantDescription}
+              </p>
             </div>
+            <div className="flex flex-col items-end text-right ml-4">
+              <div className="flex items-center space-x-2">
+                <FilledStar className="h-5 w-5" />
+                <span className="text-sm font-semibold text-gray-900">
+                  {restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '0.0'}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {restaurant?.rating?.count ? `${restaurant.rating.count} lượt` : 'Chưa có đánh giá'}
+              </div>
+            </div>
+            <div className="ml-3">
+              {isOpen && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  Đang mở
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Distance and ETA removed */}
+          <div className="flex items-center justify-between">
+            <span>Phí giao: {formatCurrency(deliveryFee)}</span>
             <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
               Giao bằng Drone
             </span>

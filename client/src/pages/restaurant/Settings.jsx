@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { 
   Save, Edit, X, MapPin, Phone, Clock, DollarSign,
-  Image, Truck, Info, User
+  Image, Truck, Info, User, Power
 } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 import toast from 'react-hot-toast'
@@ -24,15 +24,6 @@ function RestaurantSettings() {
       ratePerKm: 2000,
       estimatedPrepTime: 30,
       maxDeliveryDistance: 10
-    },
-    operatingHours: {
-      monday: { open: '08:00', close: '22:00', closed: false },
-      tuesday: { open: '08:00', close: '22:00', closed: false },
-      wednesday: { open: '08:00', close: '22:00', closed: false },
-      thursday: { open: '08:00', close: '22:00', closed: false },
-      friday: { open: '08:00', close: '22:00', closed: false },
-      saturday: { open: '08:00', close: '22:00', closed: false },
-      sunday: { open: '08:00', close: '22:00', closed: false }
     }
   })
   const queryClient = useQueryClient()
@@ -63,6 +54,22 @@ function RestaurantSettings() {
     }
   )
 
+  // Toggle restaurant status mutation
+  const toggleStatusMutation = useMutation(
+    () => restaurantService.toggleRestaurantStatus(),
+    {
+      onSuccess: (response) => {
+        queryClient.invalidateQueries(['restaurant-profile'])
+        toast.success(response.data.message || 'Đã cập nhật trạng thái cửa hàng')
+      },
+      onError: (error) => {
+        console.error('Toggle status error:', error.response?.data)
+        const errorMessage = error.response?.data?.error || 'Không thể thay đổi trạng thái cửa hàng'
+        toast.error(errorMessage)
+      }
+    }
+  )
+
   // Initialize form with restaurant data
   useEffect(() => {
     if (restaurantData?.data?.restaurant) {
@@ -79,8 +86,7 @@ function RestaurantSettings() {
           ratePerKm: restaurant.deliverySettings?.ratePerKm || 2000,
           estimatedPrepTime: restaurant.deliverySettings?.estimatedPrepTime || 30,
           maxDeliveryDistance: restaurant.deliverySettings?.maxDeliveryDistance || 10
-        },
-        operatingHours: restaurant.operatingHours || formData.operatingHours
+        }
       })
     }
   }, [restaurantData])
@@ -101,19 +107,6 @@ function RestaurantSettings() {
         [field]: value
       }))
     }
-  }
-
-  const handleOperatingHoursChange = (day, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      operatingHours: {
-        ...prev.operatingHours,
-        [day]: {
-          ...prev.operatingHours[day],
-          [field]: value
-        }
-      }
-    }))
   }
 
   const handleSubmit = (e) => {
@@ -139,22 +132,15 @@ function RestaurantSettings() {
           ratePerKm: restaurant.deliverySettings?.ratePerKm || 2000,
           estimatedPrepTime: restaurant.deliverySettings?.estimatedPrepTime || 30,
           maxDeliveryDistance: restaurant.deliverySettings?.maxDeliveryDistance || 10
-        },
-        operatingHours: restaurant.operatingHours || formData.operatingHours
+        }
       })
     }
     setIsEditing(false)
   }
 
-  const days = [
-    { key: 'monday', label: 'Thứ Hai' },
-    { key: 'tuesday', label: 'Thứ Ba' },
-    { key: 'wednesday', label: 'Thứ Tư' },
-    { key: 'thursday', label: 'Thứ Năm' },
-    { key: 'friday', label: 'Thứ Sáu' },
-    { key: 'saturday', label: 'Thứ Bảy' },
-    { key: 'sunday', label: 'Chủ Nhật' }
-  ]
+  const handleToggleStatus = () => {
+    toggleStatusMutation.mutate()
+  }
 
   if (isLoading) {
     return (
@@ -439,63 +425,55 @@ function RestaurantSettings() {
           </div>
         </div>
 
-        {/* Operating Hours */}
+        {/* Restaurant Status */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <Clock className="h-5 w-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-900">Giờ Hoạt Động</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <Power className="h-5 w-5 text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900">Trạng Thái Cửa Hàng</h2>
+            </div>
+            {restaurantData?.data?.restaurant && (
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                restaurantData.data.restaurant.isOpen 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {restaurantData.data.restaurant.isOpen ? 'Đang mở cửa' : 'Đang đóng cửa'}
+              </span>
+            )}
           </div>
 
           <div className="space-y-4">
-            {days.map((day) => (
-              <div key={day.key} className="flex items-center space-x-4">
-                <div className="w-24 text-sm font-medium text-gray-700">
-                  {day.label}
-                </div>
-                
-                {isEditing ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={!formData.operatingHours[day.key].closed}
-                        onChange={(e) => handleOperatingHoursChange(day.key, 'closed', !e.target.checked)}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      />
-                      <span className="text-sm text-gray-600">Mở</span>
-                    </div>
-                    
-                    {!formData.operatingHours[day.key].closed && (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="time"
-                          value={formData.operatingHours[day.key].open}
-                          onChange={(e) => handleOperatingHoursChange(day.key, 'open', e.target.value)}
-                          className="input"
-                        />
-                        <span className="text-gray-500">đến</span>
-                        <input
-                          type="time"
-                          value={formData.operatingHours[day.key].close}
-                          onChange={(e) => handleOperatingHoursChange(day.key, 'close', e.target.value)}
-                          className="input"
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-sm text-gray-600">
-                    {formData.operatingHours[day.key].closed ? (
-                      <span className="text-red-600">Đóng</span>
-                    ) : (
-                      <span>
-                        {formData.operatingHours[day.key].open} - {formData.operatingHours[day.key].close}
-                      </span>
-                    )}
-                  </div>
+            <p className="text-sm text-gray-600">
+              {restaurantData?.data?.restaurant?.isOpen 
+                ? 'Cửa hàng đang mở và có thể nhận đơn hàng từ khách hàng.'
+                : 'Cửa hàng đang đóng, khách hàng không thể đặt hàng.'}
+            </p>
+            
+            {restaurantData?.data?.restaurant?.approved ? (
+              <button
+                type="button"
+                onClick={handleToggleStatus}
+                disabled={toggleStatusMutation.isLoading}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                  restaurantData?.data?.restaurant?.isOpen
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                } disabled:opacity-50`}
+              >
+                {toggleStatusMutation.isLoading ? 'Đang xử lý...' : (
+                  restaurantData?.data?.restaurant?.isOpen 
+                    ? 'Đóng Cửa Hàng' 
+                    : 'Mở Cửa Hàng'
                 )}
+              </button>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-amber-600">
+                  Cửa hàng cần được duyệt bởi admin trước khi có thể mở cửa
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </form>

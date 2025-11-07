@@ -50,7 +50,8 @@ const useCartStore = create(
             price: item.price,
             quantity: 1,
             imageUrl: item.imageUrl,
-            weightGrams: item.weightGrams,
+            // weightGrams removed from model; keep compatibility by omitting
+            weightGrams: item.weightGrams || 0,
             specialInstructions: ''
           }
           set({ items: [...state.items, newItem] })

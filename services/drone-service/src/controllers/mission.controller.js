@@ -368,7 +368,7 @@ const updateMissionStatus = async (req, res) => {
 const addPathPoint = async (req, res) => {
   try {
     const { id } = req.params;
-    const { latitude, longitude, altitude, heading, speed, batteryPercent } = req.body;
+  const { latitude, longitude, altitude, heading, speed } = req.body;
     
     const mission = await DeliveryMission.findById(id);
     if (!mission) {
@@ -378,7 +378,7 @@ const addPathPoint = async (req, res) => {
       });
     }
     
-    await mission.addPathPoint(latitude, longitude, altitude, heading, speed, batteryPercent);
+  await mission.addPathPoint(latitude, longitude, altitude, heading, speed);
     
     // Update drone location
     const drone = await Drone.findById(mission.droneId);
@@ -392,7 +392,6 @@ const addPathPoint = async (req, res) => {
       io.to(`restaurant-${mission.restaurantId}`).emit('mission-path-update', {
         missionId: mission._id,
         location: { latitude, longitude, altitude },
-        batteryPercent,
         timestamp: new Date()
       });
     }

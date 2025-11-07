@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { adminService } from '../../services/adminService'
+import Pagination from '../../components/common/Pagination'
 import toast from 'react-hot-toast'
 import { 
   Search, Filter, Truck, MapPin, Activity, 
@@ -15,22 +16,29 @@ function AdminDrones() {
   const [restaurantFilter, setRestaurantFilter] = useState('all')
   const [selectedDrone, setSelectedDrone] = useState(null)
   const [showDroneModal, setShowDroneModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   // Fetch drones
   const { data: dronesData, isLoading } = useQuery(
-    ['admin-drones', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter }],
+    ['admin-drones', { search: searchQuery, status: statusFilter, restaurant: restaurantFilter, page: currentPage }],
     () => adminService.getAllDrones({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined
+      restaurantId: restaurantFilter !== 'all' ? restaurantFilter : undefined,
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 2 * 60 * 1000, // 2 minutes
     }
   )
 
   const drones = dronesData?.data?.drones || []
   const restaurants = dronesData?.data?.restaurants || []
+  const totalDrones = dronesData?.data?.pagination?.total || dronesData?.data?.total || 0
+  const totalPages = Math.ceil(totalDrones / pageSize)
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
@@ -85,7 +93,10 @@ function AdminDrones() {
               type="text"
               placeholder="Tìm kiếm drone theo tên, model hoặc số serial..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -93,7 +104,10 @@ function AdminDrones() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -106,7 +120,10 @@ function AdminDrones() {
           {/* Restaurant Filter */}
           <select
             value={restaurantFilter}
-            onChange={(e) => setRestaurantFilter(e.target.value)}
+            onChange={(e) => {
+              setRestaurantFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             <option value="all">Tất Cả Nhà Hàng</option>
@@ -160,6 +177,17 @@ function AdminDrones() {
         )}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalDrones}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
       {/* Drone Detail Modal */}
       {showDroneModal && selectedDrone && (
         <DroneDetailModal
@@ -202,28 +230,20 @@ function DroneCard({ drone, onView, getStatusIcon, getStatusColor }) {
         </div>
       </div>
 
-      {/* Current Mission */}
-      {drone.currentMission && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center space-x-2 mb-1">
-            <Activity className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
+      {/* Current Mission - Fixed height container */}
+      <div className="mb-4 min-h-[76px]">
+        {drone.currentMission && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-2 mb-1">
+              <Activity className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">Đơn Giao Đang Thực Hiện</span>
+            </div>
+            <p className="text-sm text-blue-700">
+              Mission #{drone.currentMission.missionNumber || drone.currentMission._id?.slice(-6) || 'N/A'}
+            </p>
           </div>
-          <p className="text-sm text-blue-700">
-            Mission #{drone.currentMission.missionNumber || drone.currentMission._id || 'N/A'}
-          </p>
-        </div>
-      )}
-
-      {/* Location - Only show if exists */}
-      {drone.currentLocation?.lat && drone.currentLocation?.lng && (
-        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-          <MapPin className="h-4 w-4" />
-          <span className="text-xs">
-            {drone.currentLocation.lat.toFixed(4)}, {drone.currentLocation.lng.toFixed(4)}
-          </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex items-center justify-between">

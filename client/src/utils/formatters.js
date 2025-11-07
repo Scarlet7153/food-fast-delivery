@@ -143,6 +143,7 @@ export const formatDuration = (minutes) => {
 // Format order status
 export const formatOrderStatus = (status) => {
   const statusMap = {
+    PENDING_PAYMENT: 'Chờ thanh toán',
     PLACED: 'Đã đặt',
     CONFIRMED: 'Đang chuẩn bị',
     COOKING: 'Đang chuẩn bị',

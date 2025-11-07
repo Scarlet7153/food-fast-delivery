@@ -3,13 +3,25 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { restaurantService } from '../../services/restaurantService'
 import { useCartStore } from '../../stores/cartStore'
+import { useAuthStore } from '../../stores/authStore'
+import Pagination from '../../components/common/Pagination'
 import { Search, Clock, MapPin, ShoppingCart } from 'lucide-react'
+
+// Filled gold star SVG
+const FilledStar = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#FBBF24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 17.27L18.18 21 16.54 13.97 22 9.24 14.81 8.63 12 2 9.19 8.63 2 9.24 7.46 13.97 5.82 21z" />
+  </svg>
+)
 import { formatCurrency, formatDistance, removeVietnameseAccents } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 
 function CustomerHome() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(12)
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
   const { addItem, cartRestaurant, restaurantId } = useCartStore()
   
   // Normalize search query (remove Vietnamese accents)
@@ -17,15 +29,16 @@ function CustomerHome() {
 
   // Fetch restaurants - realtime search without debounce
   const { data: restaurantsData, isLoading, isFetching } = useQuery(
-    ['restaurants', { search: normalizedSearch }],
+    ['restaurants', { search: normalizedSearch, page: currentPage }],
     () => restaurantService.getRestaurants({
       search: normalizedSearch || undefined,
-      limit: 12
+      page: currentPage,
+      limit: pageSize
     }),
     {
-      staleTime: 30 * 1000, // 30 seconds
-      enabled: true,
       keepPreviousData: true, // Keep old data while fetching new data to prevent flickering
+      staleTime: 30 * 1000, // 30 seconds
+      enabled: true
     }
   )
 
@@ -37,17 +50,32 @@ function CustomerHome() {
       limit: 12
     }),
     {
-      staleTime: 30 * 1000, // 30 seconds
-      enabled: true,
       keepPreviousData: true, // Keep old data while fetching new data to prevent flickering
+      staleTime: 30 * 1000, // 30 seconds
+      enabled: true
     }
   )
 
   const restaurants = restaurantsData?.data?.restaurants || []
-  const menuItems = menuItemsData?.data?.menuItems || []
+  // Exclude menu items from restaurants that are closed
+  const rawMenuItems = menuItemsData?.data?.menuItems || []
+  const menuItems = rawMenuItems.filter(mi => {
+    const rest = mi?.restaurantId || {}
+    return rest.isOpen !== false // include when true or undefined
+  })
+  const totalRestaurants = restaurantsData?.data?.pagination?.total || restaurantsData?.data?.total || 0
+  const totalPages = Math.ceil(totalRestaurants / pageSize)
 
   // Handle add to cart
   const handleAddToCart = (item) => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm món vào giỏ hàng')
+      // Redirect user to login and return them to the cart after successful login
+      navigate('/login', { state: { from: '/customer/cart' } })
+      return
+    }
+
     const restaurant = item.restaurantId
     if (!restaurant) {
       toast.error('Không tìm thấy thông tin nhà hàng')
@@ -76,7 +104,10 @@ function CustomerHome() {
             type="text"
             placeholder="Tìm kiếm nhà hàng, món ăn..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input pl-10 pr-10 w-full"
           />
           {isFetching && (
@@ -175,8 +206,8 @@ function CustomerHome() {
             ))}
           </div>
         ) : restaurants.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {restaurants.map(restaurant => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+            {restaurants.filter(r => r.isOpen === true).map(restaurant => (
               <RestaurantCard key={restaurant._id} restaurant={restaurant} />
             ))}
           </div>
@@ -206,6 +237,17 @@ function CustomerHome() {
         )}
       </div>
 
+      {/* Pagination for Restaurants */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalRestaurants}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
     </div>
   )
 }
@@ -227,15 +269,15 @@ function MenuItemCard({ item, onAddToCart }) {
   }
 
   return (
-    <div className="group">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+    <div className="group h-full">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
         {/* Menu Item Image */}
         <Link to={`/customer/restaurants/${restaurant._id}`} className="block">
-          <div className="aspect-w-1 aspect-h-1 bg-gray-200 relative">
+          <div className="h-40 bg-gray-200 relative">
             <img
               src={itemImage}
               alt={itemName}
-              className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               onError={(e) => {
                 e.target.src = '/placeholder-food.jpg'
               }}
@@ -248,8 +290,8 @@ function MenuItemCard({ item, onAddToCart }) {
           </div>
         </Link>
 
-        {/* Menu Item Info */}
-        <div className="p-3">
+  {/* Menu Item Info */}
+  <div className="p-3 flex flex-col flex-1 overflow-hidden">
           <Link to={`/customer/restaurants/${restaurant._id}`} className="block">
             <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-1 line-clamp-1">
               {itemName}
@@ -264,35 +306,37 @@ function MenuItemCard({ item, onAddToCart }) {
             </p>
           </Link>
 
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex flex-col">
-              <span className="font-semibold text-primary-600">
-                {formatCurrency(itemPrice)}
-              </span>
-              {originalPrice && originalPrice > itemPrice && (
-                <span className="text-xs text-gray-400 line-through">
-                  {formatCurrency(originalPrice)}
+          <div className="mt-auto">
+            {item?.category && (
+              <div className="mb-2">
+                <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                  {item.category}
                 </span>
-              )}
-            </div>
-            
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCartClick}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Thêm vào giỏ hàng"
-            >
-              <ShoppingCart className="h-5 w-5" />
-            </button>
-          </div>
+              </div>
+            )}
 
-          {item?.category && (
-            <div>
-              <span className="inline-block text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                {item.category}
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="font-semibold text-primary-600">
+                  {formatCurrency(itemPrice)}
+                </span>
+                {originalPrice && originalPrice > itemPrice && (
+                  <span className="text-xs text-gray-400 line-through">
+                    {formatCurrency(originalPrice)}
+                  </span>
+                )}
+              </div>
+
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCartClick}
+                className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                title="Thêm vào giỏ hàng"
+              >
+                <ShoppingCart className="h-5 w-5" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -307,53 +351,65 @@ function RestaurantCard({ restaurant }) {
   const restaurantName = restaurant?.name || 'Nhà hàng'
   const restaurantDescription = restaurant?.description || 'Chưa có mô tả'
   const restaurantImage = restaurant?.imageUrl || '/placeholder-restaurant.jpg'
+  const isOpen = restaurant?.isOpen || false
 
   return (
     <Link
       to={`/customer/restaurants/${restaurant._id}`}
-      className="group block"
+      className="group block h-full"
     >
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+  <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full ${!isOpen ? 'opacity-75' : ''}`}>
         {/* Restaurant Image */}
-        <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+        <div className="h-48 bg-gray-200 relative">
           <img
             src={restaurantImage}
             alt={restaurantName}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
             onError={(e) => {
               e.target.src = '/placeholder-restaurant.jpg'
             }}
           />
+          {!isOpen && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg">
+                Đang đóng cửa
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Restaurant Info */}
-        <div className="p-4">
-          <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors mb-2">
-            {restaurantName}
-          </h3>
+        <div className="p-4 flex flex-col flex-1 overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
+              {restaurantName}
+            </h3>
+            <div className="inline-flex items-center gap-3">
+              <div className="inline-flex items-center gap-2 text-sm text-slate-700">
+                <FilledStar className="h-4 w-4" />
+                <span className="font-medium">{restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '—'}</span>
+                <span className="text-xs text-slate-500">({restaurant?.rating?.count ?? 0})</span>
+              </div>
+              {isOpen && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  Đang mở
+                </span>
+              )}
+            </div>
+          </div>
 
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
             {restaurantDescription}
           </p>
 
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-1">
-              <MapPin className="h-4 w-4" />
-              <span>{formatDistance(restaurant?.distance || 1500)}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="h-4 w-4" />
-              <span>{estimatedTime} phút</span>
-            </div>
-          </div>
+          {/* Distance and ETA removed as requested */}
 
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-gray-600">
-              Phí giao: {formatCurrency(deliveryFee)}
-            </span>
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-              Giao bằng Drone
-            </span>
+          <div className="mt-auto">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                Phí giao: {formatCurrency(deliveryFee)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

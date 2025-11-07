@@ -369,10 +369,6 @@ function RestaurantOrderDetail() {
             <span className="text-gray-600">Phí giao hàng</span>
             <span className="font-medium">{formatCurrency(order.amount?.deliveryFee || 0)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Phí dịch vụ</span>
-            <span className="font-medium">Miễn phí</span>
-          </div>
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between">
               <span className="font-semibold text-lg">Tổng</span>

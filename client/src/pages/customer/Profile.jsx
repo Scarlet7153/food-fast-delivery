@@ -3,14 +3,14 @@ import { useAuthStore } from '../../stores/authStore'
 import { paymentInfoService } from '../../services/paymentInfoService'
 import { 
   User, Mail, Phone, MapPin, Calendar, Edit3, 
-  Save, X, Key, Shield, CreditCard 
+  Save, X, Key, CreditCard 
 } from 'lucide-react'
 import { formatDateTime, formatPhoneNumber } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
 
 function Profile() {
-  const { user, updateProfile, changePassword, isLoading } = useAuthStore()
+  const { user, updateProfile, changePassword, refreshUser, isLoading } = useAuthStore()
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -20,6 +20,18 @@ function Profile() {
     phone: '',
     address: ''
   })
+
+  // Refresh user data on component mount to get latest info including createdAt
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        await refreshUser()
+      } catch (error) {
+        console.error('Error refreshing user data:', error)
+      }
+    }
+    loadUserData()
+  }, [])
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -307,10 +319,9 @@ function Profile() {
       
       if (nominatimResponse.ok) {
         addressData = await nominatimResponse.json()
-        console.log('Nominatim Response:', addressData)
       }
     } catch (error) {
-      console.log('Nominatim failed, trying BigDataCloud...')
+      // try next provider
     }
     
     // Nếu Nominatim không thành công, thử BigDataCloud
@@ -322,10 +333,9 @@ function Profile() {
         
         if (bigDataResponse.ok) {
           addressData = await bigDataResponse.json()
-          console.log('BigDataCloud Response:', addressData)
         }
       } catch (error) {
-        console.log('BigDataCloud failed, trying alternative...')
+        // try next provider
       }
     }
     
@@ -339,7 +349,6 @@ function Profile() {
           const data = await response.json()
           if (data.results && data.results.length > 0) {
             addressData = data.results[0]
-            console.log('OpenCage Response:', addressData)
           }
         }
       } catch (error) {
@@ -350,33 +359,28 @@ function Profile() {
     // Xử lý dữ liệu địa chỉ
     let street = '', city = '', district = '', ward = ''
     
-    console.log('Raw address data:', addressData)
     
-    if (addressData.address) {
+    if (addressData && addressData.address) {
       // Nominatim format
-      console.log('Using Nominatim format')
       street = addressData.address.road || addressData.address.house_number || addressData.address.pedestrian || ''
       city = addressData.address.city || addressData.address.town || addressData.address.village || addressData.address.municipality || ''
       district = addressData.address.county || addressData.address.state_district || addressData.address.district || ''
       ward = addressData.address.suburb || addressData.address.neighbourhood || addressData.address.quarter || ''
-    } else if (addressData.localityInfo) {
+    } else if (addressData && addressData.localityInfo) {
       // BigDataCloud format
-      console.log('Using BigDataCloud format')
       const addressComponents = addressData.localityInfo?.administrative || []
       street = addressData.locality || addressComponents[0]?.name || ''
       city = addressData.city || addressData.principalSubdivision || ''
       district = addressData.principalSubdivision || ''
       ward = addressData.locality || (addressComponents.length > 1 ? addressComponents[1].name : '')
-    } else if (addressData.components) {
+    } else if (addressData && addressData.components) {
       // OpenCage format
-      console.log('Using OpenCage format')
       street = addressData.components.road || addressData.components.house_number || ''
       city = addressData.components.city || addressData.components.town || addressData.components.village || ''
       district = addressData.components.county || addressData.components.state_district || ''
       ward = addressData.components.suburb || addressData.components.neighbourhood || ''
     } else {
       // Fallback - thử lấy từ display_name
-      console.log('Using fallback format')
       const displayName = addressData.display_name || ''
       if (displayName) {
         // Tách địa chỉ từ display_name
@@ -564,7 +568,7 @@ function Profile() {
 
   const tabs = [
     { id: 'profile', label: 'Hồ Sơ', icon: User },
-    { id: 'security', label: 'Bảo Mật', icon: Shield },
+    { id: 'security', label: 'Bảo Mật', icon: Key },
     { id: 'billing', label: 'Thông tin giao hàng', icon: MapPin }
   ]
 
@@ -592,9 +596,11 @@ function Profile() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
             <p className="text-gray-600">{user.email}</p>
-            <p className="text-sm text-gray-500">
-              Thành viên từ {formatDateTime(user.createdAt)}
-            </p>
+            {user.createdAt && (
+              <p className="text-sm text-gray-500">
+                Thành viên từ {formatDateTime(user.createdAt)}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -786,15 +792,7 @@ function ProfileTab({ user, profileForm, isEditing, isLoading, onFormChange, onS
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Loại Tài Khoản
-            </label>
-            <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-              <Shield className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 capitalize">{user.role}</span>
-            </div>
-          </div>
+          {/* Account type removed as requested */}
         </div>
 
         <div>
