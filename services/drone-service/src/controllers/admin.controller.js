@@ -405,6 +405,34 @@ const updateDroneStatus = async (req, res) => {
   }
 };
 
+// Delete drone (admin)
+const deleteDrone = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const drone = await Drone.findById(id);
+    if (!drone) {
+      return res.status(404).json({ success: false, error: 'Drone not found' });
+    }
+
+    // Delete any associated missions (safe cleanup) - optional
+    try {
+      await DeliveryMission.deleteMany({ droneId: drone._id });
+    } catch (err) {
+      logger.warn('Failed to delete associated missions for drone:', err.message || err);
+    }
+
+    await Drone.findByIdAndDelete(id);
+
+    logger.info(`Admin deleted drone: ${drone.name} (id: ${drone._id}) by user ${req.user?._id}`);
+
+    res.json({ success: true, message: 'Drone deleted successfully' });
+  } catch (error) {
+    logger.error('Admin delete drone error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete drone' });
+  }
+};
+
 // Get drone statistics
 const getStatistics = async (req, res) => {
   try {
@@ -620,5 +648,6 @@ module.exports = {
   updateDroneStatus,
   getStatistics,
   getOverview,
-  createMission
+  createMission,
+  deleteDrone
 };

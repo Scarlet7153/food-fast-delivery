@@ -24,6 +24,8 @@ const schemas = {
     maxPayloadGrams: Joi.number().min(100).max(10000).optional(),
     maxRangeMeters: Joi.number().min(1000).max(50000).optional(),
     maxFlightTimeMinutes: Joi.number().min(5).max(120).optional(),
+    // Allow updating status from the edit form (IDLE or BUSY)
+    status: Joi.string().valid('IDLE', 'BUSY').optional(),
     settings: Joi.object({
       autoReturn: Joi.boolean().optional(),
       lowBatteryThreshold: Joi.number().min(5).max(50).optional(),

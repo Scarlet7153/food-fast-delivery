@@ -28,5 +28,7 @@ router.post('/', auth, requireRole('restaurant'), validate(schemas.createDrone),
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateDrone), droneController.updateDrone);
 router.patch('/:id/status', auth, requireRole('restaurant'), validate(schemas.updateDroneStatus), droneController.updateDroneStatus);
 router.patch('/:id/location', auth, requireRole('restaurant'), validate(schemas.updateDroneLocation), droneController.updateDroneLocation);
+// Allow restaurant owners to delete their drone
+router.delete('/:id', auth, requireRole('restaurant'), droneController.deleteDrone);
 
 module.exports = router;

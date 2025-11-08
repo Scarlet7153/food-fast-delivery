@@ -295,6 +295,39 @@ const updateDroneLocation = async (req, res) => {
   }
 };
 
+// Delete drone (restaurant owner)
+const deleteDrone = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const drone = await Drone.findById(id);
+    if (!drone) {
+      return res.status(404).json({ success: false, error: 'Drone not found' });
+    }
+
+    // Check if user owns the restaurant
+    try {
+      const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${req.user._id}`);
+      const restaurant = restaurantResponse.data.data.restaurant;
+
+      if (drone.restaurantId.toString() !== restaurant._id.toString()) {
+        return res.status(403).json({ success: false, error: 'You do not have permission to delete this drone' });
+      }
+    } catch (error) {
+      return res.status(403).json({ success: false, error: 'Restaurant not found' });
+    }
+
+    await Drone.findByIdAndDelete(id);
+
+    logger.info(`Drone deleted: ${drone.name} by ${req.user._id}`);
+
+    res.json({ success: true, message: 'Drone deleted successfully' });
+  } catch (error) {
+    logger.error('Delete drone error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete drone' });
+  }
+};
+
 // Get available drones
 const getAvailableDrones = async (req, res) => {
   try {
@@ -422,6 +455,7 @@ module.exports = {
   createDrone,
   updateDrone,
   updateDroneStatus,
+  deleteDrone,
   updateDroneLocation,
   getAvailableDrones,
   getDroneStatistics

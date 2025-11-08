@@ -12,6 +12,8 @@ router.use(auth, requireRole('admin'));
 router.get('/drones', adminController.getAllDrones);
 router.get('/drones/:id', adminController.getDroneById);
 router.patch('/drones/:id/status', adminController.updateDroneStatus);
+// Allow admin to delete a drone
+router.delete('/drones/:id', adminController.deleteDrone);
 
 // Mission management
 router.get('/missions', missionController.getAllMissions);
