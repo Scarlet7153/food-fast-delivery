@@ -100,7 +100,7 @@ cd ../payment-service ; npm install
 cd ../..
 # Chạy toàn bộ services
 npm run microservices:start
-
+	
 # Chạy client
 npm run dev:client
 ```
