@@ -514,42 +514,44 @@ const checkPaymentStatus = async (req, res) => {
 const createMoMoPayment = async (req, res) => {
   try {
     const { orderId } = req.body;
-    
-    // Get order details to extract restaurantId and amount breakdown
+
+    // Fetch order details
     let order;
     try {
       const orderResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/internal/orders/${orderId}`);
-      logger.info('Order response:', orderResponse.data);
       order = orderResponse.data.data.order;
-      logger.info('Extracted order:', order);
-    } catch (error) {
-      logger.error('Failed to fetch order:', error.message);
-      return res.status(404).json({
-        success: false,
-        error: 'Order not found'
-      });
+    } catch (err) {
+      logger.error('Failed to fetch order:', err.message || err);
+      return res.status(404).json({ success: false, error: 'Order not found' });
     }
-    
-    // Auto-generate payment data from order
+
     const amount = order.amount.total;
     const momoOrderInfo = `Order ${order.orderNumber}`;
-    const momoExtraData = JSON.stringify({
-      orderNumber: order.orderNumber,
-      restaurantId: order.restaurantId
-    });
-    
-    // Generate payment number
-    const paymentNumber = `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-    
-    // Create payment record
-    const payment = new Payment({
-      orderId,
-      userId: req.user._id,
-      restaurantId: order.restaurantId,
-      paymentNumber,
-      method: 'MOMO',
-      status: 'PENDING',
-      amount: {
+    const momoExtraData = JSON.stringify({ orderNumber: order.orderNumber, restaurantId: order.restaurantId });
+
+    // Find existing payment for this order (to avoid unique index violation)
+    let payment = await Payment.findOne({ orderId });
+
+    if (payment) {
+      logger.info(`Existing payment found for order ${order.orderNumber}: ${payment._id}`);
+
+      // If there's already an in-flight MoMo payment, return its URL so client can continue
+      if (payment.method === 'MOMO' && ['PENDING', 'PROCESSING'].includes(payment.status)) {
+        return res.json({
+          success: true,
+          data: {
+            paymentId: payment._id,
+            payUrl: payment.momo?.payUrl || null,
+            requestId: payment.momo?.requestId || null
+          }
+        });
+      }
+
+      // Otherwise, reuse/update existing payment record to switch to MoMo
+      payment.method = 'MOMO';
+      payment.status = 'PENDING';
+      payment.paymentNumber = payment.paymentNumber || `PAY${Date.now()}${Math.random().toString(36).substr(2,5).toUpperCase()}`;
+      payment.amount = {
         total: amount,
         currency: 'VND',
         breakdown: {
@@ -558,38 +560,62 @@ const createMoMoPayment = async (req, res) => {
           tax: order.amount.tax || 0,
           discount: order.amount.discount || 0
         }
-      },
-      security: {
-        ipAddress: req.ip || req.connection.remoteAddress,
-        userAgent: req.get('User-Agent'),
-        riskScore: 0  // Default low risk, can be calculated by fraud detection service
-      },
-      metadata: {
-        customerInfo: {
-          name: req.user.name,
-          email: req.user.email,
-          phone: req.user.phone
+      };
+      payment.metadata = payment.metadata || {};
+      payment.metadata.customerInfo = payment.metadata.customerInfo || {
+        name: req.user.name,
+        email: req.user.email,
+        phone: req.user.phone
+      };
+      payment.metadata.orderInfo = payment.metadata.orderInfo || {
+        orderNumber: order.orderNumber,
+        items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price }))
+      };
+      payment.metadata.deliveryInfo = payment.metadata.deliveryInfo || {
+        address: order.deliveryAddress.text,
+        contactPhone: order.deliveryAddress.contactPhone
+      };
+
+      // Clear previous MoMo fields if any
+      payment.momo = {};
+      await payment.save();
+    } else {
+      // Create new payment
+      payment = new Payment({
+        orderId,
+        userId: req.user._id,
+        restaurantId: order.restaurantId,
+        paymentNumber: `PAY${Date.now()}${Math.random().toString(36).substr(2,5).toUpperCase()}`,
+        method: 'MOMO',
+        status: 'PENDING',
+        amount: {
+          total: amount,
+          currency: 'VND',
+          breakdown: {
+            subtotal: order.amount.subtotal,
+            deliveryFee: order.amount.deliveryFee,
+            tax: order.amount.tax || 0,
+            discount: order.amount.discount || 0
+          }
         },
-        orderInfo: {
-          orderNumber: order.orderNumber,
-          items: order.items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-          }))
+        security: {
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get('User-Agent'),
+          riskScore: 0
         },
-        deliveryInfo: {
-          address: order.deliveryAddress.text,
-          contactPhone: order.deliveryAddress.contactPhone
+        metadata: {
+          customerInfo: { name: req.user.name, email: req.user.email, phone: req.user.phone },
+          orderInfo: { orderNumber: order.orderNumber, items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })) },
+          deliveryInfo: { address: order.deliveryAddress.text, contactPhone: order.deliveryAddress.contactPhone }
         }
-      }
-    });
-    
-    await payment.save();
-    
+      });
+
+      await payment.save();
+    }
+
     // Create MoMo payment request
     const paymentResult = await momoService.createPaymentRequest({
-      orderId: payment._id,
+      orderId: payment._id.toString(),
       amount,
       orderInfo: momoOrderInfo,
       extraData: momoExtraData,
@@ -597,35 +623,24 @@ const createMoMoPayment = async (req, res) => {
       customerEmail: req.user.email,
       customerPhone: req.user.phone
     });
-    
+
     if (paymentResult.success) {
-      // Update payment with MoMo data
-      payment.momo = {
-        requestId: paymentResult.data.requestId,
-        payUrl: paymentResult.data.payUrl
-      };
+      payment.momo = payment.momo || {};
+      payment.momo.requestId = paymentResult.data.requestId;
+      payment.momo.payUrl = paymentResult.data.payUrl;
+      payment.status = 'PROCESSING';
       await payment.save();
-      
-      res.json({
-        success: true,
-        data: {
-          paymentId: payment._id,
-          payUrl: paymentResult.data.payUrl,
-          requestId: paymentResult.data.requestId
-        }
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: paymentResult.error || 'Failed to create MoMo payment'
-      });
+
+      return res.json({ success: true, data: { paymentId: payment._id, payUrl: payment.momo.payUrl, requestId: payment.momo.requestId } });
     }
+
+    // Failed to create MoMo request
+    payment.status = 'FAILED';
+    await payment.save();
+    return res.status(400).json({ success: false, error: paymentResult.error || 'Failed to create MoMo payment' });
   } catch (error) {
     logger.error('Create MoMo payment error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
 
