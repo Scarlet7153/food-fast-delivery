@@ -167,12 +167,38 @@ const getRestaurantMissions = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
+    // Fetch order details for each mission
+    const missionsWithOrders = await Promise.all(missions.map(async (mission) => {
+      const missionObj = mission.toObject();
+      
+      // Fetch order data from order-service
+      if (missionObj.orderId) {
+        try {
+          const orderResponse = await axios.get(
+            `${config.ORDER_SERVICE_URL}/api/internal/orders/${missionObj.orderId}`
+          );
+          missionObj.order = orderResponse.data.data.order;
+        } catch (error) {
+          logger.error(`Failed to fetch order ${missionObj.orderId}:`, error.message);
+          missionObj.order = null;
+        }
+      }
+      
+      // Rename droneId to drone for consistency
+      if (missionObj.droneId) {
+        missionObj.drone = missionObj.droneId;
+        delete missionObj.droneId;
+      }
+      
+      return missionObj;
+    }));
+    
     const total = await DeliveryMission.countDocuments({ restaurantId, ...options });
     
     res.json({
       success: true,
       data: {
-        missions,
+        missions: missionsWithOrders,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -342,7 +368,7 @@ const updateMissionStatus = async (req, res) => {
 const addPathPoint = async (req, res) => {
   try {
     const { id } = req.params;
-    const { latitude, longitude, altitude, heading, speed, batteryPercent } = req.body;
+  const { latitude, longitude, altitude, heading, speed } = req.body;
     
     const mission = await DeliveryMission.findById(id);
     if (!mission) {
@@ -352,7 +378,7 @@ const addPathPoint = async (req, res) => {
       });
     }
     
-    await mission.addPathPoint(latitude, longitude, altitude, heading, speed, batteryPercent);
+  await mission.addPathPoint(latitude, longitude, altitude, heading, speed);
     
     // Update drone location
     const drone = await Drone.findById(mission.droneId);
@@ -366,7 +392,6 @@ const addPathPoint = async (req, res) => {
       io.to(`restaurant-${mission.restaurantId}`).emit('mission-path-update', {
         missionId: mission._id,
         location: { latitude, longitude, altitude },
-        batteryPercent,
         timestamp: new Date()
       });
     }

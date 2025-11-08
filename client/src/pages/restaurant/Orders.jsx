@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { orderService } from '../../services/orderService'
 import { droneService } from '../../services/droneService'
 import api from '../../services/api'
+import Pagination from '../../components/common/Pagination'
 import { 
   Search, Filter, Clock, MapPin, Star, Eye, CheckCircle,
   Truck, XCircle, AlertCircle, Package, Utensils, Loader2, Plane,
@@ -16,24 +17,31 @@ import { t } from '../../utils/translations'
 function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('newest')
   const [showDroneConfirmModal, setShowDroneConfirmModal] = useState(false)
   const [selectedOrderForDrone, setSelectedOrderForDrone] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
   const queryClient = useQueryClient()
 
   // Fetch orders
   const { data: ordersData, isLoading, refetch } = useQuery(
-    ['restaurant-orders', { search: searchQuery, status: statusFilter, sortBy }],
+    ['restaurant-orders', { search: searchQuery, status: statusFilter, page: currentPage }],
     () => orderService.getRestaurantOrders({
       search: searchQuery,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      sortBy
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 1 * 60 * 1000, // 1 minute
       refetchInterval: 10 * 1000, // Refetch every 10 seconds for real-time updates
     }
   )
+
+  const orders = ordersData?.data?.orders || []
+  const totalOrders = ordersData?.data?.pagination?.total || ordersData?.data?.total || 0
+  const totalPages = Math.ceil(totalOrders / pageSize)
 
   // Update order status mutation
   const updateStatusMutation = useMutation(
@@ -65,25 +73,15 @@ function RestaurantOrders() {
     }
   )
 
-  const orders = ordersData?.data?.orders || []
-
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Đơn' },
     { value: 'PLACED', label: 'Đã Đặt' },
-    { value: 'CONFIRMED', label: 'Đã Xác Nhận' },
-    { value: 'COOKING', label: 'Đang Nấu' },
-    { value: 'READY_FOR_PICKUP', label: 'Sẵn Sàng' },
-    { value: 'IN_FLIGHT', label: 'Đang Bay' },
+    { value: 'COOKING', label: 'Đang Chuẩn Bị' },
+    { value: 'IN_FLIGHT', label: 'Đang Giao' },
     { value: 'DELIVERED', label: 'Đã Giao' },
     { value: 'CANCELLED', label: 'Đã Hủy' },
   ]
 
-  const sortOptions = [
-    { value: 'newest', label: 'Mới Nhất' },
-    { value: 'oldest', label: 'Cũ Nhất' },
-    { value: 'total', label: 'Giá Trị Cao' },
-    { value: 'status', label: 'Theo Trạng Thái' },
-  ]
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -118,7 +116,16 @@ function RestaurantOrders() {
   }
 
   const handleStatusUpdate = (orderId, newStatus, note = '') => {
-    updateStatusMutation.mutate({ orderId, status: newStatus, note })
+    // When confirming an order, automatically set to COOKING instead
+    if (newStatus === 'CONFIRMED') {
+      updateStatusMutation.mutate({ 
+        orderId, 
+        status: 'COOKING', 
+        note: note || 'Đã xác nhận và bắt đầu chuẩn bị món'
+      })
+    } else {
+      updateStatusMutation.mutate({ orderId, status: newStatus, note })
+    }
   }
 
   const handleAssignDrone = (order) => {
@@ -139,9 +146,8 @@ function RestaurantOrders() {
       case 'PLACED':
         return { status: 'CONFIRMED', label: 'Xác Nhận Đơn', icon: CheckCircle }
       case 'CONFIRMED':
-        return { status: 'COOKING', label: 'Bắt Đầu Nấu', icon: Utensils }
       case 'COOKING':
-        return { status: 'READY_FOR_PICKUP', label: 'Sẵn Sàng', icon: Package }
+        return { status: 'ASSIGN_DRONE', label: 'Giao Cho Drone', icon: Plane }
       case 'READY_FOR_PICKUP':
         return { status: 'ASSIGN_DRONE', label: 'Giao Cho Drone', icon: Plane }
       default:
@@ -169,7 +175,10 @@ function RestaurantOrders() {
               type="text"
               placeholder="Tìm kiếm theo mã đơn hoặc tên khách hàng..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -177,7 +186,10 @@ function RestaurantOrders() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -187,18 +199,7 @@ function RestaurantOrders() {
             ))}
           </select>
 
-          {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input lg:w-48"
-          >
-            {sortOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          {/* Sort removed */}
 
           {/* Refresh Button */}
           <button
@@ -274,6 +275,15 @@ function RestaurantOrders() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalOrders}
+        itemsPerPage={pageSize}
+        onPageChange={setCurrentPage}
+      />
 
       {/* Drone Assignment Confirmation Modal */}
       {showDroneConfirmModal && selectedOrderForDrone && (
@@ -382,7 +392,7 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
                 {order.deliveryMission.estimatedArrival && (
                   <>
                     <span>•</span>
-                    <span>ETA: {formatDateTime(order.deliveryMission.estimatedArrival)}</span>
+                    <span>Dự kiến đến: {formatDateTime(order.deliveryMission.estimatedArrival)}</span>
                   </>
                 )}
               </div>
@@ -392,7 +402,7 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
             {order.status === 'IN_FLIGHT' && order.missionId && (
               <div className="flex items-center space-x-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
                 <Plane className="h-3 w-3" />
-                <span>Đã giao cho drone - Mission #{order.missionId}</span>
+                <span>Đã giao cho drone - Nhiệm vụ #{order.missionId}</span>
               </div>
             )}
           </div>
@@ -415,7 +425,7 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
                   onClick={() => onAssignDrone()}
                   disabled={isUpdating}
                   className="btn btn-primary btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
-                  title="Hệ thống sẽ tự động chọn drone rảnh phù hợp nhất"
+                    title="Hệ thống sẽ tự động chọn drone rảnh phù hợp nhất"
                 >
                   {isUpdating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

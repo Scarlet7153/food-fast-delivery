@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { Navigation } from 'lucide-react'
+import { formatMissionStatus } from '../utils/formatters'
 
 // Google Maps API Key
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAQHXjTAKClEVWMwWUxRsT7MZYeoZY7iQ8'
@@ -149,10 +150,10 @@ function DroneTrackingMap({ mission }) {
             <Navigation className="h-5 w-5 text-blue-600" />
             <div>
               <p className="text-sm font-medium text-gray-900">
-                Trạng thái: <span className="text-blue-600">{mission.status}</span>
+                Trạng thái: <span className="text-blue-600">{formatMissionStatus(mission.status)}</span>
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Drone: {mission.droneId?.name || 'N/A'} ({mission.droneId?.model || 'N/A'})
+                Drone: {mission.drone?.name || mission.droneId?.name || 'Chưa phân công'} ({mission.drone?.model || mission.droneId?.model || 'N/A'})
               </p>
             </div>
           </div>

@@ -127,10 +127,13 @@ function Checkout() {
     (paymentData) => paymentService.createMoMoPayment(paymentData),
     {
       onSuccess: (response) => {
-        const { paymentUrl } = response.data
-        setPaymentUrl(paymentUrl)
-        // Open payment URL in new tab
-        window.open(paymentUrl, '_blank')
+        const { payUrl } = response.data
+        if (payUrl) {
+          // Redirect to payment page (not open in new tab to avoid popup blocker)
+          window.location.href = payUrl
+        } else {
+          toast.error('Không nhận được URL thanh toán')
+        }
       },
       onError: (error) => {
         console.error('Payment creation error:', error)
@@ -242,7 +245,6 @@ function Checkout() {
       }
 
       try {
-        console.log('Order data being sent:', JSON.stringify(orderData, null, 2))
         await createOrderMutation.mutateAsync(orderData)
       } catch (error) {
         console.error('Order creation error details:', error.response?.data)
@@ -255,10 +257,7 @@ function Checkout() {
     try {
       const paymentData = {
         orderId,
-        amount: getTotal(),
-        paymentMethod: formData.paymentMethod,
-        returnUrl: `${window.location.origin}/customer/orders/${orderId}`,
-        notifyUrl: `${window.location.origin}/api/payments/momo/ipn`
+        method: formData.paymentMethod.toUpperCase()
       }
 
       await createPaymentMutation.mutateAsync(paymentData)
@@ -420,10 +419,6 @@ function Checkout() {
                 <span className="font-medium">{formatCurrency(deliveryFee)}</span>
               </div>
               
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Phí dịch vụ</span>
-                <span className="font-medium">Miễn phí</span>
-              </div>
             </div>
 
             {/* Total */}

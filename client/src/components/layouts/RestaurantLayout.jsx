@@ -1,6 +1,9 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useAuthGuard } from '../../hooks/useAuthGuard'
+import { useEffect, useState } from 'react'
+import { restaurantService } from '../../services/restaurantService'
+import toast from 'react-hot-toast'
 import { 
   BarChart3, ShoppingBag, Utensils, Plane, MapPin, 
   Info, User, Bell, LogOut
@@ -8,10 +11,49 @@ import {
 
 function RestaurantLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuthStore()
+  const [isOpen, setIsOpen] = useState(true)
   
   // Use auth guard to check token expiration
   useAuthGuard()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/customer', { replace: true })
+  }
+
+  // Load restaurant status for owner
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const res = await restaurantService.getMyRestaurant()
+        if (mounted) setIsOpen(res.data.restaurant?.isOpen ?? true)
+      } catch (err) {
+        // ignore
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  const handleToggleStatus = async () => {
+    const newState = !isOpen
+    // optimistic update
+    setIsOpen(newState)
+    try {
+      const res = await restaurantService.toggleRestaurantStatus()
+      const serverState = res.data.isOpen
+      // if server returns explicit state, use it; otherwise keep optimistic
+      if (typeof serverState === 'boolean') setIsOpen(serverState)
+      toast.success(`Cửa hàng đã ${serverState ? 'mở cửa' : 'đóng cửa'}`)
+    } catch (err) {
+      // revert optimistic update
+      setIsOpen(!newState)
+      toast.error('Không thể thay đổi trạng thái cửa hàng')
+    }
+  }
 
   const navigation = [
     { name: 'Bảng Điều Khiển', href: '/restaurant', icon: BarChart3 },
@@ -87,7 +129,7 @@ function RestaurantLayout() {
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <LogOut className="mr-3 h-4 w-4" />
@@ -113,16 +155,31 @@ function RestaurantLayout() {
               
               {/* Header Actions */}
               <div className="flex items-center space-x-4">
-                {/* Notifications */}
-                <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-                </button>
+                {/* Toggle switch + status text */}
+                <div className="flex items-center space-x-3">
+                  <label className="flex items-center cursor-pointer">
+                    {/* Hidden checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={!!isOpen}
+                      onChange={handleToggleStatus}
+                      className="sr-only"
+                      aria-label="Chuyển trạng thái cửa hàng"
+                    />
+                    {/* Switch */}
+                    <div className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors ${isOpen ? 'bg-green-600' : 'bg-gray-300'}`}>
+                      <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${isOpen ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </div>
+                  </label>
 
-                {/* Restaurant Status */}
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Đang Hoạt Động</span>
+                  {/* Status text on the right */}
+                  <div className="text-sm font-medium">
+                    {isOpen ? (
+                      <span className="text-green-600">Đang hoạt động</span>
+                    ) : (
+                      <span className="text-red-600">Đang đóng cửa</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

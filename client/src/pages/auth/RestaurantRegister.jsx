@@ -162,9 +162,8 @@ function RestaurantRegister() {
     setIsLoading(true)
 
     try {
-      const { confirmPassword, ...registerData } = formData
-      console.log('Registering with data:', registerData)
-      const response = await authService.register(registerData)
+  const { confirmPassword, ...registerData } = formData
+  const response = await authService.register(registerData)
       
       if (response.success) {
         // Redirect to login page with approval message

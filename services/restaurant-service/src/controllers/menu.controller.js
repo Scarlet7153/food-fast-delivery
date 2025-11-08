@@ -49,7 +49,7 @@ const getMenuItems = async (req, res) => {
         menuItems,
         restaurant: {
           name: restaurant.name,
-          isOpen: restaurant.isOpen()
+          isOpen: restaurant.isOpen || false
         }
       }
     });
@@ -100,7 +100,7 @@ const getMyMenuItems = async (req, res) => {
         restaurant: {
           _id: restaurant._id,
           name: restaurant.name,
-          isOpen: restaurant.isOpen()
+          isOpen: restaurant.isOpen || false
         }
       }
     });
@@ -422,15 +422,13 @@ const searchMenuItems = async (req, res) => {
         $or: [
           { name: searchRegex },
           { description: searchRegex },
-          { category: searchRegex },
-          { tags: { $in: [new RegExp(flexiblePattern, 'i')] } },
-          { searchKeywords: { $in: [new RegExp(flexiblePattern, 'i')] } }
+          { category: searchRegex }
         ],
         available: true
       };
       
-      // Only get items from active and approved restaurants
-      const activeRestaurants = await Restaurant.find({ active: true, approved: true }).select('_id');
+  // Only get items from restaurants that are active, approved and currently open
+  const activeRestaurants = await Restaurant.find({ active: true, approved: true, isOpen: true }).select('_id');
       const restaurantIds = activeRestaurants.map(r => r._id);
       query.restaurantId = { $in: restaurantIds };
       
@@ -450,8 +448,8 @@ const searchMenuItems = async (req, res) => {
       }
       
       menuItems = await MenuItem.find(query)
-        .populate('restaurantId', 'name active approved')
-        .sort({ featured: -1, 'popularity.rating.average': -1, name: 1 })
+        .populate('restaurantId', 'name active approved isOpen')
+        .sort({ featured: -1, name: 1 })
         .limit(options.limit);
     } else {
       // When no search term, find by category, featured, and other filters across all restaurants
@@ -471,14 +469,14 @@ const searchMenuItems = async (req, res) => {
         if (options.maxPrice) query.price.$lte = options.maxPrice;
       }
       
-      // Only get items from active and approved restaurants
-      const activeRestaurants = await Restaurant.find({ active: true, approved: true }).select('_id');
+      // Only get items from restaurants that are active, approved and currently open
+      const activeRestaurants = await Restaurant.find({ active: true, approved: true, isOpen: true }).select('_id');
       const restaurantIds = activeRestaurants.map(r => r._id);
       query.restaurantId = { $in: restaurantIds };
       
       menuItems = await MenuItem.find(query)
-        .populate('restaurantId', 'name active approved')
-        .sort({ featured: -1, 'popularity.rating.average': -1, name: 1 })
+        .populate('restaurantId', 'name active approved isOpen')
+        .sort({ featured: -1, name: 1 })
         .limit(options.limit);
     }
     

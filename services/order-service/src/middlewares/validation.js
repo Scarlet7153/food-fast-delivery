@@ -56,17 +56,14 @@ const schemas = {
   }),
 
   rateOrder: Joi.object({
-    food: Joi.number().min(1).max(5).required(),
-    delivery: Joi.number().min(1).max(5).required(),
-    overall: Joi.number().min(1).max(5).required(),
-    comment: Joi.string().max(500).optional()
+    rating: Joi.number().min(1).max(5).required(),
+    comment: Joi.string().max(500).allow('').optional()
   })
 };
 
 // Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
-    console.log('Validation input:', JSON.stringify(req.body, null, 2));
     const { error } = schema.validate(req.body, { abortEarly: false });
     
     if (error) {
@@ -75,7 +72,6 @@ const validate = (schema) => {
         message: detail.message
       }));
       
-      console.log('Validation errors:', errors);
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -83,7 +79,6 @@ const validate = (schema) => {
       });
     }
     
-    console.log('Validation passed');
     next();
   };
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { adminService } from '../../services/adminService'
+import Pagination from '../../components/common/Pagination'
 import { 
   Search, Filter, Users, Mail, Phone, Calendar, 
   Shield, CheckCircle, XCircle, AlertTriangle, Eye, Edit3
@@ -15,18 +16,23 @@ function AdminUsers() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedUser, setSelectedUser] = useState(null)
   const [showUserModal, setShowUserModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   const queryClient = useQueryClient()
 
   // Fetch users
   const { data: usersData, isLoading } = useQuery(
-    ['admin-users', { search: searchQuery, role: roleFilter, status: statusFilter }],
+    ['admin-users', { search: searchQuery, role: roleFilter, status: statusFilter, page: currentPage }],
     () => adminService.getUsers({
       search: searchQuery,
       role: roleFilter !== 'all' ? roleFilter : undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
   )
@@ -47,6 +53,8 @@ function AdminUsers() {
   )
 
   const users = usersData?.data?.users || []
+  const totalUsers = usersData?.data?.pagination?.total || usersData?.data?.total || 0
+  const totalPages = Math.ceil(totalUsers / pageSize)
 
   const roleOptions = [
     { value: 'all', label: 'Tất Cả Vai Trò' },
@@ -162,7 +170,10 @@ function AdminUsers() {
               type="text"
               placeholder="Tìm kiếm người dùng theo tên, email hoặc ID..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -170,7 +181,10 @@ function AdminUsers() {
           {/* Role Filter */}
           <select
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            onChange={(e) => {
+              setRoleFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {roleOptions.map(option => (
@@ -183,7 +197,10 @@ function AdminUsers() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -326,6 +343,17 @@ function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalUsers}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* User Detail Modal */}
       {showUserModal && selectedUser && (

@@ -48,19 +48,7 @@ const droneSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DeliveryMission'
   },
-  // Maintenance tracking
-  maintenance: {
-    totalFlightHours: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    totalFlights: {
-      type: Number,
-      default: 0,
-      min: 0
-    }
-  }
+  // removed maintenance and detailed settings to simplify model
 }, {
   timestamps: true
 });

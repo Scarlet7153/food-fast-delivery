@@ -28,15 +28,35 @@ const deliveryMissionSchema = new mongoose.Schema({
     default: 'PENDING',
     required: true,
   }
+  ,
+  // Route, estimates, parameters and telemetry
+  route: {
+    type: Object
+  },
+  estimates: {
+    type: Object
+  },
+  parameters: {
+    type: Object
+  },
+  // Actuals recorded after/while flight
+  actual: {
+    type: Object,
+    default: {}
+  },
+  // Optional last status note
+  lastNote: {
+    type: String
+  }
 }, {
   timestamps: true
 });
 
 // Indexes
 deliveryMissionSchema.index({ droneId: 1 });
-deliveryMissionSchema.index({ orderId: 1 });
+// orderId is already unique on the schema path; avoid duplicate index declaration
 deliveryMissionSchema.index({ restaurantId: 1 });
-deliveryMissionSchema.index({ missionNumber: 1 });
+// missionNumber is already unique on the schema path; avoid duplicate index declaration
 deliveryMissionSchema.index({ createdAt: -1 });
 deliveryMissionSchema.index({ status: 1 });
 
@@ -52,6 +72,43 @@ deliveryMissionSchema.pre('save', async function(next) {
 // Instance method to update status
 deliveryMissionSchema.methods.updateStatus = async function(newStatus) {
   this.status = newStatus;
+  return this.save();
+};
+
+// Instance method to update status with optional note
+deliveryMissionSchema.methods.updateStatus = async function(newStatus, note) {
+  this.status = newStatus;
+  if (note) this.lastNote = note;
+  return this.save();
+};
+
+// Instance helper to get a human readable status note
+deliveryMissionSchema.methods.getStatusNote = function(status) {
+  switch ((status || this.status)) {
+    case 'PENDING': return 'Mission pending';
+    case 'ASSIGNED': return 'Drone assigned to mission';
+    case 'IN_PROGRESS': return 'Mission in progress';
+    case 'DELIVERED': return 'Package delivered';
+    case 'COMPLETED': return 'Mission completed';
+    case 'FAILED': return 'Mission failed';
+    case 'CANCELLED': return 'Mission cancelled';
+    case 'ABORTED': return 'Mission aborted';
+    default: return 'Status updated';
+  }
+};
+
+// Instance method to add a path point (telemetry)
+// Deprecated: store last known location instead of full pathPoints to reduce document size
+deliveryMissionSchema.methods.addPathPoint = async function(latitude, longitude, altitude, heading, speed) {
+  this.actual = this.actual || {};
+  this.actual.lastLocation = {
+    latitude,
+    longitude,
+    altitude,
+    heading,
+    speed,
+    timestamp: new Date()
+  };
   return this.save();
 };
 

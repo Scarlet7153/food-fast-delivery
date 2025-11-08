@@ -9,6 +9,7 @@ const menuController = require('../controllers/menu.controller');
 router.get('/me', auth, requireRole('restaurant'), restaurantController.getMyRestaurant);
 router.put('/me', auth, requireRole('restaurant'), validate(schemas.updateRestaurant), restaurantController.updateMyRestaurant);
 router.get('/me/menu', auth, requireRole('restaurant'), menuController.getMyMenuItems);
+router.post('/me/toggle-status', auth, requireRole('restaurant'), restaurantController.toggleRestaurantStatus);
 
 // Public routes
 router.get('/', restaurantController.getAllRestaurants);

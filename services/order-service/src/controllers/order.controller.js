@@ -53,38 +53,17 @@ const createOrder = async (req, res) => {
     // Calculate estimated delivery time
     const order = new Order(orderData);
     order.calculateEstimatedDeliveryTime();
-    await order.save();
-
-    // Create payment request if needed
-    if (order.payment.method === 'MOMO') {
-      try {
-        const paymentResponse = await axios.post(`${config.PAYMENT_SERVICE_URL}/api/payments/momo/create`, {
-          orderId: order._id,
-          amount: order.amount.total,
-          orderInfo: `Order ${order.orderNumber}`,
-          extraData: JSON.stringify({
-            orderNumber: order.orderNumber,
-            restaurantId: order.restaurantId
-          })
-        }, {
-          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
-        });
-
-        if (paymentResponse.data.success) {
-          order.payment.momo = paymentResponse.data.data;
-          order.payment.status = 'PENDING';
-          await order.save();
-        }
-      } catch (error) {
-        logger.error('Payment creation failed:', error);
-        // Continue with order creation even if payment fails
-      }
-    } else if (order.payment.method === 'COD') {
-      // For COD, mark payment as paid immediately
+    
+    // Set initial status based on payment method
+    if (orderData.payment.method === 'MOMO') {
+      order.status = 'PENDING_PAYMENT';  // Wait for payment confirmation
+      order.payment.status = 'UNPAID';
+    } else if (orderData.payment.method === 'COD') {
+      order.status = 'PLACED';  // Ready for restaurant to process
       order.payment.status = 'PAID';
-      order.status = 'PLACED';
-      await order.save();
     }
+    
+    await order.save();
 
     logger.info(`New order created: ${order.orderNumber} by user ${req.user._id}`);
 
@@ -212,7 +191,8 @@ const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, note } = req.body;
     
-    console.log('Update order status request:', { id, status, note, user: req.user });
+  // Request info logged via structured logger
+  logger.debug && logger.debug('Update order status request', { id, status, note, user: req.user });
     
     const order = await Order.findById(id);
     if (!order) {
@@ -309,6 +289,14 @@ const cancelOrder = async (req, res) => {
       return res.status(403).json({
         success: false,
         error: 'You do not have permission to cancel this order'
+      });
+    }
+    
+    // Check if order can be cancelled (only PLACED or PENDING_PAYMENT)
+    if (order.status !== 'PLACED' && order.status !== 'PENDING_PAYMENT') {
+      return res.status(400).json({
+        success: false,
+        error: 'Không thể hủy đơn hàng sau khi nhà hàng đã xác nhận'
       });
     }
     
@@ -474,7 +462,7 @@ const getOrderStatistics = async (req, res) => {
 const rateOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const { food, delivery, overall, comment } = req.body;
+    const { rating, comment } = req.body;
     
     const order = await Order.findById(id);
     if (!order) {
@@ -509,20 +497,20 @@ const rateOrder = async (req, res) => {
     }
     
     order.rating = {
-      food,
-      delivery,
-      overall,
+      rating,
       comment,
       ratedAt: new Date()
     };
     
     await order.save();
     
-    // Update restaurant and menu item ratings
+    // Update restaurant rating (forward auth header so restaurant service can verify user)
     try {
-      await axios.post(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/${order.restaurantId}/rating`, {
-        rating: overall
-      });
+      await axios.post(
+        `${config.RESTAURANT_SERVICE_URL}/api/restaurants/${order.restaurantId}/rating`,
+        { rating: rating },
+        { headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {} }
+      );
     } catch (error) {
       logger.warn('Failed to update restaurant rating:', error);
     }
@@ -691,10 +679,10 @@ const assignDroneToOrder = async (req, res) => {
     }
     
     // Check if order is in correct status
-    if (order.status !== 'READY_FOR_PICKUP') {
+    if (!['COOKING', 'READY_FOR_PICKUP'].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        error: 'Order must be in READY_FOR_PICKUP status to assign drone'
+        error: 'Order must be in COOKING or READY_FOR_PICKUP status to assign drone'
       });
     }
     
@@ -823,6 +811,17 @@ const assignDroneToOrder = async (req, res) => {
       maxRangeMeters: selectedDrone.maxRangeMeters,
       status: 'BUSY'
     };
+    
+    // If assigning from COOKING, add READY_FOR_PICKUP to timeline first
+    if (order.status === 'COOKING') {
+      order.timeline.push({
+        status: 'READY_FOR_PICKUP',
+        timestamp: new Date(),
+        note: 'Món ăn đã sẵn sàng để drone lấy',
+        updatedBy: req.user._id
+      });
+    }
+    
     order.status = 'IN_FLIGHT';
     order.timeline.push({
       status: 'IN_FLIGHT',
@@ -927,6 +926,89 @@ const confirmDelivery = async (req, res) => {
   }
 };
 
+// Internal API - Get order by ID (no authentication)
+const getOrderByIdInternal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Enrich order with customer information
+    let enrichedOrder = order.toObject();
+    enrichedOrder.customer = {
+      _id: order.userId,
+      name: order.deliveryAddress?.contactName || 'Khách hàng',
+      email: '',
+      phone: order.deliveryAddress?.contactPhone || ''
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        order: enrichedOrder
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Get order by ID (internal) error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get order'
+    });
+  }
+};
+
+// Update order status (internal API for payment service)
+const updateOrderStatusInternal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, paymentStatus } = req.body;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+    
+    // Update order status
+    if (status) {
+      order.status = status;
+    }
+    
+    // Update payment status
+    if (paymentStatus) {
+      order.payment.status = paymentStatus;
+    }
+    
+    await order.save();
+    
+    logger.info(`Order ${order.orderNumber} status updated to ${status}, payment: ${paymentStatus}`);
+    
+    res.json({
+      success: true,
+      message: 'Order status updated',
+      data: {
+        order
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Update order status (internal) error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update order status'
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -937,5 +1019,7 @@ module.exports = {
   getRestaurantOrders,
   getOrderStatistics,
   assignDroneToOrder,
-  confirmDelivery
+  confirmDelivery,
+  getOrderByIdInternal,
+  updateOrderStatusInternal
 };

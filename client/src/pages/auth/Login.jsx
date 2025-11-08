@@ -50,21 +50,33 @@ function Login() {
       const result = await login(formData)
       
       if (result.success) {
+        // Check if there's a redirect location from state
+        const from = location.state?.from
+        
+        if (from) {
+          // Only redirect back to `from` when it's appropriate for the logged-in user's role.
+          // If `from` is a public customer page (e.g. '/customer') but user is admin/restaurant,
+          // prefer role-based home to avoid sending admins/restaurants to the public UI.
+          const user = result.user
+          const isCustomerPath = from.startsWith('/customer') || from === '/'
+          if (isCustomerPath && user.role !== 'customer') {
+            // Ignore `from` and fall through to role-based redirect
+          } else {
+            // Redirect to the page they were trying to access
+            navigate(from, { replace: true })
+            return
+          }
+        }
+        
         // Redirect based on user role
         const user = result.user
-        switch (user.role) {
-          case 'customer':
-            navigate('/customer')
-            break
-          case 'restaurant':
-            navigate('/restaurant')
-            break
-          case 'admin':
-            navigate('/admin')
-            break
-          default:
-            navigate('/')
+        const roleRoutes = {
+          'admin': '/admin',
+          'restaurant': '/restaurant',
+          'customer': '/customer'
         }
+        const targetRoute = roleRoutes[user.role] || '/customer'
+        navigate(targetRoute, { replace: true })
       }
     } catch (error) {
       // Handle specific error messages

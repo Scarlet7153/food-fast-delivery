@@ -121,6 +121,7 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
+      'PENDING_PAYMENT',  // Waiting for payment confirmation
       'PLACED',
       'CONFIRMED', 
       'COOKING',
@@ -232,7 +233,7 @@ orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'payment.status': 1 });
-orderSchema.index({ orderNumber: 1 });
+// orderNumber has `unique: true` on the schema path; avoid duplicate index declaration
 orderSchema.index({ 'deliveryAddress.location': '2dsphere' });
 
 // Virtual for duration
@@ -253,9 +254,7 @@ orderSchema.virtual('estimatedDuration').get(function() {
 
 // Pre-save middleware to generate order number
 orderSchema.pre('save', async function(next) {
-  console.log('Pre-save middleware running, isNew:', this.isNew, 'orderNumber:', this.orderNumber);
   if (this.isNew && !this.orderNumber) {
-    console.log('Generating order number...');
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -272,8 +271,7 @@ orderSchema.pre('save', async function(next) {
       sequence = lastSequence + 1;
     }
     
-    this.orderNumber = `ORD${year}${month}${day}${sequence.toString().padStart(4, '0')}`;
-    console.log('Generated order number:', this.orderNumber);
+  this.orderNumber = `ORD${year}${month}${day}${sequence.toString().padStart(4, '0')}`;
   }
   next();
 });
@@ -320,10 +318,21 @@ orderSchema.methods.updateStatus = function(newStatus, updatedBy, note) {
     throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
   }
   
+  const currentStatus = this.status;
   this.status = newStatus;
   
   if (newStatus === 'DELIVERED') {
     this.actualDeliveryTime = new Date();
+  }
+  
+  // If transitioning from PLACED to COOKING, add CONFIRMED to timeline first
+  if (currentStatus === 'PLACED' && newStatus === 'COOKING') {
+    this.timeline.push({
+      status: 'CONFIRMED',
+      timestamp: new Date(),
+      note: 'Đơn hàng đã được nhà hàng xác nhận',
+      updatedBy: updatedBy
+    });
   }
   
   this.timeline.push({
@@ -339,8 +348,8 @@ orderSchema.methods.updateStatus = function(newStatus, updatedBy, note) {
 // Instance method to check if status transition is valid
 orderSchema.methods.canTransitionTo = function(newStatus) {
   const validTransitions = {
-    PLACED: ['CONFIRMED', 'CANCELLED'],
-    CONFIRMED: ['COOKING', 'CANCELLED'],
+    PLACED: ['CONFIRMED', 'COOKING', 'CANCELLED'], // Allow direct transition to COOKING (will auto-add CONFIRMED to timeline)
+    CONFIRMED: ['COOKING', 'READY_FOR_PICKUP', 'CANCELLED'], // Allow direct transition to READY_FOR_PICKUP
     COOKING: ['READY_FOR_PICKUP', 'CANCELLED'],
     READY_FOR_PICKUP: ['IN_FLIGHT', 'CANCELLED'],
     IN_FLIGHT: ['DELIVERED', 'FAILED'],
@@ -365,6 +374,11 @@ orderSchema.methods.calculateEstimatedDeliveryTime = function() {
 orderSchema.methods.cancelOrder = function(reason, cancelledBy, refundAmount = 0) {
   if (this.status === 'DELIVERED' || this.status === 'CANCELLED') {
     throw new Error('Cannot cancel delivered or already cancelled order');
+  }
+  
+  // Customers can only cancel orders that haven't been confirmed by restaurant
+  if (this.status !== 'PLACED' && this.status !== 'PENDING_PAYMENT') {
+    throw new Error('Cannot cancel order after restaurant confirmation');
   }
   
   this.status = 'CANCELLED';
@@ -416,10 +430,16 @@ orderSchema.statics.findByUser = function(userId, options = {}) {
 
 // Static method to find by restaurant
 orderSchema.statics.findByRestaurant = function(restaurantId, options = {}) {
-  const query = { restaurantId };
+  const query = { 
+    restaurantId,
+    status: { $ne: 'PENDING_PAYMENT' }  // Exclude pending payment orders
+  };
   
   if (options.status) {
-    query.status = options.status;
+    // If specific status requested, use it (as long as it's not PENDING_PAYMENT)
+    if (options.status !== 'PENDING_PAYMENT') {
+      query.status = options.status;
+    }
   }
   
   if (options.dateFrom || options.dateTo) {
@@ -434,7 +454,10 @@ orderSchema.statics.findByRestaurant = function(restaurantId, options = {}) {
 
 // Static method to get order statistics
 orderSchema.statics.getStatistics = function(restaurantId, dateFrom, dateTo) {
-  const matchStage = { restaurantId };
+  const matchStage = { 
+    restaurantId,
+    status: { $ne: 'PENDING_PAYMENT' }  // Exclude pending payment orders
+  };
   
   if (dateFrom || dateTo) {
     matchStage.createdAt = {};

@@ -16,7 +16,7 @@ const getAllOrders = async (req, res) => {
       endDate 
     } = req.query;
 
-    // Build filter
+    // Build filter - Admin sees all orders including PENDING_PAYMENT
     const filter = {};
     
     if (status) {
@@ -262,17 +262,17 @@ const getStatistics = async (req, res) => {
       newOrders,
       totalRevenue
     ] = await Promise.all([
-      Order.countDocuments(),
-      Order.countDocuments({ status: 'completed' }),
-      Order.countDocuments({ status: { $in: ['confirmed', 'preparing', 'ready', 'out_for_delivery'] } }),
-      Order.countDocuments({ status: 'pending' }),
-      Order.countDocuments({ status: 'cancelled' }),
+      Order.countDocuments({}),  // Admin sees all orders
+      Order.countDocuments({ status: 'DELIVERED' }),
+      Order.countDocuments({ status: { $in: ['CONFIRMED', 'COOKING', 'IN_FLIGHT'] } }),
+      Order.countDocuments({ status: 'PLACED' }),
+      Order.countDocuments({ status: 'CANCELLED' }),
       Order.countDocuments({ 
-        createdAt: { $gte: startDate, $lte: endDate } 
+        createdAt: { $gte: startDate, $lte: endDate }
       }),
       Order.aggregate([
-        { $match: { status: 'completed' } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        { $match: { status: 'DELIVERED' } },
+        { $group: { _id: null, total: { $sum: '$amount.total' } } }
       ])
     ]);
 
@@ -342,7 +342,7 @@ const getStatistics = async (req, res) => {
 // Get order overview
 const getOverview = async (req, res) => {
   try {
-    // Order status overview
+    // Order status overview - Admin sees all
     const statusOverview = await Order.aggregate([
       {
         $group: {
@@ -352,13 +352,13 @@ const getOverview = async (req, res) => {
       }
     ]);
 
-    // Recent orders
-    const recentOrders = await Order.find()
+    // Recent orders - Admin sees all
+    const recentOrders = await Order.find({})
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('orderNumber status totalAmount createdAt');
+      .select('orderNumber status amount createdAt');
 
-    // Performance metrics
+    // Performance metrics - Admin sees all
     const performanceStats = await Order.aggregate([
       {
         $group: {
@@ -366,19 +366,19 @@ const getOverview = async (req, res) => {
           totalOrders: { $sum: 1 },
           totalRevenue: { 
             $sum: { 
-              $cond: [{ $eq: ['$status', 'completed'] }, '$totalAmount', 0] 
+              $cond: [{ $eq: ['$status', 'DELIVERED'] }, '$amount.total', 0] 
             } 
           },
           avgOrderValue: { 
             $avg: { 
-              $cond: [{ $eq: ['$status', 'completed'] }, '$totalAmount', null] 
+              $cond: [{ $eq: ['$status', 'DELIVERED'] }, '$amount.total', null] 
             } 
           }
         }
       }
     ]);
 
-    // Top customers by order count
+    // Top customers by order count - Admin sees all
     const topCustomers = await Order.aggregate([
       {
         $group: {

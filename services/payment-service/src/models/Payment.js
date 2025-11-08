@@ -190,11 +190,11 @@ const paymentSchema = new mongoose.Schema({
 });
 
 // Indexes
-paymentSchema.index({ orderId: 1 });
+// `orderId` is already unique on the schema path, avoid duplicate index declaration
 paymentSchema.index({ userId: 1, createdAt: -1 });
 paymentSchema.index({ restaurantId: 1, createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
-paymentSchema.index({ paymentNumber: 1 });
+// `paymentNumber` is already unique on the schema path, avoid duplicate index declaration
 paymentSchema.index({ 'momo.transId': 1 });
 paymentSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 

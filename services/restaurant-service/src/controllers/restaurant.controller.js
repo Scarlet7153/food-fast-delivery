@@ -108,7 +108,9 @@ const getAllRestaurants = async (req, res) => {
             await Restaurant.findByIdAndUpdate(rest._id, { ownerEmail: rest.ownerEmail });
           }
         } catch (error) {
-          logger.warn(`Failed to fetch owner email for restaurant ${rest._id}:`, error.message);
+          const status = error.response?.status;
+          const data = error.response?.data;
+          logger.warn(`Failed to fetch owner email for restaurant ${rest._id}:`, error.message, { status, data });
         }
       }
       
@@ -174,7 +176,9 @@ const getRestaurantById = async (req, res) => {
           restaurantObj.owner = ownerResponse.data.data.user;
         }
       } catch (error) {
-        logger.warn(`Failed to fetch owner info for restaurant ${id}:`, error.message);
+        const status = error.response?.status;
+        const data = error.response?.data;
+        logger.warn(`Failed to fetch owner info for restaurant ${id}:`, error.message, { status, data });
       }
     }
     
@@ -698,6 +702,50 @@ const getAllRestaurantsInternal = async (req, res) => {
   }
 };
 
+// Toggle restaurant open/close status (Restaurant owner only)
+const toggleRestaurantStatus = async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ ownerUserId: req.user._id });
+    
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+
+    // Check if restaurant is approved
+    if (!restaurant.approved) {
+      return res.status(403).json({
+        success: false,
+        error: 'Restaurant must be approved before opening'
+      });
+    }
+
+    // Toggle the isOpen status
+    restaurant.isOpen = !restaurant.isOpen;
+    await restaurant.save();
+
+    logger.info(`Restaurant ${restaurant.name} is now ${restaurant.isOpen ? 'OPEN' : 'CLOSED'}`);
+
+    res.json({
+      success: true,
+      message: `Cửa hàng đã ${restaurant.isOpen ? 'mở cửa' : 'đóng cửa'}`,
+      data: {
+        restaurant,
+        isOpen: restaurant.isOpen
+      }
+    });
+
+  } catch (error) {
+    logger.error('Toggle restaurant status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to toggle restaurant status'
+    });
+  }
+};
+
 module.exports = {
   getAllRestaurants,
   getAllRestaurantsInternal,
@@ -712,5 +760,6 @@ module.exports = {
   updateRestaurantStatus,
   getPendingRestaurants,
   calculateDeliveryFee,
-  updateRating
+  updateRating,
+  toggleRestaurantStatus
 };

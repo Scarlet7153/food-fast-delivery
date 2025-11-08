@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { adminService } from '../../services/adminService'
+import Pagination from '../../components/common/Pagination'
 import { 
   Search, Filter, Building2, MapPin, Phone, Mail, 
   CheckCircle, XCircle, AlertTriangle, Eye, Edit3,
@@ -15,17 +16,22 @@ function AdminRestaurants() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedRestaurant, setSelectedRestaurant] = useState(null)
   const [showRestaurantModal, setShowRestaurantModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   const queryClient = useQueryClient()
 
   // Fetch restaurants
   const { data: restaurantsData, isLoading } = useQuery(
-    ['admin-restaurants', { search: searchQuery, status: statusFilter }],
+    ['admin-restaurants', { search: searchQuery, status: statusFilter, page: currentPage }],
     () => adminService.getRestaurants({
       search: searchQuery,
-      status: statusFilter !== 'all' ? statusFilter : undefined
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      page: currentPage,
+      limit: pageSize
     }),
     {
+      keepPreviousData: true,
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
   )
@@ -46,6 +52,8 @@ function AdminRestaurants() {
   )
 
   const restaurants = restaurantsData?.data?.restaurants || []
+  const totalRestaurants = restaurantsData?.data?.pagination?.total || restaurantsData?.data?.total || 0
+  const totalPages = Math.ceil(totalRestaurants / pageSize)
 
   const statusOptions = [
     { value: 'all', label: 'Tất Cả Trạng Thái' },
@@ -127,7 +135,10 @@ function AdminRestaurants() {
               type="text"
               placeholder="Tìm kiếm nhà hàng theo tên, chủ sở hữu hoặc ID..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="input pl-10 w-full"
             />
           </div>
@@ -135,7 +146,10 @@ function AdminRestaurants() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
             className="input lg:w-48"
           >
             {statusOptions.map(option => (
@@ -188,6 +202,17 @@ function AdminRestaurants() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalRestaurants}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* Restaurant Detail Modal */}
       {showRestaurantModal && selectedRestaurant && (
