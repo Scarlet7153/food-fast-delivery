@@ -30,6 +30,17 @@ function RestaurantDashboard() {
 
   const stats = statsData?.data?.stats || {}
   const recentOrders = ordersData?.data?.orders || []
+  
+  // Log để debug
+  console.log('Stats Data:', statsData)
+  console.log('Stats:', stats)
+  console.log('Total Revenue:', stats.totalRevenue)
+
+  // Format số liệu cho đơn vị TB/đơn
+  const avgOrderValue = {
+    today: stats.todayOrders ? (stats.todayRevenue / stats.todayOrders) : 0,
+    total: stats.totalOrders ? (stats.totalRevenue / stats.totalOrders) : 0
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -94,23 +105,17 @@ function RestaurantDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng Đơn Hàng</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.totalOrders || 0}
+              <p className="text-sm font-medium text-gray-600">Tổng Doanh Thu</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(stats.totalRevenue || 0)}
               </p>
-              {stats.totalOrders > 0 ? (
-                <p className="text-sm text-green-600 flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +12% so với tuần trước
-                </p>
-              ) : (
-                <p className="text-sm text-gray-500 mt-1">
-                  Chưa có dữ liệu
-                </p>
-              )}
+              <p className="text-sm text-blue-600 flex items-center mt-1">
+                <ShoppingBag className="h-3 w-3 mr-1" />
+                {stats.totalOrders || 0} đơn • {formatCurrency(avgOrderValue.total)} TB/đơn
+              </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
-              <ShoppingBag className="h-6 w-6 text-blue-600" />
+              <DollarSign className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
@@ -119,19 +124,13 @@ function RestaurantDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Doanh Thu Hôm Nay</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(stats.todayRevenue || 0)}
               </p>
-              {stats.todayRevenue > 0 ? (
-                <p className="text-sm text-green-600 flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +8% so với hôm qua
-                </p>
-              ) : (
-                <p className="text-sm text-gray-500 mt-1">
-                  Chưa có doanh thu
-                </p>
-              )}
+              <p className="text-sm text-green-600 flex items-center mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {stats.todayOrders || 0} đơn • {formatCurrency(avgOrderValue.today)} TB/đơn
+              </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <DollarSign className="h-6 w-6 text-green-600" />
@@ -143,10 +142,10 @@ function RestaurantDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Đơn Đang Xử Lý</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-yellow-600">
                 {stats.activeOrders || 0}
               </p>
-              <p className="text-sm text-blue-600 flex items-center mt-1">
+              <p className="text-sm text-yellow-600 flex items-center mt-1">
                 <Clock className="h-3 w-3 mr-1" />
                 {stats.activeOrders > 0 ? 'Đang tiến hành' : 'Không có đơn xử lý'}
               </p>
@@ -161,16 +160,16 @@ function RestaurantDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Đánh Giá TB</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-orange-600">
                 {stats.totalReviews > 0 ? (stats.averageRating?.toFixed(1) || '0.0') : '--'}
               </p>
-              <p className="text-sm text-gray-600 flex items-center mt-1">
+              <p className="text-sm text-orange-600 flex items-center mt-1">
                 <Users className="h-3 w-3 mr-1" />
                 {stats.totalReviews || 0} đánh giá
               </p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Users className="h-6 w-6 text-purple-600" />
+            <div className="p-3 bg-orange-100 rounded-full">
+              <Users className="h-6 w-6 text-orange-600" />
             </div>
           </div>
         </div>

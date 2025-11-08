@@ -43,15 +43,15 @@ export const orderService = {
     return response.data
   },
 
-  // Update order status (restaurant owner)
-  async updateOrderStatus(id, status, note) {
-    const response = await api.patch(`/orders/${id}/status`, { status, note })
+  // Get restaurant order stats (restaurant owner)
+  async getRestaurantOrderStats(params = {}) {
+    const response = await api.get('/orders/restaurant/stats', { params })
     return response.data
   },
 
-  // Get restaurant order statistics
-  async getRestaurantOrderStats(params = {}) {
-    const response = await api.get('/orders/restaurant/stats', { params })
+  // Update order status (restaurant owner)
+  async updateOrderStatus(id, status, note) {
+    const response = await api.patch(`/orders/${id}/status`, { status, note })
     return response.data
   },
 

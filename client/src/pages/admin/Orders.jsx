@@ -523,15 +523,15 @@ function OrderDetailModal({ order, onClose }) {
               
               {order.timeline?.map((event, index) => (
                 <div key={index} className="flex items-center space-x-3">
-                   <div className="flex-shrink-0">
-                     {event.status === 'PLACED' || event.status === 'DELIVERED' ? (
-                       <CheckCircle className="h-4 w-4 text-green-500" />
-                     ) : event.status === 'CANCELLED' || event.status === 'FAILED' ? (
-                       <XCircle className="h-4 w-4 text-red-500" />
-                     ) : (
-                       <CheckCircle className="h-4 w-4 text-blue-500" />
-                     )}
-                   </div>
+                  <div className="flex-shrink-0">
+                    {event.status === 'PLACED' || event.status === 'DELIVERED' ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : event.status === 'CANCELLED' || event.status === 'FAILED' ? (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-blue-500" />
+                    )}
+                  </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{formatOrderStatus(event.status)}</p>
                     <p className="text-xs text-gray-500">{formatDateTime(event.timestamp)}</p>

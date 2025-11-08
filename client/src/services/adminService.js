@@ -98,24 +98,15 @@ export const adminService = {
     return response.data
   },
 
-  // Analytics
-  async getAnalytics(params = {}) {
-    const response = await api.get('/admin/analytics', { params })
-    return response.data
-  },
-
-  async getRevenueReport(params = {}) {
+  // Revenue statistics
+  async getStatistics(params = {}) {
     const response = await api.get('/admin/analytics/revenue', { params })
     return response.data
   },
-// Tổng doanh thu toàn hệ thống
-async getTotalRevenue(params = {}) {
-  const response = await api.get('/admin/analytics/total-revenue', { params })
-  return response.data
-},
 
-  async getOrderReport(params = {}) {
-    const response = await api.get('/admin/analytics/orders', { params })
+  // Statistics and Analytics
+  async getStatistics(params = {}) {
+    const response = await api.get('/admin/statistics', { params })
     return response.data
   }
 }

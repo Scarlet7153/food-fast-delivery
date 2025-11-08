@@ -6,12 +6,29 @@ const connect = async () => {
   try {
     const options = {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000, // Increase timeout
       socketTimeoutMS: 45000,
       bufferCommands: false,
+      retryWrites: true,
+      retryReads: true,
+      // Add retry logic
+      connectTimeoutMS: 30000,
+      heartbeatFrequencyMS: 2000,
     };
 
-    await mongoose.connect(config.MONGODB_URI, options);
+    // Try to connect with retries
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        await mongoose.connect(config.MONGODB_URI, options);
+        break;
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        logger.warn(`Failed to connect to MongoDB. Retrying... (${retries} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retry
+      }
+    }
     
     logger.info('Connected to MongoDB - Order Service');
   } catch (error) {

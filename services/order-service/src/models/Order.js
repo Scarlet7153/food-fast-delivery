@@ -298,7 +298,69 @@ orderSchema.pre('save', function(next) {
   }
   next();
 });
+// Tổng hop doanh thu theo nhà hàng
+const getRestaurantRevenue = async (restaurantId) => {
+  const revenue = await Order.aggregate([
+    // Lọc các đơn hàng của nhà hàng
+    {
+      $match: {
+        restaurantId: new mongoose.Types.ObjectId(restaurantId),
+        status: 'completed' // chỉ tính các đơn đã hoàn thành
+      }
+    },
+    // Tính tổng tiền từ tất cả các đơn hàng
+    {
+      $group: {
+        _id: '$restaurantId',
+        totalRevenue: { $sum: '$totalAmount' },
+        totalOrders: { $sum: 1 },
+        // Có thể thêm thống kê theo thời gian
+        daily: {
+          $push: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            amount: '$totalAmount'
+          }
+        }
+      }
+    },
+    // Nhóm theo ngày để có thống kê theo thời gian
+    {
+      $addFields: {
+        dailyStats: {
+          $reduce: {
+            input: '$daily',
+            initialValue: [],
+            in: {
+              $concatArrays: [
+                '$$value',
+                [{
+                  date: '$$this.date',
+                  amount: '$$this.amount'
+                }]
+              ]
+            }
+          }
+        }
+      }
+    },
+    // Projection để format kết quả
+    {
+      $project: {
+        _id: 0,
+        totalRevenue: 1,
+        totalOrders: 1,
+        dailyStats: {
+          $sortArray: { 
+            input: '$dailyStats', 
+            sortBy: { date: -1 } 
+          }
+        }
+      }
+    }
+  ]);
 
+  return revenue[0] || { totalRevenue: 0, totalOrders: 0, dailyStats: [] };
+};
 // Instance method to get status note
 orderSchema.methods.getStatusNote = function(status) {
   const statusNotes = {
