@@ -17,7 +17,7 @@ const getRestaurantDrones = async (req, res) => {
     } catch (error) {
       return res.status(404).json({
         success: false,
-        error: 'Restaurant not found'
+        error: 'Không tìm thấy nhà hàng'
       });
     }
     
@@ -48,7 +48,7 @@ const getRestaurantDrones = async (req, res) => {
     logger.error('Get restaurant drones error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get drones'
+      error: 'Lấy danh sách drone thất bại'
     });
   }
 };
@@ -62,7 +62,7 @@ const getDroneById = async (req, res) => {
     if (!drone) {
       return res.status(404).json({
         success: false,
-        error: 'Drone not found'
+        error: 'Không tìm thấy drone'
       });
     }
     
@@ -74,13 +74,13 @@ const getDroneById = async (req, res) => {
       if (drone.restaurantId.toString() !== restaurant._id.toString()) {
         return res.status(403).json({
           success: false,
-          error: 'You do not have permission to view this drone'
+          error: 'Bạn không có quyền xem drone này'
         });
       }
     } catch (error) {
       return res.status(403).json({
         success: false,
-        error: 'Restaurant not found'
+        error: 'Không tìm thấy nhà hàng'
       });
     }
     
@@ -119,15 +119,37 @@ const createDrone = async (req, res) => {
       ...req.body,
       restaurantId
     };
-    
+
+    // Enforce unique name per restaurant (case-insensitive)
+    if (droneData.name) {
+      const existing = await Drone.findOne({
+        restaurantId,
+        name: { $regex: `^${droneData.name}$`, $options: 'i' }
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          error: 'Đã tồn tại drone cùng tên trong nhà hàng của bạn'
+        });
+      }
+    }
+
     const drone = new Drone(droneData);
-    await drone.save();
+    try {
+      await drone.save();
+    } catch (err) {
+      // Handle potential duplicate key error from DB unique index
+      if (err.code === 11000) {
+        return res.status(400).json({ success: false, error: 'Đã tồn tại drone cùng tên trong nhà hàng của bạn' });
+      }
+      throw err
+    }
     
     logger.info(`New drone created: ${drone.name} for restaurant ${restaurantId}`);
     
     res.status(201).json({
       success: true,
-      message: 'Drone created successfully',
+      message: 'Đăng ký drone thành công',
       data: {
         drone
       }
@@ -174,6 +196,21 @@ const updateDrone = async (req, res) => {
       });
     }
     
+    // If updating name, ensure uniqueness within the restaurant (case-insensitive)
+    if (updateData.name && updateData.name.toLowerCase() !== drone.name.toLowerCase()) {
+      const conflict = await Drone.findOne({
+        restaurantId: drone.restaurantId,
+        _id: { $ne: drone._id },
+        name: { $regex: `^${updateData.name}$`, $options: 'i' }
+      });
+      if (conflict) {
+        return res.status(400).json({
+          success: false,
+          error: 'Another drone with this name already exists for your restaurant'
+        });
+      }
+    }
+
     const updatedDrone = await Drone.findByIdAndUpdate(
       id,
       updateData,
@@ -184,7 +221,7 @@ const updateDrone = async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Drone updated successfully',
+      message: 'Cập nhật drone thành công',
       data: {
         drone: updatedDrone
       }
@@ -194,7 +231,7 @@ const updateDrone = async (req, res) => {
     logger.error('Update drone error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to update drone'
+      error: 'Cập nhật drone thất bại'
     });
   }
 };
@@ -209,7 +246,7 @@ const updateDroneStatus = async (req, res) => {
     if (!drone) {
       return res.status(404).json({
         success: false,
-        error: 'Drone not found'
+        error: 'Không tìm thấy drone'
       });
     }
     
@@ -221,13 +258,13 @@ const updateDroneStatus = async (req, res) => {
       if (drone.restaurantId.toString() !== restaurant._id.toString()) {
         return res.status(403).json({
           success: false,
-          error: 'You do not have permission to update this drone'
+          error: 'Bạn không có quyền cập nhật drone này'
         });
       }
     } catch (error) {
       return res.status(403).json({
         success: false,
-        error: 'Restaurant not found'
+        error: 'Không tìm thấy nhà hàng'
       });
     }
     
@@ -237,7 +274,7 @@ const updateDroneStatus = async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Drone status updated successfully',
+      message: 'Cập nhật trạng thái drone thành công',
       data: {
         drone
       }
@@ -247,7 +284,7 @@ const updateDroneStatus = async (req, res) => {
     logger.error('Update drone status error:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Failed to update drone status'
+      error: error.message || 'Cập nhật trạng thái drone thất bại'
     });
   }
 };
@@ -280,7 +317,7 @@ const updateDroneLocation = async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Drone location updated successfully',
+      message: 'Cập nhật vị trí drone thành công',
       data: {
         drone
       }
@@ -290,7 +327,7 @@ const updateDroneLocation = async (req, res) => {
     logger.error('Update drone location error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to update drone location'
+      error: 'Cập nhật vị trí drone thất bại'
     });
   }
 };
@@ -308,7 +345,7 @@ const getAvailableDrones = async (req, res) => {
     } catch (error) {
       return res.status(404).json({
         success: false,
-        error: 'Restaurant not found'
+        error: 'Không tìm thấy nhà hàng'
       });
     }
     
@@ -325,7 +362,7 @@ const getAvailableDrones = async (req, res) => {
     logger.error('Get available drones error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get available drones'
+      error: 'Lấy drone khả dụng thất bại'
     });
   }
 };
@@ -373,7 +410,64 @@ const getDroneStatistics = async (req, res) => {
     logger.error('Get drone statistics error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get drone statistics'
+      error: 'Lấy thống kê drone thất bại'
+    });
+  }
+};
+
+// Delete a drone
+const deleteDrone = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const drone = await Drone.findById(id);
+    if (!drone) {
+      return res.status(404).json({
+        success: false,
+        error: 'Drone not found'
+      });
+    }
+    
+    // Check if user owns the restaurant
+    try {
+      const restaurantResponse = await axios.get(`${config.RESTAURANT_SERVICE_URL}/api/restaurants/owner/${req.user._id}`);
+      const restaurant = restaurantResponse.data.data.restaurant;
+      
+      if (drone.restaurantId.toString() !== restaurant._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          error: 'You do not have permission to delete this drone'
+        });
+      }
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+    
+    // Prevent deletion if drone is BUSY (has active mission)
+    if (drone.status === 'BUSY') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete drone while it is busy with a mission'
+      });
+    }
+    
+    await Drone.findByIdAndDelete(id);
+    
+    logger.info(`Drone deleted: ${drone.name}`);
+    
+    res.json({
+      success: true,
+      message: 'Drone deleted successfully'
+    });
+    
+  } catch (error) {
+    logger.error('Delete drone error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Xóa drone thất bại'
     });
   }
 };
@@ -410,7 +504,7 @@ const getAllDrones = async (req, res) => {
     logger.error('Get all drones error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch drones'
+      error: 'Lấy danh sách drone thất bại'
     });
   }
 };
@@ -421,6 +515,7 @@ module.exports = {
   getAllDrones,
   createDrone,
   updateDrone,
+  deleteDrone,
   updateDroneStatus,
   updateDroneLocation,
   getAvailableDrones,

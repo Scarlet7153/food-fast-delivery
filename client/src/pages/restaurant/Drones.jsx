@@ -8,12 +8,15 @@ import {
 import { formatDistance, formatDuration, formatDroneStatus, formatDateTime } from '../../utils/formatters'
 import toast from 'react-hot-toast'
 import { t } from '../../utils/translations'
+import ConfirmationModal from '../../components/ConfirmationModal'
 
 function RestaurantDrones() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingDrone, setEditingDrone] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState({ id: null, name: '' })
   const queryClient = useQueryClient()
 
   // Fetch drones
@@ -122,9 +125,20 @@ function RestaurantDrones() {
 
 
   const handleDeleteDrone = (droneId, droneName) => {
-    if (window.confirm(`Bạn có chắc muốn xóa drone "${droneName}"?`)) {
-      deleteDroneMutation.mutate(droneId)
-    }
+    setDeleteTarget({ id: droneId, name: droneName })
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget.id) return
+    deleteDroneMutation.mutate(deleteTarget.id)
+    setShowDeleteModal(false)
+    setDeleteTarget({ id: null, name: '' })
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setDeleteTarget({ id: null, name: '' })
   }
 
   const handleStatusChange = (droneId, newStatus) => {
@@ -286,6 +300,18 @@ function RestaurantDrones() {
           isLoading={createDroneMutation.isLoading || updateDroneMutation.isLoading}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title={`Xóa drone "${deleteTarget.name}"`}
+        message={`Bạn sắp xóa drone "${deleteTarget.name}". Hành động này không thể hoàn tác và sẽ xóa tất cả dữ liệu liên quan. Bạn có chắc chắn muốn tiếp tục?`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+      />
     </div>
   )
 }

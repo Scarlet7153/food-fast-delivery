@@ -56,6 +56,9 @@ const droneSchema = new mongoose.Schema({
 // Indexes
 droneSchema.index({ restaurantId: 1, status: 1 });
 droneSchema.index({ status: 1 });
+// Ensure drone names are unique per restaurant (best-effort at DB level)
+// Note: Mongo unique index is case-sensitive depending on collation; controller also enforces case-insensitive uniqueness.
+droneSchema.index({ restaurantId: 1, name: 1 }, { unique: true });
 
 // Instance method to check if drone is available
 droneSchema.methods.isAvailable = function() {

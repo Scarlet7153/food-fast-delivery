@@ -16,19 +16,26 @@ const droneService = {
   
   // Create a new drone
   async createDrone(droneData) {
-    const response = await api.post('/restaurant/drones', droneData)
+  const response = await api.post('/restaurant/drones', droneData, { headers: { 'x-hide-global-error-toast': true } })
     return response.data
   },
   
   // Update a drone
   async updateDrone(droneId, droneData) {
-    const response = await api.put(`/restaurant/drones/${droneId}`, droneData)
+    // Only allow editable fields to be sent to server
+    const allowed = ['name', 'serialNumber', 'model', 'maxPayloadGrams', 'maxRangeMeters']
+    const payload = {}
+    allowed.forEach(key => {
+      if (Object.prototype.hasOwnProperty.call(droneData, key)) payload[key] = droneData[key]
+    })
+
+  const response = await api.put(`/restaurant/drones/${droneId}`, payload, { headers: { 'x-hide-global-error-toast': true } })
     return response.data
   },
   
   // Delete a drone
   async deleteDrone(droneId) {
-    const response = await api.delete(`/restaurant/drones/${droneId}`)
+    const response = await api.delete(`/restaurant/drones/${droneId}`, { headers: { 'x-hide-global-error-toast': true } })
     return response.data
   },
   
@@ -40,7 +47,7 @@ const droneService = {
   
   // Update drone status
   async updateDroneStatus(droneId, status) {
-    const response = await api.patch(`/restaurant/drones/${droneId}/status`, { status })
+  const response = await api.patch(`/restaurant/drones/${droneId}/status`, { status }, { headers: { 'x-hide-global-error-toast': true } })
     return response.data
   },
   

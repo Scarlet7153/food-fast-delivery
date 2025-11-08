@@ -16,9 +16,19 @@ const schemas = {
     serialNumber: Joi.string().max(50).optional(),
     model: Joi.string().max(50).optional(),
     maxPayloadGrams: Joi.number().min(100).max(10000).optional(),
-    maxRangeMeters: Joi.number().min(1000).max(50000).optional(),
+    // Align min range with model's min (100 meters)
+    maxRangeMeters: Joi.number().min(100).max(50000).optional(),
+
+    // Immutable / internal fields should not be updated via this endpoint
+    restaurantId: Joi.forbidden(),
+    status: Joi.forbidden(),
+    currentLocation: Joi.forbidden(),
+    currentMission: Joi.forbidden(),
+    createdAt: Joi.forbidden(),
+    updatedAt: Joi.forbidden(),
+    _id: Joi.forbidden()
   // simplified model: omit maxFlightTime and detailed settings
-  }),
+  }).or('name', 'serialNumber', 'model', 'maxPayloadGrams', 'maxRangeMeters'),
 
   updateDroneStatus: Joi.object({
     status: Joi.string().valid('IDLE', 'BUSY').required()
@@ -77,7 +87,8 @@ const validate = (schema) => {
       
       return res.status(400).json({
         success: false,
-        error: 'Validation failed',
+        // Vietnamese: Validation failed
+        error: 'Dữ liệu không hợp lệ',
         details: errors
       });
     }

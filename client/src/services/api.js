@@ -132,10 +132,16 @@ api.interceptors.response.use(
     // Handle other errors (skip 401 and pending approval errors)
     const isPendingApproval = error.response?.data?.data?.pendingApproval
     if (error.response?.status !== 401 && !isPendingApproval) {
-      if (error.response?.data?.error) {
-        toast.error(error.response.data.error)
-      } else if (error.message && error.message !== 'Network Error') {
-        toast.error(error.message)
+      // Allow callers to suppress the global error toast by setting
+      // `hideGlobalErrorToast` on the request config (useful when the
+      // caller shows its own toasts to avoid duplicate notifications).
+      const hideGlobal = originalRequest?.hideGlobalErrorToast || originalRequest?.headers?.['x-hide-global-error-toast']
+      if (!hideGlobal) {
+        if (error.response?.data?.error) {
+          toast.error(error.response.data.error)
+        } else if (error.message && error.message !== 'Network Error') {
+          toast.error(error.message)
+        }
       }
     }
 

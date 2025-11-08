@@ -26,6 +26,7 @@ router.get('/statistics', auth, requireRole('restaurant'), droneController.getDr
 router.get('/:id', auth, requireRole('restaurant'), droneController.getDroneById);
 router.post('/', auth, requireRole('restaurant'), validate(schemas.createDrone), droneController.createDrone);
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateDrone), droneController.updateDrone);
+router.delete('/:id', auth, requireRole('restaurant'), droneController.deleteDrone);
 router.patch('/:id/status', auth, requireRole('restaurant'), validate(schemas.updateDroneStatus), droneController.updateDroneStatus);
 router.patch('/:id/location', auth, requireRole('restaurant'), validate(schemas.updateDroneLocation), droneController.updateDroneLocation);
 

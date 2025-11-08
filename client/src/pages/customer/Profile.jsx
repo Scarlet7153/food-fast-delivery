@@ -45,7 +45,7 @@ function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [paymentToDelete, setPaymentToDelete] = useState(null)
   const [paymentForm, setPaymentForm] = useState({
-    method: 'cod', // 'cod' or 'momo'
+  method: 'momo', // default to 'momo'
     deliveryAddress: {
       street: '',
       city: '',
@@ -200,7 +200,7 @@ function Profile() {
     setIsAddingPayment(true)
     setEditingPayment(null)
     setPaymentForm({
-      method: 'cod',
+      method: 'momo',
       deliveryAddress: {
         street: '',
         city: '',
@@ -220,7 +220,7 @@ function Profile() {
     setEditingPayment(payment)
     setIsAddingPayment(true)
     setPaymentForm({
-      method: payment.method || 'cod',
+      method: payment.method || 'momo',
       deliveryAddress: payment.deliveryAddress || {
         street: '',
         city: '',
@@ -261,7 +261,7 @@ function Profile() {
       setIsAddingPayment(false)
       setEditingPayment(null)
       setPaymentForm({
-        method: 'cod',
+        method: 'momo',
         deliveryAddress: {
           street: '',
           city: '',
@@ -284,8 +284,8 @@ function Profile() {
   const handleCancelPayment = () => {
     setIsAddingPayment(false)
     setEditingPayment(null)
-    setPaymentForm({
-      method: 'cod',
+      setPaymentForm({
+        method: 'momo',
       deliveryAddress: {
         street: '',
         city: '',
@@ -1043,20 +1043,14 @@ function BillingTab({
 
 // Payment Form Component
 function PaymentForm({ form, editingPayment, onFormChange, onSave, onCancel, onGetCurrentLocation }) {
+  // Only MoMo payment method supported now
   const paymentMethods = [
-    {
-      id: 'cod',
-      name: 'Thanh toán khi nhận hàng (COD)',
-      description: 'Thanh toán bằng tiền mặt khi nhận hàng',
-      icon: '💰',
-      recommended: true
-    },
     {
       id: 'momo',
       name: 'Ví MoMo',
       description: 'Thanh toán qua ví điện tử MoMo',
       icon: '💳',
-      recommended: false
+      recommended: true
     }
   ]
 

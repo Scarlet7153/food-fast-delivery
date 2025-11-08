@@ -4,7 +4,7 @@ const Joi = require('joi');
 const schemas = {
   createPayment: Joi.object({
     orderId: Joi.string().required(),
-    method: Joi.string().valid('MOMO', 'COD', 'BANK_TRANSFER', 'CREDIT_CARD').default('MOMO').optional()
+    method: Joi.string().valid('MOMO').default('MOMO').optional()
   }),
 
   processRefund: Joi.object({

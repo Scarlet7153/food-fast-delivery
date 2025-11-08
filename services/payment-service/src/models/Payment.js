@@ -24,7 +24,7 @@ const paymentSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['MOMO', 'COD', 'BANK_TRANSFER', 'CREDIT_CARD'],
+  enum: ['MOMO'],
     required: [true, 'Payment method is required']
   },
   status: {

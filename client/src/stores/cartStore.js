@@ -125,13 +125,14 @@ const useCartStore = create(
 
       getDeliveryFee: () => {
         const { restaurant } = get()
-        if (!restaurant || !restaurant.deliverySettings) {
+        // If we don't have a restaurant in the cart, fee is 0
+        if (!restaurant) {
           return 0
         }
-        
-        // This would be calculated based on distance in real implementation
-        // For now, return base rate
-        return restaurant.deliverySettings.baseRate || 10000
+
+        // If restaurant exists but deliverySettings is missing, fall back to default base rate
+        // In other parts of the app we use 10000 VND as default, so keep that consistent
+        return (restaurant.deliverySettings && restaurant.deliverySettings.baseRate) || 10000
       },
 
       getTotal: () => {

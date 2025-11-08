@@ -23,7 +23,7 @@ const schemas = {
       currency: Joi.string().default('VND').optional()
     }).required(),
     payment: Joi.object({
-      method: Joi.string().valid('MOMO', 'COD').default('MOMO').optional()
+      method: Joi.string().valid('MOMO').default('MOMO').optional()
     }).optional(),
     deliveryAddress: Joi.object({
       text: Joi.string().min(10).max(200).required(),

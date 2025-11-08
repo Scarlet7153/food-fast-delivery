@@ -37,7 +37,8 @@ function Checkout() {
       phone: '',
       name: ''
     },
-    paymentMethod: 'cod'
+    // COD removed: default to MoMo
+    paymentMethod: 'momo'
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -106,14 +107,9 @@ function Checkout() {
         // Clear cart
         clearCart()
         
-        // Show appropriate message and navigate
-        if (order.payment.method === 'COD') {
-          toast.success('Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.')
-          navigate(`/customer/orders/${order._id}`)
-        } else {
-          toast.success('Tạo đơn hàng thành công!')
-          handlePayment(order._id)
-        }
+  // After order is created, proceed with payment flow (MoMo)
+  toast.success('Tạo đơn hàng thành công!')
+  handlePayment(order._id)
       },
       onError: (error) => {
         console.error('Order creation error:', error)
@@ -669,20 +665,14 @@ function DeliveryInfoStep({ formData, onChange, savedPaymentInfo, showSavedAddre
 
 // Payment Step Component
 function PaymentStep({ formData, onChange, isSubmitting, paymentUrl }) {
+  // COD removed — only MoMo remains
   const paymentMethods = [
-    {
-      id: 'cod',
-      name: 'Thanh toán khi nhận hàng (COD)',
-      description: 'Thanh toán bằng tiền mặt khi nhận hàng',
-      icon: '💰',
-      recommended: true
-    },
     {
       id: 'momo',
       name: 'Ví MoMo',
       description: 'Thanh toán qua ví điện tử MoMo',
       icon: '💳',
-      recommended: false
+      recommended: true
     }
   ]
 

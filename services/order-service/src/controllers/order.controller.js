@@ -54,14 +54,19 @@ const createOrder = async (req, res) => {
     const order = new Order(orderData);
     order.calculateEstimatedDeliveryTime();
     
-    // Set initial status based on payment method
-    if (orderData.payment.method === 'MOMO') {
-      order.status = 'PENDING_PAYMENT';  // Wait for payment confirmation
-      order.payment.status = 'UNPAID';
-    } else if (orderData.payment.method === 'COD') {
-      order.status = 'PLACED';  // Ready for restaurant to process
-      order.payment.status = 'PAID';
-    }
+      // Reject COD payment method
+      if (orderData.payment && orderData.payment.method && orderData.payment.method.toUpperCase() === 'COD') {
+        return res.status(400).json({
+          success: false,
+          error: 'COD payment method is no longer supported'
+        });
+      }
+    
+      // Set initial status based on payment method
+      if (!orderData.payment || !orderData.payment.method || orderData.payment.method.toUpperCase() === 'MOMO') {
+        order.status = 'PENDING_PAYMENT';  // Wait for payment confirmation
+        order.payment.status = 'UNPAID';
+      }
     
     await order.save();
 

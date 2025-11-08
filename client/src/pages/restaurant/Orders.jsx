@@ -320,182 +320,67 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
   }
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition-colors">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-4">
-          {/* Order Icon */}
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-            {getStatusIcon(order.status)}
-          </div>
-
-          {/* Order Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  Đơn #{order.orderNumber}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Khách hàng: {order.customer?.name || 'Không rõ'}
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+        <div className="p-6 hover:bg-gray-50 transition-colors">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 min-w-0">
+              {/* Order Icon + Status */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                  {getStatusIcon(order.status)}
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                   {formatOrderStatus(order.status)}
                 </span>
               </div>
-            </div>
 
-            {/* Order Details */}
-            <div className="space-y-1 text-sm text-gray-600 mb-3">
-              <div className="flex items-center space-x-4">
-                <span>{order.items.length} món</span>
-                <span>•</span>
-                <span>{formatCurrency(order.amount?.total || 0)}</span>
-                <span>•</span>
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatDateTime(order.createdAt)}</span>
+              {/* Order Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2 gap-4">
+                  <div className="truncate">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      Đơn #{order.orderNumber}
+                    </h3>
+                    <p className="text-sm text-gray-600 truncate">
+                      Khách hàng: {order.customer?.name || 'Không rõ'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              {order.deliveryAddress && (
-                <div className="flex items-center space-x-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>{order.deliveryAddress.text}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Items Preview */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {order.items.slice(0, 3).map((item, index) => (
-                <span
-                  key={index}
-                  className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
-                >
-                  {item.quantity}x {item.name}
-                </span>
-              ))}
-              {order.items.length > 3 && (
-                <span className="text-xs text-gray-500">
-                  +{order.items.length - 3} món nữa
-                </span>
-              )}
-            </div>
-
-            {/* Mission Info */}
-            {order.deliveryMission && (
-              <div className="flex items-center space-x-2 text-xs text-gray-500">
-                <Truck className="h-3 w-3" />
-                <span>Drone #{order.deliveryMission.drone?.name}</span>
-                {order.deliveryMission.estimatedArrival && (
-                  <>
+                {/* Order Details */}
+                <div className="space-y-1 text-sm text-gray-600 mb-3">
+                  <div className="flex items-center space-x-4">
+                    <span>{order.items.length} món</span>
                     <span>•</span>
-                    <span>Dự kiến đến: {formatDateTime(order.deliveryMission.estimatedArrival)}</span>
-                  </>
+                    <span>{formatCurrency(order.amount?.total || 0)}</span>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatDateTime(order.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col items-end justify-between gap-3">
+              <div className="flex items-center space-x-2">
+                {nextStatus && canUpdate && (
+                  <button
+                    onClick={() => handleUpdateStatus(nextStatus.status)}
+                    disabled={isUpdating}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+                  >
+                    <nextStatus.icon className="inline-block h-4 w-4 mr-2 -mt-1" />
+                    {nextStatus.label}
+                  </button>
                 )}
+                <Link to={`/restaurant/orders/${order._id}`} className="btn btn-outline btn-sm">Xem</Link>
               </div>
-            )}
-            
-            {/* Drone Assignment Info */}
-            {order.status === 'IN_FLIGHT' && order.missionId && (
-              <div className="flex items-center space-x-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                <Plane className="h-3 w-3" />
-                <span>Đã giao cho drone - Nhiệm vụ #{order.missionId}</span>
+              <div className="text-xs text-gray-500">
+                {order.deliveryType || ''}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center space-x-2 ml-4">
-          <Link 
-            to={`/restaurant/orders/${order._id}`}
-            className="btn btn-outline btn-sm flex items-center space-x-1"
-          >
-            <Eye className="h-4 w-4" />
-            <span>Xem</span>
-          </Link>
-
-          {canUpdate && nextStatus && (
-            <>
-              {nextStatus.status === 'ASSIGN_DRONE' ? (
-                <button
-                  onClick={() => onAssignDrone()}
-                  disabled={isUpdating}
-                  className="btn btn-primary btn-sm flex items-center space-x-1 bg-blue-600 hover:bg-blue-700"
-                    title="Hệ thống sẽ tự động chọn drone rảnh phù hợp nhất"
-                >
-                  {isUpdating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plane className="h-4 w-4" />
-                  )}
-                  <span>{nextStatus.label}</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleUpdateStatus(nextStatus.status)}
-                  disabled={isUpdating}
-                  className={`btn btn-primary btn-sm flex items-center space-x-1 ${
-                    nextStatus.status === 'CONFIRMED' ? 'bg-green-600 hover:bg-green-700' :
-                    nextStatus.status === 'COOKING' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                    nextStatus.status === 'READY_FOR_PICKUP' ? 'bg-orange-600 hover:bg-orange-700' :
-                    'bg-purple-600 hover:bg-purple-700'
-                  }`}
-                >
-                  {isUpdating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <nextStatus.icon className="h-4 w-4" />
-                  )}
-                  <span>{nextStatus.label}</span>
-                </button>
-              )}
-            </>
-          )}
-
-          {order.status === 'PLACED' && (
-            <button
-              onClick={() => {
-                const reason = window.prompt('Lý do hủy:')
-                if (reason) {
-                  onStatusUpdate(order._id, 'CANCELLED', reason)
-                }
-              }}
-              className="btn btn-outline btn-sm text-red-600 border-red-300 hover:bg-red-50"
-            >
-              Hủy
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Special Instructions */}
-      {order.specialInstructions && (
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-700">
-            <strong>Yêu Cầu Đặc Biệt:</strong> {order.specialInstructions}
-          </p>
-        </div>
-      )}
-
-      {/* Note Input */}
-      {showNoteInput && (
-        <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Thêm Ghi Chú (Tùy chọn)
-          </label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="input w-full"
-            rows={2}
-            placeholder="Thêm ghi chú về đơn hàng này..."
-          />
-        </div>
-      )}
     </div>
   )
 }
