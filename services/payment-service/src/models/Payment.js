@@ -266,6 +266,8 @@ paymentSchema.methods.updateStatus = function(newStatus, note, metadata) {
   
   if (newStatus === 'COMPLETED') {
     this.completedAt = new Date();
+    // Remove TTL - payment should not be auto-deleted after successful completion
+    this.expiresAt = null;
   } else if (newStatus === 'FAILED') {
     this.failedAt = new Date();
   } else if (newStatus === 'CANCELLED') {

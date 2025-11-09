@@ -25,7 +25,6 @@ function AdminLayout() {
     { name: 'Đơn Hàng', href: '/admin/orders', icon: ShoppingBag },
     { name: 'Drone', href: '/admin/drones', icon: Plane },
     { name: 'Giao Hàng', href: '/admin/missions', icon: MapPin },
-    { name: 'Doanh Thu', href: '/admin/revenues', icon: Shield },
   ]
 
   return (

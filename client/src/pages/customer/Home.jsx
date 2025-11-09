@@ -384,17 +384,10 @@ function RestaurantCard({ restaurant }) {
             <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
               {restaurantName}
             </h3>
-            <div className="inline-flex items-center gap-3">
-              <div className="inline-flex items-center gap-2 text-sm text-slate-700">
-                <FilledStar className="h-4 w-4" />
-                <span className="font-medium">{restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '—'}</span>
-                <span className="text-xs text-slate-500">({restaurant?.rating?.count ?? 0})</span>
-              </div>
-              {isOpen && (
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                  Đang mở
-                </span>
-              )}
+            <div className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <FilledStar className="h-4 w-4" />
+              <span className="font-medium">{restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '—'}</span>
+              <span className="text-xs text-slate-500">({restaurant?.rating?.count ?? 0})</span>
             </div>
           </div>
 
@@ -409,6 +402,11 @@ function RestaurantCard({ restaurant }) {
               <span className="text-sm text-gray-600">
                 Phí giao: {formatCurrency(deliveryFee)}
               </span>
+              {isOpen && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                  Đang mở
+                </span>
+              )}
             </div>
           </div>
         </div>

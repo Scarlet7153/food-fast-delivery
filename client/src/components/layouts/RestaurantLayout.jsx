@@ -56,7 +56,6 @@ function RestaurantLayout() {
   }
 
   const navigation = [
-    { name: 'Bảng Điều Khiển', href: '/restaurant', icon: BarChart3 },
     { name: 'Đơn Hàng', href: '/restaurant/orders', icon: ShoppingBag },
     { name: 'Thực Đơn', href: '/restaurant/menu', icon: Utensils },
     { name: 'Drone', href: '/restaurant/drones', icon: Plane },
@@ -70,7 +69,7 @@ function RestaurantLayout() {
       <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
         {/* Logo */}
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
-          <Link to="/restaurant" className="flex items-center space-x-2">
+          <Link to="/restaurant/orders" className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <svg
                 className="h-5 w-5 text-white"

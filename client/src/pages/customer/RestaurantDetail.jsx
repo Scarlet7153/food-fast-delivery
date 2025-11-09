@@ -6,7 +6,7 @@ import { useCartStore } from '../../stores/cartStore'
 import { useAuthStore } from '../../stores/authStore'
 import { 
   Clock, MapPin, Phone, Plus, 
-  ShoppingCart, Heart, Share2, Filter, Grid, List 
+  ShoppingCart, Heart, Share2, Filter, Grid, List, Truck
 } from 'lucide-react'
 
 // Filled gold star SVG
@@ -198,12 +198,16 @@ function RestaurantDetail() {
 
           {/* Restaurant Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {/* Removed distance and ETA display as requested; keep phone only */}
+            {/* Phone */}
             <div className="flex items-center space-x-2 text-gray-600">
               <Phone className="h-5 w-5" />
-              <span>{currentRestaurant.phone || 'Không có SĐT'}</span>
+              <span>{currentRestaurant?.phone || 'Không có SĐT'}</span>
             </div>
-            <div />
+            {/* Delivery Fee */}
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Truck className="h-5 w-5" />
+              <span>Phí giao: {formatCurrency(currentRestaurant?.deliverySettings?.baseRate || 10000)}</span>
+            </div>
             <div />
           </div>
 

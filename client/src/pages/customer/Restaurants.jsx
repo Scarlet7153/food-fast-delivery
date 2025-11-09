@@ -274,31 +274,20 @@ function RestaurantGridCard({ restaurant }) {
 
         <div className="p-4 flex flex-col flex-1">
           <div className="flex items-start justify-between mb-2">
-            <div className="pr-4">
-              <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                {restaurantName}
-              </h3>
+            <div className="pr-4 flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
+                  {restaurantName}
+                </h3>
+                <div className="inline-flex items-center gap-2 text-sm text-slate-700 ml-2">
+                  <FilledStar className="h-4 w-4" />
+                  <span className="font-medium">{restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '—'}</span>
+                  <span className="text-xs text-slate-500">({restaurant?.rating?.count ?? 0})</span>
+                </div>
+              </div>
               <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                 {restaurantDescription}
               </p>
-            </div>
-            <div className="flex flex-col items-end text-right ml-4">
-              <div className="flex items-center space-x-2">
-                <FilledStar className="h-5 w-5" />
-                <span className="text-sm font-semibold text-gray-900">
-                  {restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '0.0'}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {restaurant?.rating?.count ? `${restaurant.rating.count} lượt` : 'Chưa có đánh giá'}
-              </div>
-            </div>
-            <div className="ml-3">
-              {isOpen && (
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                  Đang mở
-                </span>
-              )}
             </div>
           </div>
 
@@ -307,6 +296,11 @@ function RestaurantGridCard({ restaurant }) {
             <span className="text-sm text-gray-600">
               Phí giao: {formatCurrency(deliveryFee)}
             </span>
+            {isOpen && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                Đang mở
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -348,42 +342,33 @@ function RestaurantListCard({ restaurant }) {
           )}
         </div>
 
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4 flex flex-col">
           <div className="flex items-start justify-between mb-2">
-            <div className="pr-4">
-              <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                {restaurantName}
-              </h3>
+            <div className="pr-4 flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
+                  {restaurantName}
+                </h3>
+                <div className="inline-flex items-center gap-2 text-sm text-slate-700 ml-2">
+                  <FilledStar className="h-4 w-4" />
+                  <span className="font-medium">{restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '—'}</span>
+                  <span className="text-xs text-slate-500">({restaurant?.rating?.count ?? 0})</span>
+                </div>
+              </div>
               <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                 {restaurantDescription}
               </p>
             </div>
-            <div className="flex flex-col items-end text-right ml-4">
-              <div className="flex items-center space-x-2">
-                <FilledStar className="h-5 w-5" />
-                <span className="text-sm font-semibold text-gray-900">
-                  {restaurant?.rating?.average ? restaurant.rating.average.toFixed(1) : '0.0'}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {restaurant?.rating?.count ? `${restaurant.rating.count} lượt` : 'Chưa có đánh giá'}
-              </div>
-            </div>
-            <div className="ml-3">
-              {isOpen && (
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                  Đang mở
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Distance and ETA removed */}
-          <div className="flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between">
             <span>Phí giao: {formatCurrency(deliveryFee)}</span>
-            <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-              Giao bằng Drone
-            </span>
+            {isOpen && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                Đang mở
+              </span>
+            )}
           </div>
         </div>
       </div>

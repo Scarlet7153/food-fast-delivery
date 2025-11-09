@@ -27,7 +27,6 @@ import Profile from './pages/customer/Profile'
 import PaymentResult from './pages/customer/PaymentResult'
 
 // Restaurant Pages
-import RestaurantDashboard from './pages/restaurant/Dashboard'
 import RestaurantOrders from './pages/restaurant/Orders'
 import RestaurantOrderDetail from './pages/restaurant/OrderDetail'
 import RestaurantMenu from './pages/restaurant/Menu'
@@ -41,7 +40,6 @@ import AdminRestaurants from './pages/admin/Restaurants'
 import AdminOrders from './pages/admin/Orders'
 import AdminDrones from './pages/admin/Drones'
 import AdminMissions from './pages/admin/Missions'
-import RevenueStats from './pages/admin/RevenueStats'
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }) {
@@ -178,7 +176,7 @@ function App() {
             <RestaurantLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<RestaurantDashboard />} />
+          <Route index element={<Navigate to="orders" replace />} />
           <Route path="orders" element={<RestaurantOrders />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="menu" element={<RestaurantMenu />} />
@@ -199,7 +197,6 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="drones" element={<AdminDrones />} />
           <Route path="missions" element={<AdminMissions />} />
-          <Route path="revenues" element={<RevenueStats />} />
         </Route>
 
         {/* Error Routes */}
