@@ -1,94 +1,235 @@
-version: '3.8'
-
 services:
-  # MongoDB Database
-  mongo:
-    image: mongo:7.0
-    container_name: drone-mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: drone
-    volumes:
-      - mongo_data:/data/db
-      - ./server/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - drone-network
+  # MongoDB Database (Commented out - using MongoDB Atlas instead)
+  # Uncomment below if you want to use local MongoDB instead of Atlas
+  # mongo:
+  #   image: mongo:7.0
+  #   container_name: ffdd-mongo
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: password123
+  #     MONGO_INITDB_DATABASE: drone
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - ffdd-network
+  #   healthcheck:
+  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
-  # Backend API Server
-  server:
+  # API Gateway
+  api-gateway:
     build:
-      context: ./server
+      context: ./services/api-gateway
       dockerfile: Dockerfile
-    container_name: drone-server
+    container_name: ffdd-api-gateway
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - "3001:3001"
+    env_file:
+      - ./services/api-gateway/.env
     environment:
       NODE_ENV: production
-      PORT: 4000
-      MONGO_URI: mongodb://admin:password123@mongo:27017/drone?authSource=admin
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
+      PORT: 3001
+      USER_SERVICE_URL: http://user-service:3002
+      RESTAURANT_SERVICE_URL: http://restaurant-service:3003
+      ORDER_SERVICE_URL: http://order-service:3004
+      DRONE_SERVICE_URL: http://drone-service:3005
+      PAYMENT_SERVICE_URL: http://payment-service:3006
       CLIENT_URL: http://localhost:5173
-      MOMO_PARTNER_CODE: ${MOMO_PARTNER_CODE}
-      MOMO_ACCESS_KEY: ${MOMO_ACCESS_KEY}
-      MOMO_SECRET_KEY: ${MOMO_SECRET_KEY}
-      MOMO_ENDPOINT_CREATE: https://test-payment.momo.vn/v2/gateway/api/create
-      MOMO_IPN_URL: https://your-domain.com/api/payments/momo/ipn
-      MOMO_RETURN_URL: https://your-domain.com/payment/result
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
     depends_on:
-      - mongo
-    volumes:
-      - ./server:/app
-      - /app/node_modules
+      user-service:
+        condition: service_started
+      restaurant-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      drone-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
     networks:
-      - drone-network
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
 
-  # Frontend React App
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: ffdd-user-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./services/user-service/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      RESTAURANT_SERVICE_URL: http://restaurant-service:3003
+      ORDER_SERVICE_URL: http://order-service:3004
+      DRONE_SERVICE_URL: http://drone-service:3005
+      PAYMENT_SERVICE_URL: http://payment-service:3006
+      CLIENT_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    networks:
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Restaurant Service
+  restaurant-service:
+    build:
+      context: ./services/restaurant-service
+      dockerfile: Dockerfile
+    container_name: ffdd-restaurant-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./services/restaurant-service/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      USER_SERVICE_URL: http://user-service:3002
+      ORDER_SERVICE_URL: http://order-service:3004
+      CLIENT_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    networks:
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Order Service
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: ffdd-order-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    env_file:
+      - ./services/order-service/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      RESTAURANT_SERVICE_URL: http://restaurant-service:3003
+      DRONE_SERVICE_URL: http://drone-service:3005
+      PAYMENT_SERVICE_URL: http://payment-service:3006
+      USER_SERVICE_URL: http://user-service:3002
+      CLIENT_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    depends_on:
+      restaurant-service:
+        condition: service_started
+      drone-service:
+        condition: service_started
+    networks:
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Drone Service
+  drone-service:
+    build:
+      context: ./services/drone-service
+      dockerfile: Dockerfile
+    container_name: ffdd-drone-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    env_file:
+      - ./services/drone-service/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      USER_SERVICE_URL: http://user-service:3002
+      RESTAURANT_SERVICE_URL: http://restaurant-service:3003
+      ORDER_SERVICE_URL: http://order-service:3004
+      CLIENT_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    networks:
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: ffdd-payment-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    env_file:
+      - ./services/payment-service/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      USER_SERVICE_URL: http://user-service:3002
+      ORDER_SERVICE_URL: http://order-service:3004
+      CLIENT_URL: http://localhost:5173
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    networks:
+      - ffdd-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3006/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  # Client (Frontend)
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: drone-client
+      args:
+        VITE_API_URL: http://localhost:3001/api
+        VITE_SOCKET_URL: http://localhost:3005
+    container_name: ffdd-client
     restart: unless-stopped
     ports:
       - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:4000
-      VITE_SOCKET_URL: http://localhost:4000
     depends_on:
-      - server
-    volumes:
-      - ./client:/app
-      - /app/node_modules
+      - api-gateway
     networks:
-      - drone-network
-
-  # Nginx Reverse Proxy (Optional for production)
-  nginx:
-    image: nginx:alpine
-    container_name: drone-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - server
-      - client
-    networks:
-      - drone-network
-
-volumes:
-  mongo_data:
+      - ffdd-network
 
 networks:
-  drone-network:
+  ffdd-network:
     driver: bridge
-

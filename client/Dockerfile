@@ -3,6 +3,14 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Build arguments for Vite env vars
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+
+# Set environment variables for build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
+
 # Copy package files
 COPY package*.json ./
 
@@ -19,4 +27,4 @@ RUN npm run build
 EXPOSE 5173
 
 # Start application
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]

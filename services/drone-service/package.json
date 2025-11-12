@@ -23,7 +23,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
   },
   "keywords": ["drone", "microservice", "nodejs", "express"],
   "author": "Fast Food Delivery Team",
