@@ -72,6 +72,27 @@ kubectl get services -n ffdd
 kubectl logs -f <pod-name> -n ffdd
 ```
 
+## 📊 Monitoring
+
+Deploy Prometheus + Grafana để giám sát hệ thống:
+
+```bash
+# Windows
+k8s\monitoring\deploy-monitoring.bat
+
+# Linux/Mac
+./k8s/monitoring/deploy-monitoring.sh
+```
+
+**Truy cập:**
+- Grafana: http://localhost:31000 (admin/admin123)
+- Prometheus: http://localhost:30090
+
+**Xem thêm:**
+- [Quick Start Guide](monitoring/QUICK-START.md)
+- [Setup Services](monitoring/SETUP-SERVICES.md)
+- [Full Grafana Guide](../GRAFANA.md)
+
 ## 🗑️ Xóa
 
 ```bash

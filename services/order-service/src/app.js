@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config/env');
 const database = require('./config/database');
 const logger = require('./utils/logger');
+const { register, metricsMiddleware } = require('./utils/metrics');
 
 // Import routes
 const orderRoutes = require('./routes/order.routes');
@@ -53,6 +54,9 @@ class OrderService {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
+    // Prometheus metrics middleware
+    this.app.use(metricsMiddleware('order-service'));
+
     // Request logging
     this.app.use((req, res, next) => {
       logger.info(`${req.method} ${req.path} - ${req.ip}`);
@@ -68,6 +72,17 @@ class OrderService {
         timestamp: new Date().toISOString(),
         service: 'Order Service'
       });
+    });
+
+    // Prometheus metrics endpoint
+    this.app.get('/metrics', async (req, res) => {
+      try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+      } catch (error) {
+        logger.error('Error generating metrics:', error);
+        res.status(500).end();
+      }
     });
 
     // API routes

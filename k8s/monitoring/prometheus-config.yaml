@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: ffdd
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'ffdd-k8s'
+        environment: 'development'
+
+    # Alertmanager configuration (optional)
+    # alerting:
+    #   alertmanagers:
+    #     - static_configs:
+    #         - targets:
+    #           - alertmanager:9093
+
+    # Rule files (optional)
+    # rule_files:
+    #   - "alerts/*.yml"
+
+    scrape_configs:
+      # Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+            labels:
+              service: 'prometheus'
+
+      # Kubernetes API Server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubernetes Nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true  # Required for Docker Desktop
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # Kubernetes Pods
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          # Only scrape pods with annotation: prometheus.io/scrape: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          
+          # Replace address with pod IP:port from annotation
+          # Format: pod-ip:port
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            separator: ':'
+            regex: (.+);(.+)
+            replacement: ${1}:${2}
+          
+          # Read path from annotation: prometheus.io/path (default: /metrics)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+            replacement: ${1}
+          
+          # Set default path if annotation not present
+          - target_label: __metrics_path__
+            replacement: /metrics
+          
+          # Add pod labels as Prometheus labels
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          
+          # Add namespace
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          
+          # Add pod name
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+          
+          # Add service name from pod label
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: replace
+            target_label: service
+          
+          # Clean up temporary labels
+          - action: labeldrop
+            regex: __tmp_.+
+
+      # API Gateway
+      - job_name: 'api-gateway'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: api-gateway
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # User Service
+      - job_name: 'user-service'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: user-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # Restaurant Service
+      - job_name: 'restaurant-service'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: restaurant-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # Order Service
+      - job_name: 'order-service'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: order-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # Drone Service
+      - job_name: 'drone-service'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: drone-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # Payment Service
+      - job_name: 'payment-service'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - ffdd
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: payment-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: http
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # MongoDB - COMMENTED OUT (needs MongoDB exporter)
+      # - job_name: 'mongodb'
+      #   kubernetes_sd_configs:
+      #     - role: endpoints
+      #       namespaces:
+      #         names:
+      #           - ffdd
+      #   relabel_configs:
+      #     - source_labels: [__meta_kubernetes_service_name]
+      #       action: keep
+      #       regex: mongodb
+      #     - source_labels: [__meta_kubernetes_service_name]
+      #       target_label: service
+

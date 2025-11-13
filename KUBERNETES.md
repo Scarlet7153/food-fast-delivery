@@ -237,22 +237,65 @@ kubectl edit secret ffdd-secrets -n ffdd
 kubectl apply -f k8s/secrets.yaml
 ```
 
-## 📈 Monitoring (Optional)
+## 📈 Monitoring
 
-### Xem resource usage
+### Setup Prometheus + Grafana
+
+```bash
+# Deploy monitoring stack
+# Windows
+k8s\monitoring\deploy-monitoring.bat
+
+# Linux/Mac
+./k8s/monitoring/deploy-monitoring.sh
+```
+
+**Access:**
+- **Grafana:** http://localhost:31000 (Username: `admin`, Password: `admin123`)
+- **Prometheus:** http://localhost:30090
+
+**Dashboard:** Food Fast Delivery - Overview (auto-imported)
+
+### Quick Start
+
+Xem [Quick Start Guide](k8s/monitoring/QUICK-START.md) để bắt đầu trong 5 phút!
+
+**Features:**
+- 📊 System health & performance metrics
+- 🔥 Request rate & response time by service
+- 💻 CPU & Memory usage monitoring
+- 🚨 Alerting for critical issues
+- 📈 Business metrics (orders, revenue, etc.)
+
+### Resource Usage
+
 ```bash
 kubectl top pods -n ffdd
 kubectl top nodes
 ```
 
-### Port forwarding để debug
+### Port Forwarding
+
 ```bash
 # Forward API Gateway port
 kubectl port-forward svc/api-gateway 3001:3001 -n ffdd
 
 # Forward MongoDB port
 kubectl port-forward svc/mongodb 27017:27017 -n ffdd
+
+# Forward Grafana port
+kubectl port-forward svc/grafana 3000:3000 -n ffdd
+
+# Forward Prometheus port
+kubectl port-forward svc/prometheus 9090:9090 -n ffdd
 ```
+
+### Guides
+
+- 📖 [Full Grafana Guide](GRAFANA.md) - Chi tiết về Grafana
+- 🚀 [Quick Start](k8s/monitoring/QUICK-START.md) - Bắt đầu nhanh
+- 🔧 [Setup Services](k8s/monitoring/SETUP-SERVICES.md) - Thêm metrics cho services
+- 📚 [Monitoring README](k8s/monitoring/README.md) - Tổng quan monitoring
 
 ## ✅ Checklist
 

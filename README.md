@@ -79,6 +79,90 @@ Hệ thống được xây dựng theo **kiến trúc microservices**, đảm b�
 | **Payment Gateway** | MoMo API |
 | **DevOps** | Docker, Nginx |
 | **Build Tools** | Concurrently, npm |
+| **Monitoring** | Prometheus, Grafana |
+
+---
+
+## 🚀 Quick Start
+
+**Muốn chạy nhanh?** Xem [QUICK-START.md](QUICK-START.md) - Hướng dẫn từ đầu đến cuối trong **11-19 phút**!
+
+### Tóm tắt nhanh:
+
+1. **Install dependencies:**
+   ```powershell
+   cd services\user-service; npm install; cd ..\..
+   cd services\restaurant-service; npm install; cd ..\..
+   cd services\order-service; npm install; cd ..\..
+   cd services\drone-service; npm install; cd ..\..
+   cd services\payment-service; npm install; cd ..\..
+   cd services\api-gateway; npm install; cd ..\..
+   ```
+
+2. **Build Docker images:**
+   ```powershell
+   docker-compose build
+   ```
+
+3. **Deploy lên Kubernetes:**
+   ```powershell
+   kubectl apply -f k8s\configmap.yaml
+   kubectl apply -f k8s\secrets.yaml
+   kubectl apply -f k8s\mongodb.yaml
+   kubectl apply -f k8s\api-gateway.yaml
+   kubectl apply -f k8s\user-service.yaml
+   kubectl apply -f k8s\restaurant-service.yaml
+   kubectl apply -f k8s\order-service.yaml
+   kubectl apply -f k8s\drone-service.yaml
+   kubectl apply -f k8s\payment-service.yaml
+   kubectl apply -f k8s\client.yaml
+   ```
+
+4. **Deploy Monitoring:**
+   ```powershell
+   kubectl apply -f k8s\monitoring\prometheus-config.yaml
+   kubectl apply -f k8s\monitoring\prometheus.yaml
+   kubectl apply -f k8s\monitoring\grafana.yaml
+   kubectl apply -f k8s\monitoring\grafana-dashboard.yaml
+   ```
+
+**Chi tiết đầy đủ:** Xem [QUICK-START.md](QUICK-START.md)
+
+---
+
+## 📊 Monitoring & Observability
+
+Hệ thống tích hợp **Prometheus + Grafana** để giám sát và trực quan hóa metrics real-time:
+
+### 🚀 Quick Deploy
+
+```bash
+# Windows
+k8s\monitoring\deploy-monitoring.bat
+
+# Linux/Mac
+./k8s/monitoring/deploy-monitoring.sh
+```
+
+### 🎯 Truy cập
+
+- **Grafana Dashboard:** http://localhost:31000 (admin/admin123)
+- **Prometheus:** http://localhost:30090
+
+### ✨ Features
+
+- 📊 System health & performance metrics
+- 🔥 Request rate & response time monitoring
+- 💻 CPU & Memory usage tracking
+- 🚨 Real-time alerting
+- 📈 Business metrics (orders, revenue, users)
+
+### 📚 Documentation
+
+- **[Quick Start (5 phút)](k8s/monitoring/QUICK-START.md)** - Bắt đầu nhanh
+- **[Full Guide](GRAFANA.md)** - Hướng dẫn chi tiết (~600 dòng)
+- **[Setup Services](k8s/monitoring/SETUP-SERVICES.md)** - Thêm metrics cho services
+- **[Overview](MONITORING.md)** - Tổng quan monitoring
 
 ---
 
@@ -289,6 +373,27 @@ Admin user endpoints (user-service)
 - 401 Unauthorized { message }
 - 403 Forbidden { message }
 - 404 Not Found { message }
+
+---
+
+## 📚 Tài liệu tham khảo
+
+### 🚀 Getting Started
+- **[QUICK-START.md](QUICK-START.md)** - Hướng dẫn setup từ đầu đến cuối (11-19 phút)
+
+### 🐳 Docker & Development
+- **[DOCKER.md](DOCKER.md)** - Hướng dẫn Docker chi tiết
+- **[docker-compose.yml](docker-compose.yml)** - Docker Compose configuration
+
+### ☸️ Kubernetes & Deployment
+- **[KUBERNETES.md](KUBERNETES.md)** - Hướng dẫn Kubernetes chi tiết
+- **[k8s/README.md](k8s/README.md)** - Kubernetes deployment guide
+
+### 📊 Monitoring & Observability
+- **[MONITORING.md](MONITORING.md)** - Tổng quan monitoring
+- **[GRAFANA.md](GRAFANA.md)** - Hướng dẫn Grafana chi tiết
+- **[k8s/monitoring/README.md](k8s/monitoring/README.md)** - Monitoring setup guide
+- **[k8s/monitoring/QUICK-START.md](k8s/monitoring/QUICK-START.md)** - Quick start monitoring
 
 ---
 

@@ -4,34 +4,11 @@ Hướng dẫn build và chạy toàn bộ dự án bằng Docker với chỉ **
 
 ## 🚀 Quick Start
 
-### Cách 1: Sử dụng Docker Compose (Đơn giản nhất)
+### Sử dụng Docker Compose
 
 ```bash
 # Build và chạy tất cả services
 docker-compose up -d --build
-```
-
-### Cách 2: Sử dụng Makefile (Linux/Mac)
-
-```bash
-# Build và chạy tất cả
-make all
-
-# Hoặc từng bước
-make build    # Build images
-make up       # Start services
-```
-~
-### Cách 3: Sử dụng Script
-
-**Linux/Mac:**
-```bash
-./build.sh
-```
-
-**Windows:**
-```cmd
-build.bat
 ```
 
 ## 📋 Các lệnh Docker phổ biến

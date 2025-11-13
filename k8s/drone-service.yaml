@@ -4,7 +4,7 @@ metadata:
   name: drone-service
   namespace: ffdd
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: drone-service
@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: drone-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3005"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: drone-service

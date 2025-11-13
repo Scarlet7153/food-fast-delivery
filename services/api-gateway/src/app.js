@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const config = require('./config/env');
 const logger = require('./utils/logger');
+const { register, metricsMiddleware } = require('./utils/metrics');
 
 class APIGateway {
   constructor() {
@@ -49,6 +50,9 @@ class APIGateway {
     // this.app.use(express.json({ limit: '10mb' }));
     // this.app.use(express.urlencoded({ extended: true }));
 
+    // Prometheus metrics middleware
+    this.app.use(metricsMiddleware('api-gateway'));
+
     // Request logging
     this.app.use((req, res, next) => {
       logger.info(`${req.method} ${req.path} - ${req.ip}`);
@@ -64,6 +68,17 @@ class APIGateway {
         timestamp: new Date().toISOString(),
         service: 'API Gateway'
       });
+    });
+
+    // Prometheus metrics endpoint
+    this.app.get('/metrics', async (req, res) => {
+      try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+      } catch (error) {
+        logger.error('Error generating metrics:', error);
+        res.status(500).end();
+      }
     });
 
     // User routes (no auth required for register/login) - now handled by User Service

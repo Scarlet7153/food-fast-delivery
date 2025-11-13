@@ -4,7 +4,7 @@ metadata:
   name: api-gateway
   namespace: ffdd
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: api-gateway
@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: api-gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: api-gateway

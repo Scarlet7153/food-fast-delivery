@@ -4,7 +4,7 @@ metadata:
   name: restaurant-service
   namespace: ffdd
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: restaurant-service
@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: restaurant-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: restaurant-service

@@ -4,7 +4,7 @@ metadata:
   name: user-service
   namespace: ffdd
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: user-service
@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: user-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: user-service

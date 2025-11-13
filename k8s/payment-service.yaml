@@ -4,7 +4,7 @@ metadata:
   name: payment-service
   namespace: ffdd
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: payment-service
@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: payment-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3006"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: payment-service
