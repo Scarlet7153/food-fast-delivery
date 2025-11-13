@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: ffdd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: ffdd-payment-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3006
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: NODE_ENV
+        - name: PORT
+          value: "3006"
+        - name: MONGO_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MONGO_ROOT_USERNAME
+        - name: MONGO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MONGO_ROOT_PASSWORD
+        - name: MONGODB_URI
+          value: "mongodb://admin:password123@mongodb:27017/drone?authSource=admin"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: JWT_SECRET
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: ORDER_SERVICE_URL
+        - name: CLIENT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: CLIENT_URL
+        - name: MOMO_PARTNER_CODE
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MOMO_PARTNER_CODE
+        - name: MOMO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MOMO_ACCESS_KEY
+        - name: MOMO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MOMO_SECRET_KEY
+        - name: MOMO_ENDPOINT_CREATE
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: MOMO_ENDPOINT_CREATE
+        - name: MOMO_IPN_URL
+          value: "http://payment-service:3006/api/payments/momo/ipn"
+        - name: MOMO_RETURN_URL
+          value: "http://localhost:5173/payment/result"
+        - name: RATE_LIMIT_WINDOW_MS
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: RATE_LIMIT_WINDOW_MS
+        - name: RATE_LIMIT_MAX_REQUESTS
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: RATE_LIMIT_MAX_REQUESTS
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: ffdd
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3006
+    targetPort: 3006
+    name: http
+  selector:
+    app: payment-service
+

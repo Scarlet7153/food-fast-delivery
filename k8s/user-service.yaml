@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: ffdd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: ffdd-user-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3002
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: NODE_ENV
+        - name: PORT
+          value: "3002"
+        - name: MONGO_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MONGO_ROOT_USERNAME
+        - name: MONGO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: MONGO_ROOT_PASSWORD
+        - name: MONGODB_URI
+          value: "mongodb://admin:password123@mongodb:27017/drone?authSource=admin"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: JWT_SECRET
+        - name: JWT_REFRESH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ffdd-secrets
+              key: JWT_REFRESH_SECRET
+        - name: JWT_EXPIRES_IN
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: JWT_EXPIRES_IN
+        - name: JWT_REFRESH_EXPIRES_IN
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: JWT_REFRESH_EXPIRES_IN
+        - name: RESTAURANT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: RESTAURANT_SERVICE_URL
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: ORDER_SERVICE_URL
+        - name: DRONE_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: DRONE_SERVICE_URL
+        - name: PAYMENT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: PAYMENT_SERVICE_URL
+        - name: CLIENT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: CLIENT_URL
+        - name: RATE_LIMIT_WINDOW_MS
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: RATE_LIMIT_WINDOW_MS
+        - name: RATE_LIMIT_MAX_REQUESTS
+          valueFrom:
+            configMapKeyRef:
+              name: ffdd-config
+              key: RATE_LIMIT_MAX_REQUESTS
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: ffdd
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3002
+    targetPort: 3002
+    name: http
+  selector:
+    app: user-service
+

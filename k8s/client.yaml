@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: ffdd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - name: client
+        image: ffdd-client:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5173
+          name: http
+        env:
+        - name: VITE_API_URL
+          value: "http://localhost:30001"
+        - name: VITE_SOCKET_URL
+          value: "http://localhost:30005"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: ffdd
+spec:
+  type: NodePort
+  ports:
+  - port: 5173
+    targetPort: 5173
+    nodePort: 30173
+    name: http
+  selector:
+    app: client
+
