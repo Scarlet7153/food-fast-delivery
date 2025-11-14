@@ -57,5 +57,15 @@ describe('User Service App', () => {
       expect(response.body).toHaveProperty('path');
     });
   });
+<<<<<<< Updated upstream
   });
+=======
+  // Test fail
+  describe('test fail', () => {
+    it('should fail to verify CI/CD pipeline', () => {
+      expect(1).toBe(2); // This will always fail
+    });
+  });
+});
+>>>>>>> Stashed changes
 
