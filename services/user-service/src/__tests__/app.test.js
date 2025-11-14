@@ -59,8 +59,11 @@ describe('User Service App', () => {
   });
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   });
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   // Test fail
