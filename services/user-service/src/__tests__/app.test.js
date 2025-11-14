@@ -58,8 +58,11 @@ describe('User Service App', () => {
     });
   });
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   });
 =======
+=======
+>>>>>>> Stashed changes
   // Test fail
   describe('test fail', () => {
     it('should fail to verify CI/CD pipeline', () => {
