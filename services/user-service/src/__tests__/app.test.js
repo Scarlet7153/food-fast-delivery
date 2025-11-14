@@ -57,9 +57,5 @@ describe('User Service App', () => {
       expect(response.body).toHaveProperty('path');
     });
   });
-  // Thêm test case này để làm fail
-  test('This test will fail', () => {
-    expect(1).toBe(2); // Sẽ fail vì 1 !== 2
   });
-});
 
