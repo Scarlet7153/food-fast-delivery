@@ -2,7 +2,10 @@
 
 > Hệ thống giao đồ ăn nhanh bằng drone với kiến trúc **microservices**, sử dụng **MERN Stack** và **tích hợp thanh toán MoMo**.
 
-![MERN](./assets/mern-stack.png)![Momo-Wallet](./assets/momo-wallet.png)
+<div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+  <img src="./assets/mern-stack.png" alt="MERN Stack" width="300" />
+  <img src="./assets/momo-wallet.png" alt="MoMo Wallet" width="300" />
+</div>
 
 ---
 
@@ -37,13 +40,12 @@ Video demo bao gồm:
 - 🚁 Theo dõi drone giao hàng real-time
 - 🍴 Quản lý nhà hàng và menu
 - 👨‍💼 Dashboard quản trị viên
-- 📊 Monitoring và metrics
 
 ---
 
 ## 🌐 Deployment trên Render
 
-Hệ thống được deploy trên **Render** - nền tảng cloud hiện đại:
+Hệ thống được deploy trên **Render** :
 
 ![Render](./assets/render.png)
 
@@ -51,12 +53,12 @@ Hệ thống được deploy trên **Render** - nền tảng cloud hiện đại
 ![Kubernetes](./assets/Kubernetes.png)
 
 ### 🎯 Kubernetes Features:
-- ✅ **Microservices Architecture** - Mỗi service chạy độc lập
-- ✅ **Auto-scaling** - Tự động scale theo load
-- ✅ **Health Checks** - Liveness và Readiness probes
-- ✅ **Service Discovery** - Tự động discovery giữa các services
-- ✅ **ConfigMap & Secrets** - Quản lý config và secrets an toàn
-- ✅ **Namespace Isolation** - Tách biệt môi trường (ffdd namespace)
+-  **Microservices Architecture** - Mỗi service chạy độc lập
+-  **Auto-scaling** - Tự động scale theo load
+-  **Health Checks** - Liveness và Readiness probes
+-  **Service Discovery** - Tự động discovery giữa các services
+-  **ConfigMap & Secrets** - Quản lý config và secrets an toàn
+-  **Namespace Isolation** - Tách biệt môi trường (ffdd namespace)
 
 ### 📦 Services Deployed:
 - `api-gateway` - API Gateway service
@@ -95,10 +97,10 @@ Hệ thống tích hợp **Prometheus + Grafana** để giám sát real-time:
   - Drone mission status
 
 ### 🎯 Dashboard Features:
-- ✅ **Real-time monitoring** - Cập nhật theo thời gian thực
-- ✅ **Custom alerts** - Cảnh báo khi có vấn đề
-- ✅ **Historical data** - Xem dữ liệu lịch sử
-- ✅ **Multi-service view** - Xem tất cả services cùng lúc
+-  **Real-time monitoring** - Cập nhật theo thời gian thực
+-  **Custom alerts** - Cảnh báo khi có vấn đề
+-  **Historical data** - Xem dữ liệu lịch sử
+-  **Multi-service view** - Xem tất cả services cùng lúc
 
 ### 🔗 Truy cập:
 - **Grafana Dashboard:** http://localhost:31000 (admin/admin123)
@@ -110,25 +112,25 @@ Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITO
 ## ✨ Tính năng chính
 
 ### 👤 Khách hàng (Customer)
-- ✅ Đăng ký / Đăng nhập tài khoản
-- ✅ Duyệt danh sách nhà hàng và món ăn
-- ✅ Đặt món ăn và thanh toán MoMo (QR code)
-- ✅ Theo dõi drone giao hàng **real-time** trên bản đồ
-- ✅ Xem lịch sử đơn hàng
+-  Đăng ký / Đăng nhập tài khoản
+-  Duyệt danh sách nhà hàng và món ăn
+-  Đặt món ăn và thanh toán MoMo (QR code)
+-  Theo dõi drone giao hàng **real-time** trên bản đồ
+-  Xem lịch sử đơn hàng
 
 ### 🍴 Nhà hàng (Restaurant)
-- ✅ Quản lý menu (thêm, sửa, xóa món ăn)
-- ✅ Quản lý đơn hàng (xác nhận, từ chối, xử lý)
-- ✅ Quản lý drone giao hàng
-- ✅ Theo dõi doanh thu
-- ✅ Theo dõi nhiệm vụ giao hàng
+-  Quản lý menu (thêm, sửa, xóa món ăn)
+-  Quản lý đơn hàng (xác nhận, từ chối, xử lý)
+-  Quản lý drone giao hàng
+-  Theo dõi doanh thu
+-  Theo dõi nhiệm vụ giao hàng
 
 ### 👨‍💼 Quản trị viên (Admin)
-- ✅ Quản lý người dùng hệ thống
-- ✅ Quản lý nhà hàng (phê duyệt)
-- ✅ Quản lý đơn hàng toàn hệ thống
-- ✅ Duyệt nhà hàng mới đăng ký
-- ✅ Xem thống kê và báo cáo toàn hệ thống
+-  Quản lý người dùng hệ thống
+-  Quản lý nhà hàng (phê duyệt)
+-  Quản lý đơn hàng toàn hệ thống
+-  Duyệt nhà hàng mới đăng ký
+-  Xem thống kê và báo cáo toàn hệ thống
 
 ---
 
@@ -169,8 +171,7 @@ Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITO
 
 ## 🚀 Quick Start
 
-**Muốn chạy nhanh?** Xem [QUICK-START.md](QUICK-START.md) - Hướng dẫn từ đầu đến cuối trong **11-19 phút**!
-
+**Muốn chạy nhanh?** Xem [QUICK-START.md](QUICK-START.md)
 ### Tóm tắt nhanh:
 
 1. **Install dependencies:**
@@ -185,30 +186,23 @@ Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITO
 
 2. **Build Docker images:**
    ```powershell
-   docker-compose build
+   docker-compose up -d --build
    ```
+   
 
 3. **Deploy lên Kubernetes:**
-   ```powershell
-   kubectl apply -f k8s\configmap.yaml
-   kubectl apply -f k8s\secrets.yaml
-   kubectl apply -f k8s\mongodb.yaml
-   kubectl apply -f k8s\api-gateway.yaml
-   kubectl apply -f k8s\user-service.yaml
-   kubectl apply -f k8s\restaurant-service.yaml
-   kubectl apply -f k8s\order-service.yaml
-   kubectl apply -f k8s\drone-service.yaml
-   kubectl apply -f k8s\payment-service.yaml
-   kubectl apply -f k8s\client.yaml
+	```powershell
+   	cd k8s\
+	.\deploy.bat
+	cd ..\..
    ```
 
 4. **Deploy Monitoring:**
    ```powershell
-   kubectl apply -f k8s\monitoring\prometheus-config.yaml
-   kubectl apply -f k8s\monitoring\prometheus.yaml
-   kubectl apply -f k8s\monitoring\grafana.yaml
-   kubectl apply -f k8s\monitoring\grafana-dashboard.yaml
-   ```
+	cd k8s\monitoring
+	.\deploy-monitoring.bat
+	cd ..\..
+	```
 
 **Chi tiết đầy đủ:** Xem [QUICK-START.md](QUICK-START.md)
 
