@@ -62,6 +62,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate syntax
+        run: node --check src/app.js
+
       - name: Run tests
         run: npm test
         continue-on-error: true
@@ -88,9 +91,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate syntax
+        run: node --check src/app.js
+
       - name: Run tests
         run: npm test
-        continue-on-error: true
 
   # Job 4: Test Restaurant Service
   restaurant-service-ci:
@@ -113,6 +118,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate syntax
+        run: node --check src/app.js
 
       - name: Run tests
         run: npm test
@@ -140,6 +148,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate syntax
+        run: node --check src/app.js
+
       - name: Run tests
         run: npm test
         continue-on-error: true
@@ -166,6 +177,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate syntax
+        run: node --check src/app.js
+
       - name: Run tests
         run: npm test
         continue-on-error: true
@@ -191,6 +205,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate syntax
+        run: node --check src/app.js
 
       - name: Run tests
         run: npm test

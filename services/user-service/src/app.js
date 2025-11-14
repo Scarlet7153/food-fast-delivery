@@ -6,8 +6,11 @@ const config = require('./config/env');
 const database = require('./config/database');
 const logger = require('./utils/logger');
 const { register, metricsMiddleware } = require('./utils/metrics');
+<<<<<<< Updated upstream
 
 // Import routes
+=======
+>>>>>>> Stashed changes
 const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/admin.routes');
 
