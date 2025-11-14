@@ -2,6 +2,8 @@
 
 > Hệ thống giao đồ ăn nhanh bằng drone với kiến trúc **microservices**, sử dụng **MERN Stack** và **tích hợp thanh toán MoMo**.
 
+![MERN](./assets/mern-stack.png)![Momo-Wallet](./assets/momo-wallet.png)
+
 ---
 
 ## 👥 Thành viên thực hiện
@@ -22,6 +24,88 @@ Hệ thống được xây dựng theo **kiến trúc microservices**, đảm b�
 - Cung cấp 3 giao diện: **Customer**, **Restaurant**, **Admin**
 
 ---
+
+## 📹 Video Demo
+
+Xem video demo đầy đủ về hệ thống:
+
+[![Watch the video](https://img.youtube.com/vi/59t2Jq5CpkM/maxresdefault.jpg)](https://www.youtube.com/watch?v=59t2Jq5CpkM)
+
+Video demo bao gồm:
+- 🎬 Giới thiệu tổng quan hệ thống
+- 🛒 Quy trình đặt hàng và thanh toán
+- 🚁 Theo dõi drone giao hàng real-time
+- 🍴 Quản lý nhà hàng và menu
+- 👨‍💼 Dashboard quản trị viên
+- 📊 Monitoring và metrics
+
+---
+
+## 🌐 Deployment trên Render
+
+Hệ thống được deploy trên **Render** - nền tảng cloud hiện đại:
+
+![Render](./assets/render.png)
+
+## Kubernetes
+![Kubernetes](./assets/Kubernetes.png)
+
+### 🎯 Kubernetes Features:
+- ✅ **Microservices Architecture** - Mỗi service chạy độc lập
+- ✅ **Auto-scaling** - Tự động scale theo load
+- ✅ **Health Checks** - Liveness và Readiness probes
+- ✅ **Service Discovery** - Tự động discovery giữa các services
+- ✅ **ConfigMap & Secrets** - Quản lý config và secrets an toàn
+- ✅ **Namespace Isolation** - Tách biệt môi trường (ffdd namespace)
+
+### 📦 Services Deployed:
+- `api-gateway` - API Gateway service
+- `user-service` - User management
+- `restaurant-service` - Restaurant & menu
+- `order-service` - Order processing
+- `drone-service` - Drone tracking
+- `payment-service` - Payment processing
+- `mongodb` - Database (StatefulSet)
+- `client` - Frontend application
+---
+
+## 📊 Monitoring với Grafana
+
+Hệ thống tích hợp **Prometheus + Grafana** để giám sát real-time:
+
+![Grafana](./assets/monitoring.png)
+![Prometheus](./assets/Prometheus-1.png)
+### 📈 Metrics được theo dõi:
+- **System Metrics:**
+  - CPU & Memory usage
+  - Request rate & response time
+  - Error rate & status codes
+  - Network I/O
+
+- **Business Metrics:**
+  - Số lượng đơn hàng theo thời gian
+  - Doanh thu theo ngày/tuần/tháng
+  - Số lượng người dùng active
+  - Tỷ lệ thành công của thanh toán
+
+- **Service Health:**
+  - Service uptime
+  - Database connection pool
+  - API response times
+  - Drone mission status
+
+### 🎯 Dashboard Features:
+- ✅ **Real-time monitoring** - Cập nhật theo thời gian thực
+- ✅ **Custom alerts** - Cảnh báo khi có vấn đề
+- ✅ **Historical data** - Xem dữ liệu lịch sử
+- ✅ **Multi-service view** - Xem tất cả services cùng lúc
+
+### 🔗 Truy cập:
+- **Grafana Dashboard:** http://localhost:31000 (admin/admin123)
+- **Prometheus:** http://localhost:30090
+
+Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITORING.md)
+
 
 ## ✨ Tính năng chính
 

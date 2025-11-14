@@ -310,6 +310,12 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
   const canUpdate = ['PLACED', 'CONFIRMED', 'COOKING', 'READY_FOR_PICKUP'].includes(order.status)
 
   const handleUpdateStatus = (newStatus) => {
+    // Handle drone assignment separately
+    if (newStatus === 'ASSIGN_DRONE') {
+      onAssignDrone()
+      return
+    }
+    
     if (showNoteInput) {
       onStatusUpdate(order._id, newStatus, note)
       setShowNoteInput(false)
