@@ -59,7 +59,17 @@ jobs:
       - name: Run tests
         run: npm test
         env:
-          MONGO_URI: mongodb://admin:password123@localhost:27017/test?authSource=admin
+          NODE_ENV: test
+          PORT: 3004
+          MONGODB_URI: mongodb://admin:password123@localhost:27017/test?authSource=admin
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          USER_SERVICE_URL: http://localhost:3002
+          RESTAURANT_SERVICE_URL: http://localhost:3003
+          DRONE_SERVICE_URL: http://localhost:3005
+          PAYMENT_SERVICE_URL: http://localhost:3006
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
         continue-on-error: true
 
       - name: Run security audit

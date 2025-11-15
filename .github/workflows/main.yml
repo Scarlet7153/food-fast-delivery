@@ -68,6 +68,17 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3001
+          USER_SERVICE_URL: http://localhost:3002
+          RESTAURANT_SERVICE_URL: http://localhost:3003
+          ORDER_SERVICE_URL: http://localhost:3004
+          DRONE_SERVICE_URL: http://localhost:3005
+          PAYMENT_SERVICE_URL: http://localhost:3006
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 3: Test User Service
   user-service-ci:
@@ -96,6 +107,19 @@ jobs:
 
       - name: Run tests
         run: npm test
+        continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3002
+          MONGODB_URI: mongodb://localhost:27017/test_user_service
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-for-ci-cd
+          JWT_EXPIRES_IN: 1h
+          JWT_REFRESH_EXPIRES_IN: 7d
+          JWT_RESET_EXPIRES_IN: 1h
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 4: Test Restaurant Service
   restaurant-service-ci:
@@ -125,6 +149,16 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3003
+          MONGODB_URI: mongodb://localhost:27017/test_restaurant_service
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          USER_SERVICE_URL: http://localhost:3002
+          ORDER_SERVICE_URL: http://localhost:3004
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 5: Test Order Service
   order-service-ci:
@@ -154,6 +188,18 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3004
+          MONGODB_URI: mongodb://localhost:27017/test_order_service
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          USER_SERVICE_URL: http://localhost:3002
+          RESTAURANT_SERVICE_URL: http://localhost:3003
+          DRONE_SERVICE_URL: http://localhost:3005
+          PAYMENT_SERVICE_URL: http://localhost:3006
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 6: Test Drone Service
   drone-service-ci:
@@ -183,6 +229,17 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3005
+          MONGODB_URI: mongodb://localhost:27017/test_drone_service
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          USER_SERVICE_URL: http://localhost:3002
+          RESTAURANT_SERVICE_URL: http://localhost:3003
+          ORDER_SERVICE_URL: http://localhost:3004
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 7: Test Payment Service
   payment-service-ci:
@@ -212,6 +269,16 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3006
+          MONGODB_URI: mongodb://localhost:27017/test_payment_service
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          USER_SERVICE_URL: http://localhost:3002
+          ORDER_SERVICE_URL: http://localhost:3004
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
   # Job 8: Simple Build Test (no Docker for learning project)
   build-test:

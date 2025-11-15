@@ -56,13 +56,13 @@ const createPayment = async (req, res) => {
       restaurantId: order.restaurantId,
       method,
       amount: {
-        total: order.amount.total,
-        currency: order.amount.currency,
+        total: order.amount.total || 0,
+        currency: order.amount.currency || 'VND',
         breakdown: {
-          subtotal: order.amount.subtotal,
-          deliveryFee: order.amount.deliveryFee,
-          tax: order.amount.tax,
-          discount: order.amount.discount
+          subtotal: order.amount.subtotal || (order.amount.total || 0) - (order.amount.deliveryFee || 0) - (order.amount.tax || 0) + (order.amount.discount || 0),
+          deliveryFee: order.amount.deliveryFee || 0,
+          tax: order.amount.tax || 0,
+          discount: order.amount.discount || 0
         }
       },
       metadata: {

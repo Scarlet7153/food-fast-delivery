@@ -46,6 +46,17 @@ jobs:
       - name: Run tests
         run: npm test
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          PORT: 3001
+          USER_SERVICE_URL: http://localhost:3002
+          RESTAURANT_SERVICE_URL: http://localhost:3003
+          ORDER_SERVICE_URL: http://localhost:3004
+          DRONE_SERVICE_URL: http://localhost:3005
+          PAYMENT_SERVICE_URL: http://localhost:3006
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
       - name: Run security audit
         run: npm audit --audit-level moderate

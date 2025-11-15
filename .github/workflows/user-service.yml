@@ -60,7 +60,17 @@ jobs:
       - name: Run tests
         run: npm test
         env:
-          MONGO_URI: mongodb://admin:password123@localhost:27017/test?authSource=admin
+          NODE_ENV: test
+          PORT: 3002
+          MONGODB_URI: mongodb://admin:password123@localhost:27017/test?authSource=admin
+          JWT_SECRET: test-jwt-secret-key-for-ci-cd
+          JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-for-ci-cd
+          JWT_EXPIRES_IN: 1h
+          JWT_REFRESH_EXPIRES_IN: 7d
+          JWT_RESET_EXPIRES_IN: 1h
+          CLIENT_URL: http://localhost:5173
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 1000
 
       - name: Run security audit
         run: npm audit --audit-level moderate
