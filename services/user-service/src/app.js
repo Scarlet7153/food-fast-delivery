@@ -6,6 +6,7 @@ const config = require('./config/env');
 const database = require('./config/database');
 const logger = require('./utils/logger');
 const { register, metricsMiddleware } = require('./utils/metrics');
+const abc = ;
 
 // Import routes
 const userRoutes = require('./routes/user.routes');
