@@ -146,6 +146,48 @@ router.patch('/missions/:id/status', async (req, res) => {
 });
 
 /**
+ * Count drones by restaurant ID (internal)
+ * Used by Restaurant Service to get drone count
+ */
+router.get('/drones/count', async (req, res) => {
+  try {
+    const { restaurantId } = req.query;
+    
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Restaurant ID is required'
+      });
+    }
+    
+    // Convert string to ObjectId if needed
+    const mongoose = require('mongoose');
+    let queryRestaurantId = restaurantId;
+    if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+      queryRestaurantId = new mongoose.Types.ObjectId(restaurantId);
+    }
+    
+    const count = await Drone.countDocuments({ restaurantId: queryRestaurantId });
+    
+    logger.info(`[INTERNAL] Counted ${count} drones for restaurant ${restaurantId}`);
+    
+    res.json({
+      success: true,
+      data: {
+        restaurantId,
+        count
+      }
+    });
+  } catch (error) {
+    logger.error('[INTERNAL] Count drones by restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to count drones'
+    });
+  }
+});
+
+/**
  * Create mission (internal)
  * Used by Order Service when assigning drone
  */

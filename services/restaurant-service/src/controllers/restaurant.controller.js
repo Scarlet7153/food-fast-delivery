@@ -114,6 +114,50 @@ const getAllRestaurants = async (req, res) => {
         }
       }
       
+      // Fetch statistics for admin users
+      if (req.user && req.user.role === 'admin') {
+        // Count menu items
+        try {
+          const menuItemsCount = await MenuItem.countDocuments({ restaurantId: rest._id });
+          rest.menuItemsCount = menuItemsCount;
+        } catch (error) {
+          logger.warn(`Failed to count menu items for restaurant ${rest._id}:`, error.message);
+          rest.menuItemsCount = 0;
+        }
+        
+        // Get order statistics
+        if (config.ORDER_SERVICE_URL) {
+          try {
+            // Convert restaurantId to string for query param
+            const restaurantIdStr = rest._id.toString();
+            const orderStatsResponse = await axios.get(`${config.ORDER_SERVICE_URL}/api/admin/statistics`, {
+              params: { restaurantId: restaurantIdStr, timeRange: 'all' },
+              headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {}
+            });
+            if (orderStatsResponse.data && orderStatsResponse.data.success && orderStatsResponse.data.data) {
+              const stats = orderStatsResponse.data.data.statistics || orderStatsResponse.data.data;
+              rest.stats = {
+                totalOrders: stats.totalOrders || 0,
+                totalRevenue: stats.totalRevenue || 0
+              };
+              logger.info(`Loaded stats for restaurant ${restaurantIdStr}: ${rest.stats.totalOrders} orders, ${rest.stats.totalRevenue} revenue`);
+            } else {
+              logger.warn(`Invalid response format for restaurant ${restaurantIdStr}:`, orderStatsResponse.data);
+              rest.stats = { totalOrders: 0, totalRevenue: 0 };
+            }
+          } catch (error) {
+            logger.warn(`Failed to get order stats for restaurant ${rest._id}:`, error.message);
+            if (error.response) {
+              logger.warn(`Response status: ${error.response.status}, data:`, error.response.data);
+            }
+            rest.stats = { totalOrders: 0, totalRevenue: 0 };
+          }
+        } else {
+          logger.warn('ORDER_SERVICE_URL not configured');
+          rest.stats = { totalOrders: 0, totalRevenue: 0 };
+        }
+      }
+      
       return rest;
     }));
     

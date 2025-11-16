@@ -115,14 +115,12 @@ Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITO
 -  Đăng ký / Đăng nhập tài khoản
 -  Duyệt danh sách nhà hàng và món ăn
 -  Đặt món ăn và thanh toán MoMo (QR code)
--  Theo dõi drone giao hàng **real-time** trên bản đồ
 -  Xem lịch sử đơn hàng
 
 ### 🍴 Nhà hàng (Restaurant)
 -  Quản lý menu (thêm, sửa, xóa món ăn)
 -  Quản lý đơn hàng (xác nhận, từ chối, xử lý)
 -  Quản lý drone giao hàng
--  Theo dõi doanh thu
 -  Theo dõi nhiệm vụ giao hàng
 
 ### 👨‍💼 Quản trị viên (Admin)
@@ -130,7 +128,6 @@ Xem hướng dẫn chi tiết: [GRAFANA.md](GRAFANA.md) | [MONITORING.md](MONITO
 -  Quản lý nhà hàng (phê duyệt)
 -  Quản lý đơn hàng toàn hệ thống
 -  Duyệt nhà hàng mới đăng ký
--  Xem thống kê và báo cáo toàn hệ thống
 
 ---
 
@@ -293,154 +290,369 @@ food-fast-delivery/
 
 Base URL (API Gateway): `http://localhost:3001/api`
 
-Lưu ý: một vài route có thể tồn tại với đường dẫn khác nếu gateway map lại prefix; dùng các file trong `services/*/src/routes` làm nguồn xác thực cuối cùng.
-
 ---
 
-🔐 Authentication / User
+### Authentication / User
 
-- POST `/api/auth/register`
-	- Mô tả: Đăng ký người dùng
-	- Body: { name, email, password }
+- POST `/api/user/register` — Đăng ký người dùng
+	- Body: { name, email, password, phone, role }
 	- Response: 201 { user, token }
 
-- POST `/api/auth/login`
-	- Mô tả: Đăng nhập
+- POST `/api/user/login` — Đăng nhập
 	- Body: { email, password }
 	- Response: 200 { token, user }
 
-- POST `/api/auth/logout`
-	- Mô tả: Đăng xuất
+- POST `/api/user/logout` — Đăng xuất
 	- Protected: Có (Authorization)
 
-- POST `/api/auth/logout-all`
-	- Mô tả: Đăng xuất tất cả phiên
-
-- POST `/api/auth/refresh`
-	- Mô tả: Làm mới token (nếu project hỗ trợ refresh token)
-
-- GET `/api/users/me` hoặc `/api/auth/current-user`
-	- Mô tả: Lấy profile user hiện tại
+- POST `/api/user/logout-all` — Đăng xuất tất cả phiên
 	- Protected: Có
 
-Admin user endpoints (user-service)
-- GET `/api/users` (admin) — Lấy danh sách người dùng
-- GET `/api/users/:id` (admin) — Lấy chi tiết user
-- PATCH `/api/users/:id/status` (admin) — Cập nhật trạng thái
+- POST `/api/user/refresh` — Làm mới token
+	- Body: { refreshToken }
+
+- POST `/api/user/forgot-password` — Quên mật khẩu
+	- Body: { email }
+
+- POST `/api/user/reset-password` — Đặt lại mật khẩu
+	- Body: { token, password }
+
+- GET `/api/user/me` — Lấy profile user hiện tại
+	- Protected: Có
+
+- PUT `/api/user/profile` — Cập nhật profile
+	- Protected: Có
+	- Body: { name, phone, address, ... }
+
+- PUT `/api/user/change-password` — Đổi mật khẩu
+	- Protected: Có
+	- Body: { currentPassword, newPassword }
+
+- GET `/api/user/check-email` — Kiểm tra email có sẵn
+	- Query: ?email=...
+
+- GET `/api/user/check-phone` — Kiểm tra số điện thoại có sẵn
+	- Query: ?phone=...
+
+- GET `/api/user/payment-info` — Lấy thông tin thanh toán của user
+	- Protected: Có
+
+- POST `/api/user/payment-info` — Tạo thông tin thanh toán
+	- Protected: Có
+
+- PUT `/api/user/payment-info/:id` — Cập nhật thông tin thanh toán
+	- Protected: Có
+
+- DELETE `/api/user/payment-info/:id` — Xóa thông tin thanh toán
+	- Protected: Có
+
+- PUT `/api/user/payment-info/:id/default` — Đặt làm mặc định
+	- Protected: Có
+
+**Admin endpoints:**
+- GET `/api/admin/users` — Lấy danh sách users (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/users/:id` — Lấy chi tiết user (admin)
+	- Protected: role: admin
+
+- PATCH `/api/admin/users/:id/status` — Cập nhật trạng thái user (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/dashboard` — Dashboard admin
+	- Protected: role: admin
+
+- GET `/api/admin/overview` — Tổng quan hệ thống (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/analytics` — Analytics admin
+	- Protected: role: admin
+
+- GET `/api/admin/system` — Thống kê hệ thống (admin)
+	- Protected: role: admin
 
 ---
 
-🏪 Shop / Restaurant
+### Restaurant
 
-- GET `/api/shop/get-all` hoặc GET `/api/restaurants`
-	- Mô tả: Lấy danh sách nhà hàng
+**Public routes:**
+- GET `/api/restaurants` — Lấy danh sách nhà hàng
 	- Query params: q, city, page, limit, isOpen
-
-- GET `/api/shop/get-by-city/:city` — Lấy shop theo thành phố
-
-- POST `/api/shop/create` hoặc POST `/api/restaurants`
-	- Mô tả: Tạo nhà hàng mới
-	- Protected: role: restaurant
-	- Body ví dụ: { name, ownerId, address, city, openingHours }
-
-- POST `/api/shop/edit/:shopId` hoặc PATCH `/api/restaurants/:id`
-	- Mô tả: Cập nhật thông tin shop (owner/admin)
 
 - GET `/api/restaurants/:id` — Lấy chi tiết nhà hàng (kèm menu)
 
 - GET `/api/restaurants/owner/:ownerId` — Lấy nhà hàng theo owner
 
----
+- GET `/api/restaurants/:id/delivery-fee` — Tính phí giao hàng
+	- Query: ?distance=...
 
-🍕 Item / Menu
+- GET `/api/restaurants/:restaurantId/menu` — Lấy menu của nhà hàng
 
-- GET `/api/item/get-all/:shopId` hoặc GET `/api/restaurants/:restaurantId/menu`
-	- Mô tả: Lấy danh sách món của một nhà hàng
+- GET `/api/restaurants/menu/item/:id` — Lấy chi tiết món ăn
 
-- GET `/api/item/get-by-id/:itemId` hoặc GET `/api/restaurants/menu/item/:id`
-	- Mô tả: Lấy chi tiết món
+- GET `/api/restaurants/:restaurantId/menu/popular` — Lấy món phổ biến
 
-- POST `/api/item/create` hoặc POST `/api/restaurants/:restaurantId/menu`
+- GET `/api/restaurants/menu/search` — Tìm kiếm món ăn
+	- Query: ?q=...
+
+**Restaurant owner routes (protected):**
+- GET `/api/restaurants/me` — Lấy nhà hàng của tôi
 	- Protected: role: restaurant
-	- Body ví dụ: { name, price, description, image, category, stock }
 
-- POST `/api/item/edit-item/:itemId` hoặc PATCH `/api/restaurants/menu/:id`
+- PUT `/api/restaurants/me` — Cập nhật nhà hàng của tôi
+	- Protected: role: restaurant
 
-- DELETE `/api/item/delete/:itemId` hoặc DELETE `/api/restaurants/menu/:id`
+- POST `/api/restaurants/me/toggle-status` — Bật/tắt nhà hàng
+	- Protected: role: restaurant
+
+- GET `/api/restaurants/me/menu` — Lấy menu của nhà hàng tôi
+	- Protected: role: restaurant
+
+- POST `/api/restaurants` — Tạo nhà hàng mới
+	- Body: { name, address, city, openingHours, ... }
+
+- PUT `/api/restaurants/:id` — Cập nhật nhà hàng
+	- Protected: role: restaurant (owner) hoặc admin
+
+- POST `/api/restaurants/:restaurantId/menu` — Thêm món vào menu
+	- Protected: role: restaurant
+	- Body: { name, price, description, image, category, stock }
+
+- PUT `/api/restaurants/menu/:id` — Cập nhật món ăn
+	- Protected: role: restaurant
+
+- DELETE `/api/restaurants/menu/:id` — Xóa món ăn
+	- Protected: role: restaurant
 
 - PATCH `/api/restaurants/menu/:id/stock` — Cập nhật tồn kho
+	- Protected: role: restaurant
+	- Body: { stock }
+
+**Rating routes:**
+- POST `/api/restaurants/:id/rating` — Đánh giá nhà hàng
+	- Protected: Có
+	- Body: { rating, comment }
+
+- POST `/api/restaurants/menu/:id/rating` — Đánh giá món ăn
+	- Protected: Có
+	- Body: { rating, comment }
+
+**Admin routes:**
+- GET `/api/admin/restaurants` — Lấy tất cả nhà hàng (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/restaurants/pending` — Lấy danh sách nhà hàng chờ duyệt
+	- Protected: role: admin
+
+- GET `/api/admin/restaurants/:id` — Lấy chi tiết nhà hàng (admin)
+	- Protected: role: admin
+
+- PATCH `/api/admin/restaurants/:id/approve` — Duyệt nhà hàng
+	- Protected: role: admin
+	- Body: { approved: true/false }
+
+- PATCH `/api/admin/restaurants/:id/reject` — Từ chối nhà hàng
+	- Protected: role: admin
+
+- PATCH `/api/admin/restaurants/:id/status` — Cập nhật trạng thái nhà hàng (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/statistics` — Thống kê nhà hàng (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/overview` — Tổng quan nhà hàng (admin)
+	- Protected: role: admin
 
 ---
 
-🛒 Cart
+### Order
 
-- GET `/api/cart/get` — Lấy giỏ hàng hiện tại (user)
+**Customer routes:**
+- POST `/api/orders` — Tạo đơn hàng
+	- Protected: Có
+	- Body: { restaurantId, items: [{ itemId, quantity }], deliveryAddress, paymentMethod }
+
+- GET `/api/orders/user` — Lấy đơn hàng của user
 	- Protected: Có
 
-- POST `/api/cart/add`
-	- Body: { itemId, quantity }
-
-- POST `/api/cart/update`
-	- Body: { itemId, quantity }
-
-- DELETE `/api/cart/remove/:itemId`
-
-- DELETE `/api/cart/clear`
-
----
-
-📦 Order
-
-- POST `/api/order` hoặc `/api/orders` — Tạo đơn hàng
+- GET `/api/orders/:id` — Lấy chi tiết đơn hàng
 	- Protected: Có
-	- Body ví dụ: { shopId, items: [{ itemId, quantity }], deliveryAddress, paymentMethod }
 
-- GET `/api/order/my-orders` hoặc GET `/api/orders/user` — Lấy đơn của user
-- GET `/api/order/shop-orders` hoặc GET `/api/orders/restaurant/orders` — Lấy đơn của shop
+- PATCH `/api/orders/:id/status` — Cập nhật trạng thái đơn
+	- Protected: Có (chỉ một số status nhất định)
 
-- GET `/api/order/:orderId` — Lấy chi tiết đơn
+- PATCH `/api/orders/:id/cancel` — Hủy đơn hàng
+	- Protected: Có
 
-- PATCH `/api/order/:orderId/status` — Cập nhật trạng thái đơn (shop/admin/delivery)
+- POST `/api/orders/:id/rate` — Đánh giá đơn hàng
+	- Protected: Có
+	- Body: { rating, comment }
 
-- PATCH `/api/order/:id/cancel` — Hủy đơn
+- PATCH `/api/orders/:id/confirm-delivery` — Xác nhận đã nhận hàng
+	- Protected: Có
 
-- POST `/api/orders/:id/assign-drone` — Gán drone cho đơn
+**Restaurant routes:**
+- GET `/api/orders/restaurant/orders` — Lấy đơn hàng của nhà hàng
+	- Protected: role: restaurant
+
+- GET `/api/orders/restaurant/stats` — Thống kê đơn hàng nhà hàng
+	- Protected: role: restaurant
+
+- POST `/api/orders/:orderId/assign-drone` — Gán drone cho đơn hàng
+	- Protected: role: restaurant
+	- Body: { droneId }
+
+**Admin routes:**
+- GET `/api/admin/orders` — Lấy tất cả đơn hàng
+	- Protected: role: admin
+
+- GET `/api/admin/orders/:id` — Lấy chi tiết đơn hàng (admin)
+	- Protected: role: admin
+
+- PATCH `/api/admin/orders/:id/status` — Cập nhật trạng thái đơn (admin)
+	- Protected: role: admin
+
+- POST `/api/admin/orders/:orderId/assign-drone` — Gán drone cho đơn (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/orders/statistics` — Thống kê đơn hàng (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/orders/overview` — Tổng quan đơn hàng (admin)
+	- Protected: role: admin
+
+---
+### Payment
+
+- POST `/api/payments/momo/create` — Tạo yêu cầu thanh toán MoMo
+	- Protected: Có (Authorization)
+	- Body: { orderId }
+	- Response: 200 { paymentUrl, qrCode, ... }
+
+- POST `/api/payments/momo/verify` — Xác thực thanh toán MoMo
+	- Protected: Có
+	- Body: { orderId, ... }
+
+- POST `/api/payments/momo/notify` — Callback từ MoMo (không cần auth)
+	- Body: { ... } (từ MoMo gateway)
+
+- POST `/api/payments/momo/ipn` — IPN từ MoMo (không cần auth)
+	- Body: { ... } (từ MoMo gateway)
+
+- GET `/api/payments/user` — Lấy danh sách thanh toán của user
+	- Protected: Có
+
+- GET `/api/payments/:id` — Lấy chi tiết thanh toán
+	- Protected: Có
+
+- GET `/api/payments/:id/status` — Kiểm tra trạng thái thanh toán
+	- Protected: Có
+
+- POST `/api/payments/refund` — Tạo yêu cầu hoàn tiền
+	- Protected: Có
+	- Body: { paymentId, reason, ... }
+
+- GET `/api/payments/restaurant/payments` — Lấy danh sách thanh toán của nhà hàng
+	- Protected: role: restaurant
+
+- GET `/api/payments/restaurant/statistics` — Thống kê thanh toán nhà hàng
+	- Protected: role: restaurant
 
 ---
 
-💳 Payment
+### Drone & Mission
 
-- POST `/api/payment/vnpay/create-payment-url` — Tạo URL thanh toán VNPay
-	- Body: { orderId, amount, returnUrl }
+**Restaurant routes (protected):**
+- GET `/api/restaurant/drones` — Lấy danh sách drone của nhà hàng
+	- Protected: role: restaurant
 
-- GET `/api/payment/vnpay/return` — Redirect trả về sau thanh toán
+- GET `/api/restaurant/drones/available` — Lấy drone có sẵn
+	- Protected: role: restaurant
 
-- GET `/api/payment/vnpay/ipn` — IPN / notify từ cổng
+- GET `/api/restaurant/drones/statistics` — Thống kê drone
+	- Protected: role: restaurant
 
-- MoMo endpoints (payment-service)
-	- POST `/api/payments/momo/create`
-	- POST `/api/payments/momo/notify` (callback)
-	- POST `/api/payments/momo/ipn`
+- GET `/api/restaurant/drones/:id` — Lấy chi tiết drone
+	- Protected: role: restaurant
 
----
+- POST `/api/restaurant/drones` — Tạo drone mới
+	- Protected: role: restaurant
+	- Body: { name, model, status, ... }
 
-🚁 Drone & Mission
+- PUT `/api/restaurant/drones/:id` — Cập nhật thông tin drone
+	- Protected: role: restaurant
 
-- GET `/api/drones` — Lấy danh sách drone (admin)
-- GET `/api/drones/:id` — Lấy chi tiết drone
-- PATCH `/api/drones/:id/status` — Cập nhật trạng thái drone
+- DELETE `/api/restaurant/drones/:id` — Xóa drone
+	- Protected: role: restaurant
 
-- GET `/api/missions` — Lấy danh sách nhiệm vụ
-- GET `/api/missions/:id` — Lấy chi tiết nhiệm vụ
-- POST `/api/missions` — Tạo nhiệm vụ
-- PATCH `/api/missions/:id/status` — Cập nhật trạng thái nhiệm vụ
+- PATCH `/api/restaurant/drones/:id/status` — Cập nhật trạng thái drone
+	- Protected: role: restaurant
+	- Body: { status }
 
-- Restaurant-scoped missions:
-	- GET `/api/missions` (restaurant)
-	- POST `/api/missions` (restaurant tạo)
-	- POST `/api/missions/:id/simulate` — Bắt đầu mô phỏng
-	- POST `/api/missions/:id/stop-simulation` — Dừng mô phỏng
+- PATCH `/api/restaurant/drones/:id/location` — Cập nhật vị trí drone
+	- Protected: role: restaurant
+	- Body: { latitude, longitude }
 
+**Mission routes (protected):**
+- GET `/api/restaurant/missions` — Lấy danh sách nhiệm vụ
+	- Protected: role: restaurant
+
+- GET `/api/restaurant/missions/statistics` — Thống kê nhiệm vụ
+	- Protected: role: restaurant
+
+- GET `/api/restaurant/missions/:id` — Lấy chi tiết nhiệm vụ
+	- Protected: role: restaurant
+
+- POST `/api/restaurant/missions` — Tạo nhiệm vụ mới
+	- Protected: role: restaurant
+	- Body: { orderId, droneId, ... }
+
+- PATCH `/api/restaurant/missions/:id/status` — Cập nhật trạng thái nhiệm vụ
+	- Protected: role: restaurant
+	- Body: { status }
+
+- POST `/api/restaurant/missions/:id/path` — Thêm điểm đường đi
+	- Protected: role: restaurant
+	- Body: { latitude, longitude, ... }
+
+**Simulation routes (protected):**
+- POST `/api/restaurant/missions/:id/simulate` — Bắt đầu mô phỏng chuyến bay
+	- Protected: role: restaurant
+	- Body: { missionId }
+
+- POST `/api/restaurant/missions/:id/stop-simulation` — Dừng mô phỏng
+	- Protected: role: restaurant
+
+- GET `/api/restaurant/simulations/active` — Lấy danh sách mô phỏng đang chạy
+	- Protected: role: restaurant
+
+**Admin routes:**
+- GET `/api/admin/drones` — Lấy tất cả drone (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/drones/:id` — Lấy chi tiết drone (admin)
+	- Protected: role: admin
+
+- PATCH `/api/admin/drones/:id/status` — Cập nhật trạng thái drone (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/missions` — Lấy tất cả nhiệm vụ (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/missions/:id` — Lấy chi tiết nhiệm vụ (admin)
+	- Protected: role: admin
+
+- POST `/api/admin/missions` — Tạo nhiệm vụ (admin)
+	- Protected: role: admin
+
+- PATCH `/api/admin/missions/:id/status` — Cập nhật trạng thái nhiệm vụ (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/statistics` — Thống kê drone & mission (admin)
+	- Protected: role: admin
+
+- GET `/api/admin/overview` — Tổng quan drone & mission (admin)
+	- Protected: role: admin
 ---
 
 📌 Common response examples
@@ -456,18 +668,18 @@ Admin user endpoints (user-service)
 
 ## 📚 Tài liệu tham khảo
 
-### 🚀 Getting Started
+### Getting Started
 - **[QUICK-START.md](QUICK-START.md)** - Hướng dẫn setup từ đầu đến cuối (11-19 phút)
 
-### 🐳 Docker & Development
+### Docker & Development
 - **[DOCKER.md](DOCKER.md)** - Hướng dẫn Docker chi tiết
 - **[docker-compose.yml](docker-compose.yml)** - Docker Compose configuration
 
-### ☸️ Kubernetes & Deployment
+### Kubernetes & Deployment
 - **[KUBERNETES.md](KUBERNETES.md)** - Hướng dẫn Kubernetes chi tiết
 - **[k8s/README.md](k8s/README.md)** - Kubernetes deployment guide
 
-### 📊 Monitoring & Observability
+### Monitoring & Observability
 - **[MONITORING.md](MONITORING.md)** - Tổng quan monitoring
 - **[GRAFANA.md](GRAFANA.md)** - Hướng dẫn Grafana chi tiết
 - **[k8s/monitoring/README.md](k8s/monitoring/README.md)** - Monitoring setup guide

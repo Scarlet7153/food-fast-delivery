@@ -405,6 +405,36 @@ const updateDroneStatus = async (req, res) => {
   }
 };
 
+// Count drones by restaurant ID (for admin)
+const countDronesByRestaurant = async (req, res) => {
+  try {
+    const { restaurantId } = req.query;
+    
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Restaurant ID is required'
+      });
+    }
+    
+    const count = await Drone.countDocuments({ restaurantId });
+    
+    res.json({
+      success: true,
+      data: {
+        restaurantId,
+        count
+      }
+    });
+  } catch (error) {
+    logger.error('Count drones by restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to count drones'
+    });
+  }
+};
+
 // Get drone statistics
 const getStatistics = async (req, res) => {
   try {
@@ -604,6 +634,7 @@ const getOverview = async (req, res) => {
 };
 
 module.exports = {
+  countDronesByRestaurant,
   getAllDrones,
   getDroneById,
   updateDroneStatus,

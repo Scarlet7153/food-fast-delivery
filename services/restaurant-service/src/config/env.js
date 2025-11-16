@@ -13,6 +13,7 @@ const config = {
   // Service URLs
   USER_SERVICE_URL: process.env.USER_SERVICE_URL,
   ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL,
+  DRONE_SERVICE_URL: process.env.DRONE_SERVICE_URL,
   
   // Client URL
   CLIENT_URL: process.env.CLIENT_URL,

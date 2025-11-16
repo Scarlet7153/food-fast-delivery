@@ -276,12 +276,14 @@ function RestaurantCard({ restaurant, onView, getStatusIcon, getStatusColor, get
           <p className="text-xs text-gray-500">Món ăn</p>
         </div>
         <div>
-          <p className="text-lg font-semibold text-gray-900">{restaurant.dronesCount || 0}</p>
-          <p className="text-xs text-gray-500">Drone</p>
-        </div>
-        <div>
           <p className="text-lg font-semibold text-gray-900">{restaurant.stats?.totalOrders || 0}</p>
           <p className="text-xs text-gray-500">Đơn Hàng</p>
+        </div>
+        <div>
+          <p className="text-lg font-semibold text-gray-900">
+            {formatCurrency(restaurant.stats?.totalRevenue || 0)}
+          </p>
+          <p className="text-xs text-gray-500">Doanh Thu</p>
         </div>
       </div>
 
@@ -377,13 +379,7 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus, getStatusI
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-900">{restaurant.email || 'Chưa cung cấp'}</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-gray-900">{restaurant.address}</p>
-                  </div>
+                  <span className="text-gray-900">{restaurant.owner?.email || restaurant.ownerEmail || 'Chưa cung cấp'}</span>
                 </div>
               </div>
             </div>
@@ -391,17 +387,18 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus, getStatusI
             <div>
               <h4 className="text-lg font-medium mb-4">Thông Tin Kinh Doanh</h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Ngày Đăng Ký</span>
-                  <span className="text-gray-900">{formatDateTime(restaurant.createdAt)}</span>
+                <div className="flex items-start space-x-3">
+                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                  <div>
+                    <p className="text-gray-900">{restaurant.address}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Giấy Phép Kinh Doanh</span>
-                  <span className="text-gray-900">{restaurant.businessLicense || 'Chưa cung cấp'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Mã Số Thuế</span>
-                  <span className="text-gray-900">{restaurant.taxId || 'Chưa cung cấp'}</span>
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <span className="text-gray-600">Ngày Đăng Ký </span>
+                    <span className="text-gray-900">{formatDateTime(restaurant.createdAt)}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -449,14 +446,10 @@ function RestaurantDetailModal({ restaurant, onClose, onUpdateStatus, getStatusI
           {/* Statistics */}
           <div>
             <h4 className="text-lg font-medium mb-4">Thống Kê Nhà Hàng</h4>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{restaurant.menuItemsCount || 0}</p>
                 <p className="text-sm text-gray-600">Món ăn</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{restaurant.dronesCount || 0}</p>
-                <p className="text-sm text-gray-600">Drone</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{restaurant.stats?.totalOrders || 0}</p>

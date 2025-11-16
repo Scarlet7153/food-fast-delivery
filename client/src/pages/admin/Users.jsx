@@ -483,28 +483,7 @@ function UserDetailModal({ user, onClose, onUpdateStatus, getStatusIcon, getStat
             </div>
           )}
 
-          {/* Account Statistics */}
-          <div>
-            <h3 className="text-lg font-medium mb-4">Thống Kê Tài Khoản</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Tổng Đơn Hàng</p>
-                <p className="text-2xl font-bold text-gray-900">{user.orderCount || 0}</p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Tổng Chi Tiêu</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {user.totalSpent ? `$${user.totalSpent.toFixed(2)}` : '$0.00'}
-                </p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Hoạt Động Cuối</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {user.lastActiveAt ? formatDateTime(user.lastActiveAt) : 'Chưa bao giờ'}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Account statistics removed as requested */}
 
           {/* Status Management */}
           <form onSubmit={handleSubmit} className="border-t border-gray-200 pt-6">

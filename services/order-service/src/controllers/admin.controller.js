@@ -225,7 +225,19 @@ const assignDroneToOrder = async (req, res) => {
 // Get order statistics
 const getStatistics = async (req, res) => {
   try {
-    const { timeRange = 'today' } = req.query;
+    const { timeRange = 'today', restaurantId } = req.query;
+    
+    // Build base filter
+    const baseFilter = {};
+    if (restaurantId) {
+      // Convert string to ObjectId if needed
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+        baseFilter.restaurantId = new mongoose.Types.ObjectId(restaurantId);
+      } else {
+        baseFilter.restaurantId = restaurantId;
+      }
+    }
     
     // Calculate date range
     let startDate, endDate;
@@ -248,6 +260,11 @@ const getStatistics = async (req, res) => {
         startDate = new Date(now.setFullYear(now.getFullYear() - 1));
         endDate = new Date();
         break;
+      case 'all':
+        // No date filter - get all time statistics
+        startDate = null;
+        endDate = null;
+        break;
       default:
         startDate = new Date(now.setHours(0, 0, 0, 0));
         endDate = new Date(now.setHours(23, 59, 59, 999));
@@ -262,22 +279,39 @@ const getStatistics = async (req, res) => {
       newOrders,
       totalRevenue
     ] = await Promise.all([
-      Order.countDocuments({}),  // Admin sees all orders
-      Order.countDocuments({ status: 'DELIVERED' }),
-      Order.countDocuments({ status: { $in: ['CONFIRMED', 'COOKING', 'IN_FLIGHT'] } }),
-      Order.countDocuments({ status: 'PLACED' }),
-      Order.countDocuments({ status: 'CANCELLED' }),
+      Order.countDocuments(baseFilter),  // Admin sees all orders (or filtered by restaurantId)
+      Order.countDocuments({ ...baseFilter, status: 'DELIVERED' }),
+      Order.countDocuments({ ...baseFilter, status: { $in: ['CONFIRMED', 'COOKING', 'IN_FLIGHT'] } }),
+      Order.countDocuments({ ...baseFilter, status: 'PLACED' }),
+      Order.countDocuments({ ...baseFilter, status: 'CANCELLED' }),
       Order.countDocuments({ 
-        createdAt: { $gte: startDate, $lte: endDate }
+        ...baseFilter,
+        ...(startDate && endDate ? { createdAt: { $gte: startDate, $lte: endDate } } : {})
       }),
       Order.aggregate([
-        { $match: { status: 'DELIVERED' } },
+        { 
+          $match: { 
+            ...baseFilter, 
+            status: 'DELIVERED',
+            ...(startDate && endDate ? { createdAt: { $gte: startDate, $lte: endDate } } : {})
+          } 
+        },
         { $group: { _id: null, total: { $sum: '$amount.total' } } }
       ])
     ]);
 
     // Order status distribution
+    const statusDistributionMatch = {};
+    if (restaurantId) {
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+        statusDistributionMatch.restaurantId = new mongoose.Types.ObjectId(restaurantId);
+      } else {
+        statusDistributionMatch.restaurantId = restaurantId;
+      }
+    }
     const statusDistribution = await Order.aggregate([
+      { $match: statusDistributionMatch },
       {
         $group: {
           _id: '$status',
@@ -287,19 +321,28 @@ const getStatistics = async (req, res) => {
     ]);
 
     // Revenue by time period
+    const revenueMatch = {
+      status: 'DELIVERED'
+    };
+    if (restaurantId) {
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+        revenueMatch.restaurantId = new mongoose.Types.ObjectId(restaurantId);
+      } else {
+        revenueMatch.restaurantId = restaurantId;
+      }
+    }
+    if (startDate && endDate) {
+      revenueMatch.createdAt = { $gte: startDate, $lte: endDate };
+    }
     const revenueByPeriod = await Order.aggregate([
-      {
-        $match: {
-          status: 'completed',
-          createdAt: { $gte: startDate, $lte: endDate }
-        }
-      },
+      { $match: revenueMatch },
       {
         $group: {
           _id: {
             date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }
           },
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$amount.total' },
           orders: { $sum: 1 }
         }
       },
@@ -309,22 +352,33 @@ const getStatistics = async (req, res) => {
     ]);
 
     // Average order value
+    const avgMatch = { status: 'DELIVERED' };
+    if (restaurantId) {
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+        avgMatch.restaurantId = new mongoose.Types.ObjectId(restaurantId);
+      } else {
+        avgMatch.restaurantId = restaurantId;
+      }
+    }
     const avgOrderValue = await Order.aggregate([
-      { $match: { status: 'completed' } },
-      { $group: { _id: null, avgValue: { $avg: '$totalAmount' } } }
+      { $match: avgMatch },
+      { $group: { _id: null, avgValue: { $avg: '$amount.total' } } }
     ]);
 
     res.json({
       success: true,
       data: {
-        total: totalOrders,
-        completed: completedOrders,
-        inProgress: inProgressOrders,
-        pending: pendingOrders,
-        cancelled: cancelledOrders,
-        new: newOrders,
-        totalRevenue: totalRevenue[0]?.total || 0,
-        averageOrderValue: avgOrderValue[0]?.avgValue || 0,
+        statistics: {
+          totalOrders,
+          completedOrders,
+          inProgressOrders,
+          pendingOrders,
+          cancelledOrders,
+          newOrders,
+          totalRevenue: totalRevenue[0]?.total || 0,
+          averageOrderValue: avgOrderValue[0]?.avgValue || 0
+        },
         statusDistribution,
         revenueByPeriod,
         timeRange

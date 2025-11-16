@@ -10,6 +10,7 @@ router.use(auth, requireRole('admin'));
 
 // Drone management
 router.get('/drones', adminController.getAllDrones);
+router.get('/drones/count', adminController.countDronesByRestaurant);
 router.get('/drones/:id', adminController.getDroneById);
 router.patch('/drones/:id/status', adminController.updateDroneStatus);
 

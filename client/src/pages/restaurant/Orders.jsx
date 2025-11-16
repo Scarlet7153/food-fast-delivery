@@ -330,11 +330,11 @@ function OrderCard({ order, onStatusUpdate, onAssignDrone, getNextStatus, getSta
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0">
               {/* Order Icon + Status */}
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-2 w-28 flex-shrink-0">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
                   {getStatusIcon(order.status)}
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium text-center w-full ${getStatusColor(order.status)}`}>
                   {formatOrderStatus(order.status)}
                 </span>
               </div>

@@ -609,27 +609,40 @@ function OrderDetailModal({ order, onClose }) {
                   <p className="text-xs text-gray-500">{formatDateTime(order.createdAt)}</p>
                 </div>
               </div>
-              
-              {order.timeline?.map((event, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                   <div className="flex-shrink-0">
-                     {event.status === 'PLACED' || event.status === 'DELIVERED' ? (
-                       <CheckCircle className="h-4 w-4 text-green-500" />
-                     ) : event.status === 'CANCELLED' || event.status === 'FAILED' ? (
-                       <XCircle className="h-4 w-4 text-red-500" />
-                     ) : (
-                       <CheckCircle className="h-4 w-4 text-blue-500" />
-                     )}
-                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{formatOrderStatus(event.status)}</p>
-                    <p className="text-xs text-gray-500">{formatDateTime(event.timestamp)}</p>
-                    {event.note && (
-                      <p className="text-xs text-gray-400 italic">{event.note}</p>
-                    )}
+
+              {/* Render a cleaned timeline: remove consecutive duplicates, show newest 6 events */}
+              {(() => {
+                const events = order.timeline || []
+                // Deduplicate consecutive same-status events
+                const deduped = events.reduce((acc, ev) => {
+                  if (acc.length === 0 || acc[acc.length - 1].status !== ev.status) acc.push(ev)
+                  return acc
+                }, [])
+                // Take the last 6 events (most recent)
+                const latest = deduped.slice(-6).reverse()
+                return latest.map((event, idx) => (
+                  <div key={idx} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      {event.status === 'PLACED' || event.status === 'DELIVERED' ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : event.status === 'CANCELLED' || event.status === 'FAILED' ? (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{formatOrderStatus(event.status)}</p>
+                      <p className="text-xs text-gray-500">{formatDateTime(event.timestamp)}</p>
+                      {event.note && event.note.length <= 120 ? (
+                        <p className="text-xs text-gray-400 italic">{event.note}</p>
+                      ) : event.note ? (
+                        <p className="text-xs text-gray-400 italic">Ghi chú dài, xem chi tiết</p>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              })()}
             </div>
           </div>
         </div>
