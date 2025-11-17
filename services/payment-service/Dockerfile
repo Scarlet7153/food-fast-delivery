@@ -6,8 +6,19 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies with network-resilient options
+# Use --omit=dev (modern replacement for --only=production), disable audit, and prefer offline
+# Retry a few times to mitigate transient network/ECONNRESET errors during docker builds
+RUN sh -c '\
+  set -eux; \
+  MAX_TRIES=5; \
+  for i in $(seq 1 "$MAX_TRIES"); do \
+    npm ci --omit=dev --no-audit --prefer-offline && break || { \
+      echo "npm ci failed (attempt=$i/$MAX_TRIES). Retrying in 3s..."; \
+      sleep 3; \
+    }; \
+  done; \
+  '
 
 # Production stage
 FROM node:18-alpine
