@@ -2,6 +2,9 @@
 REM Fast Food Delivery Drone System - Kubernetes Deployment Script for Windows
 REM For Docker Desktop Kubernetes
 
+REM Change to project root directory (parent of k8s folder)
+cd /d "%~dp0\.."
+
 echo.
 echo ========================================
 echo Fast Food Delivery Drone System
@@ -47,16 +50,16 @@ echo [INFO] Images tagged for Kubernetes
 
 REM Apply namespace
 echo [INFO] Creating namespace...
-kubectl apply -f k8s\namespace.yaml
+kubectl apply -f k8s/namespace.yaml
 
 REM Apply ConfigMap and Secrets
 echo [INFO] Creating ConfigMap and Secrets...
-kubectl apply -f k8s\configmap.yaml
-kubectl apply -f k8s\secrets.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secrets.yaml
 
 REM Apply MongoDB
 echo [INFO] Deploying MongoDB...
-kubectl apply -f k8s\mongodb.yaml
+kubectl apply -f k8s/mongodb.yaml
 
 REM Wait for MongoDB
 echo [INFO] Waiting for MongoDB to be ready...
@@ -64,13 +67,13 @@ timeout /t 30 /nobreak >nul
 
 REM Apply services
 echo [INFO] Deploying microservices...
-kubectl apply -f k8s\user-service.yaml
-kubectl apply -f k8s\restaurant-service.yaml
-kubectl apply -f k8s\order-service.yaml
-kubectl apply -f k8s\drone-service.yaml
-kubectl apply -f k8s\payment-service.yaml
-kubectl apply -f k8s\api-gateway.yaml
-kubectl apply -f k8s\client.yaml
+kubectl apply -f k8s/user-service.yaml
+kubectl apply -f k8s/restaurant-service.yaml
+kubectl apply -f k8s/order-service.yaml
+kubectl apply -f k8s/drone-service.yaml
+kubectl apply -f k8s/payment-service.yaml
+kubectl apply -f k8s/api-gateway.yaml
+kubectl apply -f k8s/client.yaml
 
 REM Wait a bit for deployments
 echo [INFO] Waiting for deployments to be ready...
