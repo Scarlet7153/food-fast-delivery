@@ -23,7 +23,8 @@ const schemas = {
       currency: Joi.string().default('VND').optional()
     }).required(),
     payment: Joi.object({
-      method: Joi.string().valid('MOMO').default('MOMO').optional()
+      method: Joi.string().valid('MOMO').default('MOMO').optional(),
+      status: Joi.string().valid('UNPAID', 'PENDING', 'PAID', 'FAILED', 'REFUNDED').optional()
     }).optional(),
     deliveryAddress: Joi.object({
       text: Joi.string().min(10).max(200).required(),
@@ -64,7 +65,11 @@ const schemas = {
 // Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+    const { error } = schema.validate(req.body, { 
+      abortEarly: false,
+      stripUnknown: true,
+      allowUnknown: false
+    });
     
     if (error) {
       const errors = error.details.map(detail => ({

@@ -43,7 +43,7 @@ spec:
               name: ffdd-secrets
               key: MONGO_ROOT_PASSWORD
         - name: MONGODB_URI
-          value: "mongodb://admin:password123@mongodb:27017/drone?authSource=admin"
+          value: "mongodb+srv://voduytoan:vdt7153@cluster0.w1fx4no.mongodb.net/ffdd_payments?retryWrites=true&w=majority"
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:

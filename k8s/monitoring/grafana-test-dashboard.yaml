@@ -1,0 +1,319 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-test-dashboard
+  namespace: ffdd
+  labels:
+    app: grafana
+data:
+  ci-test-monitoring.json: |
+    {
+      "id": null,
+      "title": "CI Test Monitoring",
+        "tags": ["tests", "ci", "monitoring"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "10s",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Test Pass Rate (%)",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "(sum(test_passes) / sum(test_total)) * 100",
+                "refId": "A",
+                "legendFormat": "Pass Rate"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percent",
+                "min": 0,
+                "max": 100,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "red"},
+                    {"value": 80, "color": "yellow"},
+                    {"value": 95, "color": "green"}
+                  ]
+                }
+              }
+            },
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto"
+            }
+          },
+          {
+            "id": 2,
+            "title": "Total Tests",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(test_total)",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "Failed Tests",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(test_failures)",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "colorMode": "value",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"},
+                    {"value": 1, "color": "yellow"},
+                    {"value": 5, "color": "red"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Passed Tests",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+            "targets": [
+              {
+                "expr": "sum(test_passes)",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "colorMode": "value",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 5,
+            "title": "Test Results by Service",
+            "type": "bargauge",
+            "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "expr": "sum by (service) (test_total)",
+                "refId": "A",
+                "legendFormat": "{{service}}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "custom": {
+                  "displayMode": "gradient",
+                  "orientation": "horizontal"
+                }
+              }
+            }
+          },
+          {
+            "id": 6,
+            "title": "Test Failures by Service",
+            "type": "bargauge",
+            "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "expr": "sum by (service) (test_failures)",
+                "refId": "A",
+                "legendFormat": "{{service}}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short",
+                "colorMode": "value",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"},
+                    {"value": 1, "color": "yellow"},
+                    {"value": 5, "color": "red"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 7,
+            "title": "Test Pass Rate by Service (%)",
+            "type": "bargauge",
+            "gridPos": {"h": 10, "w": 12, "x": 0, "y": 18},
+            "targets": [
+              {
+                "expr": "(sum by (service) (test_passes) / sum by (service) (test_total)) * 100",
+                "refId": "A",
+                "legendFormat": "{{service}}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percent",
+                "min": 0,
+                "max": 100,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "red"},
+                    {"value": 80, "color": "yellow"},
+                    {"value": 95, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 8,
+            "title": "Test Results by Type (Unit vs Integration)",
+            "type": "piechart",
+            "gridPos": {"h": 10, "w": 12, "x": 12, "y": 18},
+            "targets": [
+              {
+                "expr": "sum by (test_type) (test_total)",
+                "refId": "A",
+                "legendFormat": "{{test_type}}"
+              }
+            ],
+            "options": {
+              "legend": {
+                "displayMode": "table",
+                "placement": "right"
+              },
+              "pieType": "pie"
+            }
+          },
+          {
+            "id": 9,
+            "title": "Failed Test Cases",
+            "type": "table",
+            "gridPos": {"h": 10, "w": 24, "x": 0, "y": 28},
+            "targets": [
+              {
+                "expr": "test_results_total{status=\"failed\"}",
+                "refId": "A",
+                "format": "table",
+                "instant": true
+              }
+            ],
+            "transformations": [
+              {
+                "id": "organize",
+                "options": {
+                  "excludeByName": {
+                    "__name__": true,
+                    "Time": true
+                  },
+                  "indexByName": {},
+                  "renameByName": {
+                    "service": "Service",
+                    "test_type": "Type",
+                    "test_suite": "Suite",
+                    "test_name": "Test Name",
+                    "Value": "Count"
+                  }
+                }
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "displayMode": "list",
+                  "inspect": false
+                }
+              }
+            }
+          },
+          {
+            "id": 10,
+            "title": "Test Duration (Latest Run)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38},
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum(test_duration_seconds_bucket) by (le, service))",
+                "refId": "A",
+                "legendFormat": "p95 - {{service}}"
+              },
+              {
+                "expr": "histogram_quantile(0.50, sum(test_duration_seconds_bucket) by (le, service))",
+                "refId": "B",
+                "legendFormat": "p50 - {{service}}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s"
+              }
+            }
+          },
+          {
+            "id": 11,
+            "title": "Test Results (Latest Run)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 38},
+            "targets": [
+              {
+                "expr": "sum(test_passes) by (service)",
+                "refId": "A",
+                "legendFormat": "Passed - {{service}}"
+              },
+              {
+                "expr": "sum(test_failures) by (service)",
+                "refId": "B",
+                "legendFormat": "Failed - {{service}}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "short"
+              }
+            }
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "timepicker": {
+          "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+        },
+        "uid": "ci-test-monitoring"
+      }
+

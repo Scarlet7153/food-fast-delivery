@@ -1,0 +1,114 @@
+const { recordTestResult, recordTestSuiteSummary, pushMetrics } = require('./test-metrics');
+
+class TestMetricsReporter {
+  constructor(globalConfig, options) {
+    this.globalConfig = globalConfig;
+    this.options = options || {};
+    this.serviceName = this.options.serviceName || 'unknown-service';
+    this.pushgatewayUrl = this.options.pushgatewayUrl || process.env.PROMETHEUS_PUSHGATEWAY_URL || 'http://localhost:9091';
+    this.testResults = [];
+  }
+
+  onTestResult(test, testResult, aggregatedResult) {
+    // Determine test type from file path
+    const testType = this._determineTestType(testResult.testFilePath);
+    
+    // Process each test
+    testResult.testResults.forEach((result) => {
+      const testSuite = this._extractTestSuite(result.ancestorTitles);
+      const testName = result.title;
+      const status = result.status === 'passed' ? 'passed' : 'failed';
+      const duration = result.duration || 0;
+      
+      recordTestResult({
+        service: this.serviceName,
+        testType: testType,
+        testSuite: testSuite,
+        testName: testName,
+        status: status,
+        duration: duration,
+        errorMessage: result.failureMessages ? result.failureMessages.join('\n') : null
+      });
+    });
+
+    // Record suite summary - group by test suite
+    const suiteGroups = {};
+    testResult.testResults.forEach((result) => {
+      const suiteName = this._extractTestSuite(result.ancestorTitles);
+      if (!suiteGroups[suiteName]) {
+        suiteGroups[suiteName] = { total: 0, passed: 0, failed: 0 };
+      }
+      suiteGroups[suiteName].total++;
+      if (result.status === 'passed') {
+        suiteGroups[suiteName].passed++;
+      } else {
+        suiteGroups[suiteName].failed++;
+      }
+    });
+
+    // Record summary for each suite
+    Object.entries(suiteGroups).forEach(([suiteName, counts]) => {
+      recordTestSuiteSummary({
+        service: this.serviceName,
+        testType: testType,
+        testSuite: suiteName,
+        total: counts.total || 0,
+        passed: counts.passed || 0,
+        failed: counts.failed || 0
+      });
+    });
+  }
+
+  onRunComplete(contexts, results) {
+    // Push metrics to Pushgateway after all tests complete
+    if (this.pushgatewayUrl && this.pushgatewayUrl !== '') {
+      pushMetrics(
+        this.pushgatewayUrl,
+        `${this.serviceName}-tests`,
+        {
+          instance: process.env.HOSTNAME || 'local',
+          branch: process.env.GIT_BRANCH || 'main',
+          commit: process.env.GIT_COMMIT || 'unknown'
+        }
+      ).catch(err => {
+        console.warn('Failed to push test metrics:', err.message);
+      });
+    }
+  }
+
+  _determineTestType(filePath) {
+    if (!filePath) return 'unknown';
+    
+    // Check if it's an integration test
+    if (filePath.includes('integration') || 
+        filePath.includes('__tests__') && !filePath.includes('app.test.js')) {
+      return 'integration';
+    }
+    
+    // Check if it's a unit test
+    if (filePath.includes('app.test.js') || 
+        filePath.includes('.spec.js') ||
+        filePath.includes('unit')) {
+      return 'unit';
+    }
+    
+    // Default to integration if in __tests__ folder
+    if (filePath.includes('__tests__')) {
+      return 'integration';
+    }
+    
+    return 'unit';
+  }
+
+  _extractTestSuite(ancestorTitles) {
+    if (!ancestorTitles || ancestorTitles.length === 0) {
+      return 'unknown-suite';
+    }
+    
+    // Use the top-level describe block as suite name
+    return ancestorTitles[0] || 'unknown-suite';
+  }
+}
+
+module.exports = TestMetricsReporter;
+

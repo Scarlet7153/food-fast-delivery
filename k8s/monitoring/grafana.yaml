@@ -83,6 +83,8 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboards
               mountPath: /var/lib/grafana/dashboards
+            - name: test-dashboards
+              mountPath: /var/lib/grafana/dashboards/test
           resources:
             requests:
               cpu: 100m
@@ -115,6 +117,9 @@ spec:
         - name: dashboards
           configMap:
             name: grafana-dashboards
+        - name: test-dashboards
+          configMap:
+            name: grafana-test-dashboard
 ---
 # Grafana Service
 apiVersion: v1

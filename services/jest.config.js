@@ -13,10 +13,10 @@ module.exports = {
   reporters: [
     'default',
     [
-      path.join(__dirname, '../src/utils/jest-test-reporter.js'),
+      path.join(__dirname, 'src/utils/jest-test-reporter.js'),
       {
-        serviceName: 'drone-service',
-        pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || ''
+        serviceName: '',
+        pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || 'http://localhost:9091'
       }
     ]
   ]

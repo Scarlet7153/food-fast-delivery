@@ -57,5 +57,12 @@ describe('User Service App', () => {
       expect(response.body).toHaveProperty('path');
     });
   });
+  //test fail
+  // fail.test.js
+  // describe("Test fail", () => {
+  //   test("test", () => {
+  //     expect(1).toBe(2);
+  //   });
+  // });
 });
 

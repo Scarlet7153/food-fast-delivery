@@ -64,7 +64,11 @@ describe('Order Service - Order Management', () => {
           }
         });
       }
-      if (url.includes('/api/restaurants/') && !url.includes('/owner/')) {
+      // Match restaurant endpoint: /api/restaurants/{id} but not /owner/ or /internal/
+      if (url.includes('/api/restaurants/') && 
+          !url.includes('/owner/') && 
+          !url.includes('/internal/') &&
+          !url.includes('/rating')) {
         // Use a consistent menuItemId for all tests
         const menuItemId = new mongoose.Types.ObjectId('507f1f77bcf86cd799439011');
         return Promise.resolve({
@@ -72,7 +76,11 @@ describe('Order Service - Order Management', () => {
             success: true,
             data: {
               restaurant: {
-                ...mockRestaurant.toObject(),
+                _id: mockRestaurant._id.toString(),
+                name: mockRestaurant.name,
+                description: mockRestaurant.description,
+                imageUrl: mockRestaurant.imageUrl,
+                phone: mockRestaurant.phone,
                 active: true,
                 approved: true
               },
@@ -89,7 +97,7 @@ describe('Order Service - Order Management', () => {
           }
         });
       }
-      return Promise.reject(new Error('Unexpected URL'));
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
   }, 30000);
 
@@ -110,6 +118,54 @@ describe('Order Service - Order Management', () => {
   beforeEach(async () => {
     await Order.deleteMany({});
     authToken = 'mock-token';
+    // Reset axios mocks
+    axios.get.mockClear();
+    // Re-setup default mock implementation
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/api/user/verify')) {
+        return Promise.resolve({
+          data: {
+            success: true,
+            data: {
+              user: mockUser
+            }
+          }
+        });
+      }
+      // Match restaurant endpoint: /api/restaurants/{id} but not /owner/ or /internal/
+      if (url.includes('/api/restaurants/') && 
+          !url.includes('/owner/') && 
+          !url.includes('/internal/') &&
+          !url.includes('/rating')) {
+        const menuItemId = new mongoose.Types.ObjectId('507f1f77bcf86cd799439011');
+        return Promise.resolve({
+          data: {
+            success: true,
+            data: {
+              restaurant: {
+                _id: mockRestaurant._id.toString(),
+                name: mockRestaurant.name,
+                description: mockRestaurant.description,
+                imageUrl: mockRestaurant.imageUrl,
+                phone: mockRestaurant.phone,
+                active: true,
+                approved: true
+              },
+              menuItems: [
+                {
+                  _id: menuItemId.toString(),
+                  name: 'Bánh Mỳ',
+                  price: 25000,
+                  available: true,
+                  imageUrl: ''
+                }
+              ]
+            }
+          }
+        });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
   });
 
   describe('POST /api/orders - Create Order', () => {
@@ -172,11 +228,18 @@ describe('Order Service - Order Management', () => {
 
     it('TC2: Should reject order creation for inactive restaurant', async () => {
       const inactiveRestaurant = {
-        ...mockRestaurant,
-        active: false
+        _id: mockRestaurant._id.toString(),
+        name: mockRestaurant.name,
+        description: mockRestaurant.description,
+        imageUrl: mockRestaurant.imageUrl,
+        phone: mockRestaurant.phone,
+        active: false,
+        approved: true
       };
 
-      axios.get.mockImplementationOnce((url) => {
+      // Reset and override the mock implementation for this test
+      axios.get.mockReset();
+      axios.get.mockImplementation((url) => {
         if (url.includes('/api/user/verify')) {
           return Promise.resolve({
             data: {
@@ -187,7 +250,11 @@ describe('Order Service - Order Management', () => {
             }
           });
         }
-        if (url.includes('/api/restaurants/')) {
+        // Match restaurant endpoint: /api/restaurants/{id} but not /owner/ or /internal/
+        if (url.includes('/api/restaurants/') && 
+            !url.includes('/owner/') && 
+            !url.includes('/internal/') &&
+            !url.includes('/rating')) {
           return Promise.resolve({
             data: {
               success: true,
@@ -198,6 +265,7 @@ describe('Order Service - Order Management', () => {
             }
           });
         }
+        return Promise.reject(new Error(`Unexpected URL: ${url}`));
       });
 
       const orderData = {

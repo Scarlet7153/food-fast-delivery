@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
@@ -7,5 +9,15 @@ module.exports = {
     '!src/**/*.spec.js'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html']
+  coverageReporters: ['text', 'lcov', 'html'],
+  reporters: [
+    'default',
+    [
+      path.join(__dirname, '../src/utils/jest-test-reporter.js'),
+      {
+        serviceName: 'user-service',
+        pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || ''
+      }
+    ]
+  ]
 };

@@ -348,6 +348,7 @@ orderSchema.methods.updateStatus = function(newStatus, updatedBy, note) {
 // Instance method to check if status transition is valid
 orderSchema.methods.canTransitionTo = function(newStatus) {
   const validTransitions = {
+    PENDING_PAYMENT: ['PLACED', 'CANCELLED'], // After payment confirmation, can move to PLACED
     PLACED: ['CONFIRMED', 'COOKING', 'CANCELLED'], // Allow direct transition to COOKING (will auto-add CONFIRMED to timeline)
     CONFIRMED: ['COOKING', 'READY_FOR_PICKUP', 'CANCELLED'], // Allow direct transition to READY_FOR_PICKUP
     COOKING: ['READY_FOR_PICKUP', 'CANCELLED'],
