@@ -11,7 +11,8 @@ for /f "tokens=*" %%i in ('docker images --format "{{.Repository}}:{{.Tag}}" ^| 
 docker image prune -f
 docker container prune -f
 
-cd /d C:\Users\Scarlet\Desktop\CNPM\food-fast-delivery
+rem use the script directory as project root
+pushd "%~dp0" >nul
 docker-compose build --no-cache
 
 docker tag food-fast-delivery-api-gateway:latest ffdd-api-gateway:latest 2>nul
@@ -45,5 +46,7 @@ timeout /t 15 /nobreak >nul
 
 kubectl get pods -n ffdd
 kubectl get svc -n ffdd
+
+popd >nul
 
 pause

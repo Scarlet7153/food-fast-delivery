@@ -15,7 +15,8 @@ if %errorlevel% neq 0 (
 )
 
 set PROMETHEUS_PUSHGATEWAY_URL=http://localhost:9091
-cd /d C:\Users\Scarlet\Desktop\CNPM\food-fast-delivery
+rem use the script directory as project root
+pushd "%~dp0" >nul
 
 cd services\user-service
 call npm test
@@ -41,4 +42,5 @@ cd services\api-gateway
 call npm test
 cd ..\..
 
+popd >nul
 pause
