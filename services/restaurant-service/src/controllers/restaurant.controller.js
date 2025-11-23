@@ -279,6 +279,10 @@ const getRestaurantByOwner = async (req, res) => {
 const createRestaurant = async (req, res) => {
   try {
     const restaurantData = req.body;
+    // If authenticated, prefer ownerUserId from token
+    if ((!restaurantData.ownerUserId || restaurantData.ownerUserId === '') && req.user && req.user._id) {
+      restaurantData.ownerUserId = req.user._id;
+    }
     
     // Check if owner already has a restaurant
     const existingRestaurant = await Restaurant.findOne({ ownerUserId: restaurantData.ownerUserId });
@@ -301,7 +305,11 @@ const createRestaurant = async (req, res) => {
       }
     }
     
-    const restaurant = new Restaurant(restaurantData);
+  // Ensure defaults
+  if (typeof restaurantData.approved === 'undefined') restaurantData.approved = false;
+  if (typeof restaurantData.active === 'undefined') restaurantData.active = false;
+
+  const restaurant = new Restaurant(restaurantData);
     await restaurant.save();
     
     logger.info(`New restaurant created: ${restaurant.name} by user ${restaurantData.ownerUserId}`);
@@ -766,18 +774,18 @@ const toggleRestaurantStatus = async (req, res) => {
       });
     }
 
-    // Toggle the isOpen status
-    restaurant.isOpen = !restaurant.isOpen;
+    // Toggle the active status (open/close availability)
+    restaurant.active = !restaurant.active;
     await restaurant.save();
 
-    logger.info(`Restaurant ${restaurant.name} is now ${restaurant.isOpen ? 'OPEN' : 'CLOSED'}`);
+    logger.info(`Restaurant ${restaurant.name} active status is now ${restaurant.active}`);
 
     res.json({
       success: true,
-      message: `Cửa hàng đã ${restaurant.isOpen ? 'mở cửa' : 'đóng cửa'}`,
+      message: `Cửa hàng đã ${restaurant.active ? 'mở cửa' : 'đóng cửa'}`,
       data: {
         restaurant,
-        isOpen: restaurant.isOpen
+        active: restaurant.active
       }
     });
 

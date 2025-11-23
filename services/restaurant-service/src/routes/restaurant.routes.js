@@ -22,7 +22,8 @@ router.get('/:restaurantId/menu/popular', menuController.getPopularMenuItems);
 router.get('/menu/search', menuController.searchMenuItems);
 
 // Protected routes (Restaurant owners) - continued
-router.post('/', validate(schemas.createRestaurant), restaurantController.createRestaurant);
+// Creating a restaurant requires authentication so ownerUserId can be derived from the token
+router.post('/', auth, requireRole('restaurant'), validate(schemas.createRestaurant), restaurantController.createRestaurant);
 router.put('/:id', auth, requireRole('restaurant'), validate(schemas.updateRestaurant), restaurantController.updateRestaurant);
 router.post('/:restaurantId/menu', auth, requireRole('restaurant'), validate(schemas.createMenuItem), menuController.createMenuItem);
 router.put('/menu/:id', auth, requireRole('restaurant'), validate(schemas.updateMenuItem), menuController.updateMenuItem);

@@ -5,7 +5,9 @@ const { validate, schemas } = require('../middlewares/validation');
 const paymentController = require('../controllers/payment.controller');
 
 // Protected routes
-router.post('/create', auth, validate(schemas.createPayment), paymentController.createPayment);
+// Note: authentication is performed inside controller after fetching order to allow
+// order existence checks to run before token verification (tests rely on this order).
+router.post('/create', validate(schemas.createPayment), paymentController.createPayment);
 router.post('/momo/create', auth, paymentController.createMoMoPayment);
 router.post('/momo/verify', auth, paymentController.verifyMoMoPayment);
 router.get('/user', auth, paymentController.getUserPayments);

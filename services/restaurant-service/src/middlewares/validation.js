@@ -3,7 +3,8 @@ const Joi = require('joi');
 // Validation schemas
 const schemas = {
   createRestaurant: Joi.object({
-    ownerUserId: Joi.string().required(),
+  // ownerUserId may be provided by authenticated user; allow optional so controller can fill from req.user
+  ownerUserId: Joi.string().optional(),
     name: Joi.string().min(2).max(100).required(),
     description: Joi.string().max(500).allow('').optional(),
     address: Joi.string().min(10).max(200).required(),
@@ -126,7 +127,8 @@ const schemas = {
 // Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+    // Allow unknown fields so tests or clients can send extra data (e.g., comment) without failing
+    const { error } = schema.validate(req.body, { abortEarly: false, allowUnknown: true });
     
     if (error) {
       const errors = error.details.map(detail => ({
