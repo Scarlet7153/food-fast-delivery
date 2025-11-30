@@ -237,6 +237,34 @@ data:
               service: 'pushgateway'
               job: 'pushgateway'
 
+      # WebsiteTiemBanh - Kubernetes namespace scrape (if deployed to namespace 'web-tb')
+      - job_name: 'web-tb-services'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - web-tb
+        relabel_configs:
+          # Scrape services which annotate prometheus.io/scrape=true or all services (regex: .*)
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __metrics_port
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # WebsiteTiemBanh - static targets for local/dev testing
+      - job_name: 'web-tb-static'
+        static_configs:
+          - targets: ['localhost:4000']
+            labels:
+              service: 'website-tb-backend'
+              environment: 'local'
+
       # MongoDB - COMMENTED OUT (needs MongoDB exporter)
       # - job_name: 'mongodb'
       #   kubernetes_sd_configs:

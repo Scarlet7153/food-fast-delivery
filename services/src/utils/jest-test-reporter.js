@@ -62,15 +62,17 @@ class TestMetricsReporter {
   onRunComplete(contexts, results) {
     // Push metrics to Pushgateway after all tests complete
     if (this.pushgatewayUrl && this.pushgatewayUrl !== '') {
-      pushMetrics(
-        this.pushgatewayUrl,
-        `${this.serviceName}-tests`,
-        {
-          instance: process.env.HOSTNAME || 'local',
-          branch: process.env.GIT_BRANCH || 'main',
-          commit: process.env.GIT_COMMIT || 'unknown'
-        }
-      ).catch(err => {
+      // Use a common job name 'tests' and include service as a grouping label so Grafana
+      // can filter metrics by the 'service' label. This avoids grouping all services under
+      // a single job and allows per-service dashboards.
+      const grouping = {
+        service: this.serviceName,
+        instance: process.env.HOSTNAME || 'local',
+        branch: process.env.GIT_BRANCH || 'main',
+        commit: process.env.GIT_COMMIT || 'unknown'
+      };
+
+      pushMetrics(this.pushgatewayUrl, 'tests', grouping).catch(err => {
         console.warn('Failed to push test metrics:', err.message);
       });
     }

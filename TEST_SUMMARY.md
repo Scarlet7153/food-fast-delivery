@@ -168,25 +168,30 @@ Integration tests kiểm tra nhiều component làm việc cùng nhau, thường
 
 ## 📊 Thống Kê
 
-### Tổng số test cases:
-- **Unit Tests**: ~12 test cases (6 services × 2 test cases mỗi service)
-- **Integration Tests**: ~52 test cases
-  - Order Service: 11 test cases
-  - User Service: 7 test cases
-  - Drone Service: 14 test cases
-  - API Gateway: 20 test cases
+### Kết quả chạy thực tế (theo `test.bat`)
 
-### Tổng số file test:
-- **Unit Test Files**: 8 files (6 app.test.js + 2 empty files)
-- **Integration Test Files**: 4 files
+Per-service results from the latest run:
 
-### Coverage theo service:
-- ✅ **User Service**: Có cả unit và integration tests
-- ✅ **Order Service**: Có cả unit và integration tests
-- ✅ **Drone Service**: Có cả unit và integration tests
-- ✅ **API Gateway**: Có cả unit và integration tests
-- ⚠️ **Restaurant Service**: Chỉ có unit tests (app.test.js), thiếu integration tests
-- ⚠️ **Payment Service**: Chỉ có unit tests (app.test.js), thiếu integration tests
+- User Service: Test Suites: 4 passed, Tests: 57 passed, 57 total
+- Restaurant Service: Test Suites: 6 passed, Tests: 61 passed, 61 total
+- Payment Service: Test Suites: 3 passed, Tests: 19 passed, 19 total
+- Order Service: Test Suites: 4 passed, Tests: 44 passed, 44 total
+- Drone Service: Test Suites: 2 passed, 1 failed, Tests: 23 passed, 1 failed, 24 total
+- API Gateway: Test Suites: 2 passed, Tests: 22 passed, 22 total
+
+Total tests executed: 227 tests (223 passed, 1 failed, 3 skipped/other)
+
+Notes:
+- The only failing test from this run is in Drone Service: `src/__tests__/drone.test.js` → "PATCH /api/drones/missions/:id/status - Update Mission Status › TC14". The test expected HTTP 200 but the service returned HTTP 400. Logs indicate the test creates mission fixtures before sending the PATCH; debugging the controller/validation for mission status update is the next step.
+- After each service test run, metrics were pushed to the local Prometheus Pushgateway at `http://localhost:9091/metrics/job/tests` with a `service` grouping label.
+
+### Coverage theo service (actual run)
+- ✅ User Service: unit + integration
+- ✅ Order Service: unit + integration
+- ✅ Drone Service: unit + integration (1 failing integration test)
+- ✅ API Gateway: unit + integration
+- ⚠️ Restaurant Service: unit tests present (no integration tests executed)
+- ⚠️ Payment Service: unit tests present (no integration tests executed)
 
 ---
 

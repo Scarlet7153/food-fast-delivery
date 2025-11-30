@@ -1,0 +1,122 @@
+# ============================================
+# XÓA VÀ BUILD LẠI TỪ ĐẦU
+# ============================================
+
+Write-Host "`n🗑️  BƯỚC 1: Xóa Kubernetes resources..." -ForegroundColor Red
+kubectl delete all --all -n ffdd 2>$null
+kubectl delete configmap --all -n ffdd 2>$null
+kubectl delete secret --all -n ffdd 2>$null
+kubectl delete pvc --all -n ffdd 2>$null
+kubectl delete namespace ffdd 2>$null
+Start-Sleep -Seconds 5
+
+Write-Host "`n🗑️  BƯỚC 2: Xóa Docker images..." -ForegroundColor Red
+docker images --format "{{.Repository}}:{{.Tag}}" | Select-String -Pattern "ffdd-|food-fast-delivery-" | ForEach-Object { docker rmi $_ -f 2>$null }
+docker image prune -f
+docker container prune -f
+
+Write-Host "`n🔨 BƯỚC 3: Build Docker images..." -ForegroundColor Cyan
+rem use the script directory as project root
+Push-Location $PSScriptRoot
+docker-compose build --no-cache
+
+Write-Host "`n🏷️  BƯỚC 4: Tag images..." -ForegroundColor Cyan
+docker tag food-fast-delivery-api-gateway:latest ffdd-api-gateway:latest 2>$null
+docker tag food-fast-delivery-user-service:latest ffdd-user-service:latest 2>$null
+docker tag food-fast-delivery-restaurant-service:latest ffdd-restaurant-service:latest 2>$null
+docker tag food-fast-delivery-order-service:latest ffdd-order-service:latest 2>$null
+docker tag food-fast-delivery-payment-service:latest ffdd-payment-service:latest 2>$null
+docker tag food-fast-delivery-drone-service:latest ffdd-drone-service:latest 2>$null
+docker tag food-fast-delivery-client:latest ffdd-client:latest 2>$null
+
+Write-Host "`n📦 BƯỚC 5: Deploy Kubernetes..." -ForegroundColor Green
+
+# Tạo namespace
+kubectl create namespace ffdd
+
+# Deploy ConfigMap và Secrets
+Write-Host "`n📝 Deploying ConfigMap and Secrets..." -ForegroundColor Yellow
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secrets.yaml
+
+# Deploy MongoDB và đợi sẵn sàng
+Write-Host "`n🍃 Deploying MongoDB..." -ForegroundColor Yellow
+kubectl apply -f k8s/mongodb.yaml
+kubectl wait --for=condition=ready pod -l app=mongodb -n ffdd --timeout=120s
+
+# Deploy Services
+Write-Host "`n🚀 Deploying Services..." -ForegroundColor Yellow
+kubectl apply -f k8s/user-service.yaml
+kubectl apply -f k8s/restaurant-service.yaml
+kubectl apply -f k8s/order-service.yaml
+kubectl apply -f k8s/payment-service.yaml
+kubectl apply -f k8s/drone-service.yaml
+kubectl apply -f k8s/api-gateway.yaml
+kubectl apply -f k8s/client.yaml
+
+# Deploy Monitoring - Phải deploy ConfigMaps trước khi deploy Grafana
+Write-Host "`n📊 Deploying Monitoring Stack..." -ForegroundColor Yellow
+kubectl apply -f k8s/monitoring/prometheus-config.yaml
+kubectl apply -f k8s/monitoring/prometheus.yaml
+kubectl apply -f k8s/monitoring/prometheus-pushgateway.yaml
+
+# Deploy Grafana ConfigMaps TRƯỚC khi deploy Grafana (quan trọng!)
+Write-Host "`n📋 Deploying Grafana ConfigMaps..." -ForegroundColor Yellow
+kubectl apply -f k8s/monitoring/grafana-dashboard.yaml
+kubectl apply -f k8s/monitoring/grafana-test-dashboard.yaml
+
+# Deploy Grafana sau khi ConfigMaps đã sẵn sàng
+Write-Host "`n📈 Deploying Grafana..." -ForegroundColor Yellow
+kubectl apply -f k8s/monitoring/grafana.yaml
+
+Write-Host "`n⏳ Đợi services khởi động..." -ForegroundColor Yellow
+Start-Sleep -Seconds 15
+
+Write-Host "`n✅ HOÀN TẤT! Kiểm tra status:" -ForegroundColor Green
+Write-Host "`n📊 Pod Status:" -ForegroundColor Cyan
+kubectl get pods -n ffdd
+
+Write-Host "`n🌐 Services:" -ForegroundColor Cyan
+kubectl get svc -n ffdd
+
+Write-Host "`n💡 Access URLs:" -ForegroundColor Yellow
+Write-Host "   - Grafana: http://localhost:31000 (admin/admin123)" -ForegroundColor Green
+Write-Host "   - Prometheus: http://localhost:30090" -ForegroundColor Green
+Write-Host "   - Pushgateway: http://localhost:30091" -ForegroundColor Green
+Write-Host "   - API Gateway: http://localhost:30001" -ForegroundColor Green
+
+
+-------------test-------------------------
+
+# Set Pushgateway URL
+$env:PROMETHEUS_PUSHGATEWAY_URL="http://localhost:9091"
+
+# Chạy tests cho từng service
+cd services\user-service
+npm test
+cd ..\..
+
+cd services\restaurant-service
+npm test
+cd ..\..
+
+cd services\payment-service
+npm test
+cd ..\..
+
+cd services\order-service
+npm test
+cd ..\..
+
+cd services\drone-service
+npm test
+cd ..\..
+
+cd services\api-gateway
+npm test
+cd ..\..
+
+
+Pop-Location
+
+
