@@ -1,12 +1,15 @@
 @echo off
 
-kubectl get svc prometheus-pushgateway -n ffdd >nul 2>&1
-if %errorlevel% neq 0 (
+REM Expect prometheus-pushgateway to be deployed in namespace 'monitoring'
+kubectl get svc prometheus-pushgateway -n monitoring >nul 2>&1
+if %errorlevel% EQU 0 (
+    echo [INFO] Found prometheus-pushgateway in namespace monitoring
+    start "Pushgateway Port Forward" cmd /c "kubectl port-forward svc/prometheus-pushgateway 9091:9091 -n monitoring"
+) else (
+    echo [ERROR] prometheus-pushgateway not found in namespace 'monitoring'
     pause
     exit /b 1
 )
-
-start "Pushgateway Port Forward" cmd /c "kubectl port-forward svc/prometheus-pushgateway 9091:9091 -n ffdd"
 timeout /t 5 /nobreak >nul
 
 curl -s http://localhost:9091/metrics >nul 2>&1

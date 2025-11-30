@@ -18,11 +18,11 @@ echo "Running from: $(pwd)"
 echo ""
 
 echo "[1/5] Checking namespace..."
-if ! kubectl get namespace ffdd &> /dev/null; then
-    echo "Namespace ffdd does not exist. Creating..."
-    kubectl create namespace ffdd
+if ! kubectl get namespace monitoring &> /dev/null; then
+    echo "Namespace monitoring does not exist. Creating..."
+    kubectl create namespace monitoring
 else
-    echo "Namespace ffdd already exists."
+    echo "Namespace monitoring already exists."
 fi
 echo ""
 
@@ -64,15 +64,15 @@ echo "========================================"
 echo ""
 
 echo "Waiting for Prometheus..."
-kubectl wait --for=condition=ready pod -l app=prometheus -n ffdd --timeout=120s
+kubectl wait --for=condition=ready pod -l app=prometheus -n monitoring --timeout=120s
 if [ $? -ne 0 ]; then
-    echo "Warning: Prometheus pod is not ready yet. Check status with: kubectl get pods -n ffdd"
+    echo "Warning: Prometheus pod is not ready yet. Check status with: kubectl get pods -n monitoring"
 fi
 
 echo "Waiting for Grafana..."
-kubectl wait --for=condition=ready pod -l app=grafana -n ffdd --timeout=120s
+kubectl wait --for=condition=ready pod -l app=grafana -n monitoring --timeout=120s
 if [ $? -ne 0 ]; then
-    echo "Warning: Grafana pod is not ready yet. Check status with: kubectl get pods -n ffdd"
+    echo "Warning: Grafana pod is not ready yet. Check status with: kubectl get pods -n monitoring"
 fi
 echo ""
 
@@ -89,12 +89,12 @@ echo "  Username: admin"
 echo "  Password: admin123"
 echo ""
 echo "Check status:"
-echo "  kubectl get pods -n ffdd -l 'app in (prometheus,grafana)'"
-echo "  kubectl get svc -n ffdd -l 'app in (prometheus,grafana)'"
+echo "  kubectl get pods -n monitoring -l 'app in (prometheus,grafana)'"
+echo "  kubectl get svc -n monitoring -l 'app in (prometheus,grafana)'"
 echo ""
 echo "View logs:"
-echo "  kubectl logs -f -l app=prometheus -n ffdd"
-echo "  kubectl logs -f -l app=grafana -n ffdd"
+echo "  kubectl logs -f -l app=prometheus -n monitoring"
+echo "  kubectl logs -f -l app=grafana -n monitoring"
 echo ""
 echo "========================================"
 

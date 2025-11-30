@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-pushgateway
-  namespace: ffdd
+  namespace: monitoring
   labels:
     app: prometheus-pushgateway
 spec:
@@ -48,7 +48,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-pushgateway
-  namespace: ffdd
+  namespace: monitoring
   labels:
     app: prometheus-pushgateway
 spec:

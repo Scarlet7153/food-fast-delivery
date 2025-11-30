@@ -48,8 +48,15 @@ docker tag food-fast-delivery-payment-service:latest ffdd-payment-service:latest
 docker tag food-fast-delivery-client:latest ffdd-client:latest 2>nul
 echo [INFO] Images tagged for Kubernetes
 
-REM Apply namespace
-echo [INFO] Creating namespace...
+REM Parse command line argument: app (default) | monitoring | all
+set MODE=%1
+if "%MODE%"=="" set MODE=app
+
+if /I "%MODE%"=="monitoring" goto :deploy_monitoring
+if /I "%MODE%"=="all" goto :deploy_all
+
+REM Default: deploy app only
+echo [INFO] Creating namespace for app...
 kubectl apply -f k8s/namespace.yaml
 
 REM Apply ConfigMap and Secrets
@@ -83,6 +90,44 @@ REM Show status
 echo.
 echo ========================================
 echo Deployment completed!
+echo ========================================
+echo.
+echo Service Status:
+kubectl get pods -n ffdd
+kubectl get services -n ffdd
+
+goto :eof
+
+:deploy_monitoring
+echo [INFO] Deploying monitoring only (namespace: monitoring)...
+pushd "%~dp0\monitoring" >nul
+call deploy-monitoring.bat
+popd >nul
+goto :eof
+
+:deploy_all
+echo [INFO] Deploying app and monitoring (app -> ffdd, monitoring -> monitoring)...
+REM deploy app (namespace ffdd)
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secrets.yaml
+kubectl apply -f k8s/mongodb.yaml
+kubectl apply -f k8s/user-service.yaml
+kubectl apply -f k8s/restaurant-service.yaml
+kubectl apply -f k8s/order-service.yaml
+kubectl apply -f k8s/drone-service.yaml
+kubectl apply -f k8s/payment-service.yaml
+kubectl apply -f k8s/api-gateway.yaml
+kubectl apply -f k8s/client.yaml
+
+REM deploy monitoring
+pushd "%~dp0\monitoring" >nul
+call deploy-monitoring.bat
+popd >nul
+
+echo.
+echo ========================================
+echo All deployments completed!
 echo ========================================
 echo.
 echo Service Status:

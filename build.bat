@@ -5,6 +5,12 @@ kubectl delete configmap --all -n ffdd 2>nul
 kubectl delete secret --all -n ffdd 2>nul
 kubectl delete pvc --all -n ffdd 2>nul
 kubectl delete namespace ffdd 2>nul
+
+kubectl delete all --all -n monitoring 2>nul
+kubectl delete configmap --all -n monitoring 2>nul
+kubectl delete secret --all -n monitoring 2>nul
+kubectl delete pvc --all -n monitoring 2>nul
+kubectl delete namespace monitoring 2>nul
 timeout /t 5 /nobreak >nul
 
 for /f "tokens=*" %%i in ('docker images --format "{{.Repository}}:{{.Tag}}" ^| findstr /i "ffdd- food-fast-delivery-"') do docker rmi %%i -f 2>nul
@@ -46,6 +52,17 @@ timeout /t 15 /nobreak >nul
 
 kubectl get pods -n ffdd
 kubectl get svc -n ffdd
+
+REM Ensure monitoring namespace exists and apply monitoring manifests there
+echo [INFO] Ensuring monitoring namespace exists...
+kubectl create namespace monitoring 2>nul || echo Namespace monitoring already exists
+echo [INFO] Applying monitoring manifests into namespace 'monitoring'...
+kubectl apply -f k8s\monitoring\prometheus-config.yaml
+kubectl apply -f k8s\monitoring\prometheus.yaml
+kubectl apply -f k8s\monitoring\prometheus-pushgateway.yaml
+kubectl apply -f k8s\monitoring\grafana-dashboard.yaml
+kubectl apply -f k8s\monitoring\grafana-test-dashboard.yaml
+kubectl apply -f k8s\monitoring\grafana.yaml
 
 popd >nul
 

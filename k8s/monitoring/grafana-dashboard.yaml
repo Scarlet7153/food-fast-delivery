@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards
-  namespace: ffdd
+  namespace: monitoring
   labels:
     app: grafana
 data:

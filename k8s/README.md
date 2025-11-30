@@ -27,29 +27,45 @@ k8s/
 
 ### Windows:
 ```cmd
-k8s\deploy.bat
+REM Default deploys application (app namespace `ffdd`)
+k8s\deploy.bat [app|monitoring|all]
+
+:: Examples:
+:: k8s\deploy.bat            -> deploy app (default)
+:: k8s\deploy.bat monitoring -> deploy monitoring only (namespace: monitoring)
+:: k8s\deploy.bat all        -> deploy both app and monitoring
 ```
 
 ### Linux/Mac:
 ```bash
 chmod +x k8s/deploy.sh
-./k8s/deploy.sh
+./k8s/deploy.sh [app|monitoring|all]
+
+# Examples:
+# ./k8s/deploy.sh            -> deploy app (default)
+# ./k8s/deploy.sh monitoring -> deploy monitoring only (namespace: monitoring)
+# ./k8s/deploy.sh all        -> deploy both app and monitoring
 ```
 
 ## 📝 Manual Deploy
 
+This repo separates application resources and monitoring into two namespaces:
+
+- Application namespace: `ffdd` (default for app resources)
+- Monitoring namespace: `monitoring` (Prometheus & Grafana)
+
+Deploy application resources into the `ffdd` namespace:
+
 ```bash
-# 1. Create namespace
+# 1. Create application namespace
 kubectl apply -f k8s/namespace.yaml
 
-# 2. Create ConfigMap and Secrets
+# 2. Create ConfigMap and Secrets in app namespace
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/secrets.yaml
 
-# 3. Deploy MongoDB
+# 3. Deploy MongoDB and app services (namespace: ffdd)
 kubectl apply -f k8s/mongodb.yaml
-
-# 4. Deploy all services
 kubectl apply -f k8s/user-service.yaml
 kubectl apply -f k8s/restaurant-service.yaml
 kubectl apply -f k8s/order-service.yaml
@@ -59,17 +75,29 @@ kubectl apply -f k8s/api-gateway.yaml
 kubectl apply -f k8s/client.yaml
 ```
 
+Deploy monitoring to its own namespace so it can be managed/scaled independently:
+
+```bash
+# Deploy monitoring (Prometheus + Grafana) into namespace 'monitoring'
+kubectl apply -k k8s/monitoring
+```
+
 ## 🔍 Kiểm tra
 
 ```bash
-# Xem pods
+# Xem pods (app)
 kubectl get pods -n ffdd
+
+# Xem pods (monitoring)
+kubectl get pods -n monitoring
 
 # Xem services
 kubectl get services -n ffdd
+kubectl get services -n monitoring
 
 # Xem logs
 kubectl logs -f <pod-name> -n ffdd
+kubectl logs -f <pod-name> -n monitoring
 ```
 
 ## 📊 Monitoring
@@ -96,8 +124,11 @@ k8s\monitoring\deploy-monitoring.bat
 ## 🗑️ Xóa
 
 ```bash
-# Xóa tất cả
+# Xóa tất cả (app)
 kubectl delete namespace ffdd
+
+# Xóa monitoring only
+kubectl delete namespace monitoring
 ```
 
 Xem thêm chi tiết trong [KUBERNETES.md](../KUBERNETES.md)

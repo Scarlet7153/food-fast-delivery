@@ -95,7 +95,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
-  namespace: ffdd
+  namespace: monitoring
 spec:
   template:
     metadata:

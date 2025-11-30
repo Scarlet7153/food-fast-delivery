@@ -187,7 +187,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: user-service
-  namespace: ffdd
+  namespace: monitoring
 spec:
   template:
     metadata:
