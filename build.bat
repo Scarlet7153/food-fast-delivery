@@ -29,7 +29,8 @@ docker tag food-fast-delivery-payment-service:latest ffdd-payment-service:latest
 docker tag food-fast-delivery-drone-service:latest ffdd-drone-service:latest 2>nul
 docker tag food-fast-delivery-client:latest ffdd-client:latest 2>nul
 
-kubectl create namespace ffdd
+rem create ffdd namespace if missing (idempotent)
+kubectl get namespace ffdd 1>nul 2>nul || kubectl create namespace ffdd
 kubectl apply -f k8s\configmap.yaml
 kubectl apply -f k8s\secrets.yaml
 kubectl apply -f k8s\mongodb.yaml
@@ -41,6 +42,8 @@ kubectl apply -f k8s\payment-service.yaml
 kubectl apply -f k8s\drone-service.yaml
 kubectl apply -f k8s\api-gateway.yaml
 kubectl apply -f k8s\client.yaml
+rem Ensure monitoring namespace exists before applying monitoring manifests
+kubectl get namespace monitoring 1>nul 2>nul || kubectl create namespace monitoring
 kubectl apply -f k8s\monitoring\prometheus-config.yaml
 kubectl apply -f k8s\monitoring\prometheus.yaml
 kubectl apply -f k8s\monitoring\prometheus-pushgateway.yaml
@@ -53,17 +56,6 @@ timeout /t 15 /nobreak >nul
 kubectl get pods -n ffdd
 kubectl get svc -n ffdd
 
-REM Ensure monitoring namespace exists and apply monitoring manifests there
-echo [INFO] Ensuring monitoring namespace exists...
-kubectl create namespace monitoring 2>nul || echo Namespace monitoring already exists
-echo [INFO] Applying monitoring manifests into namespace 'monitoring'...
-kubectl apply -f k8s\monitoring\prometheus-config.yaml
-kubectl apply -f k8s\monitoring\prometheus.yaml
-kubectl apply -f k8s\monitoring\prometheus-pushgateway.yaml
-kubectl apply -f k8s\monitoring\grafana-dashboard.yaml
-kubectl apply -f k8s\monitoring\grafana-test-dashboard.yaml
-kubectl apply -f k8s\monitoring\grafana.yaml
+echo [INFO] Monitoring manifests applied to namespace 'monitoring'.
 
 popd >nul
-
-pause

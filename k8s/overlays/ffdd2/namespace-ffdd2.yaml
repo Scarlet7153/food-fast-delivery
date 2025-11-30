@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ffdd2
+  labels:
+    name: ffdd2
+    app: food-fast-delivery

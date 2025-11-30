@@ -66,6 +66,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           # Only scrape pods with annotation: prometheus.io/scrape: "true"
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -122,6 +123,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
@@ -141,6 +143,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
@@ -160,6 +163,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
@@ -179,6 +183,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
@@ -198,6 +203,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
@@ -217,6 +223,7 @@ data:
             namespaces:
               names:
                 - ffdd
+                - ffdd2
         relabel_configs:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep

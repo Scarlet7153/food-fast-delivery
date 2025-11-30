@@ -76,6 +76,7 @@ Hệ thống được deploy trên **Render** :
 Hệ thống tích hợp **Prometheus + Grafana** để giám sát real-time:
 
 ![Grafana](./assets/monitoring.png)
+![Grafana](./assets/CI-monitoring.png)
 ![Prometheus](./assets/Prometheus-1.png)
 ### 📈 Metrics được theo dõi:
 - **System Metrics:**
