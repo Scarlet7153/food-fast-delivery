@@ -80,25 +80,47 @@ class TestMetricsReporter {
 
   _determineTestType(filePath) {
     if (!filePath) return 'unknown';
-    
-    // Check if it's an integration test
-    if (filePath.includes('integration') || 
-        filePath.includes('__tests__') && !filePath.includes('app.test.js')) {
-      return 'integration';
+    // Prefer content-based detection for integration tests (DB/timeouts/etc)
+    // Fall back to filename/path heuristics if file can't be read.
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const content = fs.readFileSync(filePath, 'utf8').toLowerCase();
+
+      // Common integration markers
+      const integrationMarkers = [
+        'mongodb-memory-server',
+        'mongodb-memory-server-core',
+        'mongoose.connect',
+        'jest.settimeout',
+        "supertest",
+        "http://localhost",
+        "mongo\"",
+      ];
+
+      for (const marker of integrationMarkers) {
+        if (content.includes(marker)) return 'integration';
+      }
+
+      // Filename/path heuristics
+      const fileName = path.basename(filePath).toLowerCase();
+      if (fileName.includes('integration') || filePath.includes(`${path.sep}integration${path.sep}`)) {
+        return 'integration';
+      }
+      if (fileName === 'app.test.js' || fileName.endsWith('.spec.js') || filePath.includes(`${path.sep}unit${path.sep}`) || fileName.includes('.unit.')) {
+        return 'unit';
+      }
+
+      // Default: treat tests under __tests__ as unit unless we saw an integration marker
+      if (filePath.includes('__tests__')) return 'unit';
+    } catch (e) {
+      // If reading file fails, fall back to conservative heuristics below
     }
-    
-    // Check if it's a unit test
-    if (filePath.includes('app.test.js') || 
-        filePath.includes('.spec.js') ||
-        filePath.includes('unit')) {
-      return 'unit';
-    }
-    
-    // Default to integration if in __tests__ folder
-    if (filePath.includes('__tests__')) {
-      return 'integration';
-    }
-    
+
+    // Conservative fallback heuristics
+    if (filePath.includes('integration') || filePath.includes('.e2e.')) return 'integration';
+    if (filePath.includes('app.test.js') || filePath.includes('.spec.js') || filePath.includes('unit')) return 'unit';
+
     return 'unit';
   }
 
